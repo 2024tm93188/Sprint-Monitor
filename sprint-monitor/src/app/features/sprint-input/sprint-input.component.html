@@ -1,0 +1,108 @@
+<mat-card class="sprint-input-card">
+  <mat-card-header>
+    <mat-icon mat-card-avatar>assignment</mat-icon>
+    <mat-card-title>Sprint Planning Input</mat-card-title>
+    <mat-card-subtitle>Enter data for the upcoming sprint</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="planningForm" (ngSubmit)="onSubmit()">
+
+      <!-- Historical Data Summary -->
+      <div class="data-summary" *ngIf="historicalMetrics">
+        <h4>
+          <mat-icon>history</mat-icon>
+          Historical Data Summary ({{historicalMetrics.sprintCount}} sprints)
+        </h4>
+        <div class="summary-grid">
+          <div class="metric">
+            <span class="label">Avg Velocity</span>
+            <span class="value">{{historicalMetrics.averageVelocity}} pts</span>
+          </div>
+          <div class="metric">
+            <span class="label">Effective Capacity</span>
+            <span class="value">{{historicalMetrics.effectiveCapacity}} pts</span>
+          </div>
+          <div class="metric">
+            <span class="label">Spillover Rate</span>
+            <span class="value">{{historicalMetrics.spilloverRate}}%</span>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Planned Story Points -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Planned Story Points</mat-label>
+        <input matInput type="number" formControlName="plannedPoints" min="0">
+        <mat-icon matSuffix
+          matTooltip="Total story points you plan to commit for this sprint">
+          help_outline
+        </mat-icon>
+        <mat-hint *ngIf="historicalMetrics">
+          Recommended: {{recommendedCommitment}} points (80% of velocity)
+        </mat-hint>
+        <mat-error *ngIf="planningForm.get('plannedPoints')?.hasError('required')">
+          Please enter planned story points
+        </mat-error>
+        <mat-error *ngIf="planningForm.get('plannedPoints')?.hasError('min')">
+          Story points must be positive
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Team Availability -->
+      <div class="slider-field">
+        <label>
+          Team Availability: {{planningForm.get('teamAvailability')?.value}}%
+          <mat-icon
+            matTooltip="Percentage of team available for this sprint (account for PTO, holidays)">
+            help_outline
+          </mat-icon>
+        </label>
+        <mat-slider min="0" max="100" step="5" discrete>
+          <input matSliderThumb formControlName="teamAvailability">
+        </mat-slider>
+      </div>
+
+      <!-- Team Size -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Team Size</mat-label>
+        <input matInput type="number" formControlName="teamSize" min="1">
+        <mat-icon matSuffix
+          matTooltip="Number of team members participating in the sprint">
+          help_outline
+        </mat-icon>
+        <mat-error *ngIf="planningForm.get('teamSize')?.hasError('required')">
+          Please enter team size
+        </mat-error>
+      </mat-form-field>
+
+      <!-- External Dependencies -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>External Dependencies</mat-label>
+        <input matInput type="number" formControlName="externalDependencies" min="0">
+        <mat-icon matSuffix
+          matTooltip="Number of stories dependent on external teams or systems">
+          help_outline
+        </mat-icon>
+      </mat-form-field>
+
+      <mat-divider></mat-divider>
+
+      <!-- Submit Button -->
+      <div class="actions">
+        <button mat-raised-button color="primary" type="submit"
+          [disabled]="!planningForm.valid">
+          <mat-icon>assessment</mat-icon>
+          Evaluate Risk
+        </button>
+        <button mat-stroked-button type="button" (click)="loadSampleData()">
+          <mat-icon>refresh</mat-icon>
+          Load Sample Data
+        </button>
+      </div>
+
+    </form>
+  </mat-card-content>
+</mat-card>

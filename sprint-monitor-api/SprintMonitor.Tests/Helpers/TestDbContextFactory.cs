@@ -1,0 +1,146 @@
+using Microsoft.EntityFrameworkCore;
+using SprintMonitor.API.Data;
+using SprintMonitor.API.Models;
+
+namespace SprintMonitor.Tests.Helpers;
+
+/// <summary>
+/// Helper class for creating test database contexts
+/// </summary>
+public static class TestDbContextFactory
+{
+    /// <summary>
+    /// Creates an in-memory database context for testing
+    /// </summary>
+    public static SprintMonitorDbContext Create()
+    {
+        var options = new DbContextOptionsBuilder<SprintMonitorDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new SprintMonitorDbContext(options);
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    /// <summary>
+    /// Creates a context with seeded test data
+    /// </summary>
+    public static SprintMonitorDbContext CreateWithTestData()
+    {
+        var context = Create();
+        SeedTestData(context);
+        return context;
+    }
+
+    /// <summary>
+    /// Seeds the context with test data
+    /// </summary>
+    public static void SeedTestData(SprintMonitorDbContext context)
+    {
+        // Add test teams
+        var team1 = new Team
+        {
+            TeamId = 1,
+            TeamName = "Test Team Alpha",
+            Description = "Test team for unit testing",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow.AddMonths(-6)
+        };
+
+        var team2 = new Team
+        {
+            TeamId = 2,
+            TeamName = "Test Team Beta",
+            Description = "Another test team",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow.AddMonths(-3)
+        };
+
+        context.Teams.AddRange(team1, team2);
+
+        // Add test sprints for Team 1
+        var sprints = new List<Sprint>
+        {
+            new Sprint
+            {
+                SprintId = 1,
+                TeamId = 1,
+                SprintName = "Sprint 1",
+                StartDate = DateTime.UtcNow.AddDays(-70),
+                EndDate = DateTime.UtcNow.AddDays(-56),
+                CommittedPoints = 30,
+                CompletedPoints = 28,
+                TeamSize = 5,
+                TeamAvailability = 100,
+                HadSpillover = false,
+                ExternalDependencies = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-70)
+            },
+            new Sprint
+            {
+                SprintId = 2,
+                TeamId = 1,
+                SprintName = "Sprint 2",
+                StartDate = DateTime.UtcNow.AddDays(-56),
+                EndDate = DateTime.UtcNow.AddDays(-42),
+                CommittedPoints = 32,
+                CompletedPoints = 30,
+                TeamSize = 5,
+                TeamAvailability = 95,
+                HadSpillover = false,
+                ExternalDependencies = 2,
+                CreatedAt = DateTime.UtcNow.AddDays(-56)
+            },
+            new Sprint
+            {
+                SprintId = 3,
+                TeamId = 1,
+                SprintName = "Sprint 3",
+                StartDate = DateTime.UtcNow.AddDays(-42),
+                EndDate = DateTime.UtcNow.AddDays(-28),
+                CommittedPoints = 28,
+                CompletedPoints = 26,
+                AddedPoints = 2,
+                TeamSize = 5,
+                TeamAvailability = 90,
+                HadSpillover = true,
+                ExternalDependencies = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-42)
+            },
+            new Sprint
+            {
+                SprintId = 4,
+                TeamId = 1,
+                SprintName = "Sprint 4",
+                StartDate = DateTime.UtcNow.AddDays(-28),
+                EndDate = DateTime.UtcNow.AddDays(-14),
+                CommittedPoints = 35,
+                CompletedPoints = 32,
+                TeamSize = 5,
+                TeamAvailability = 100,
+                HadSpillover = false,
+                ExternalDependencies = 0,
+                CreatedAt = DateTime.UtcNow.AddDays(-28)
+            },
+            new Sprint
+            {
+                SprintId = 5,
+                TeamId = 1,
+                SprintName = "Sprint 5",
+                StartDate = DateTime.UtcNow.AddDays(-14),
+                EndDate = DateTime.UtcNow,
+                CommittedPoints = 30,
+                CompletedPoints = 29,
+                TeamSize = 5,
+                TeamAvailability = 100,
+                HadSpillover = false,
+                ExternalDependencies = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-14)
+            }
+        };
+
+        context.Sprints.AddRange(sprints);
+        context.SaveChanges();
+    }
+}

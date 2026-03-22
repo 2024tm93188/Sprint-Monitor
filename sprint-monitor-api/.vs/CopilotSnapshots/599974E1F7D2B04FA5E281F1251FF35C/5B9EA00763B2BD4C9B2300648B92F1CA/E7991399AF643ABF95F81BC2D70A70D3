@@ -1,0 +1,104 @@
+﻿using Microsoft.EntityFrameworkCore;
+using SprintMonitor.API.Data;
+using SprintMonitor.API.DTOs;
+using SprintMonitor.API.Models;
+
+namespace SprintMonitor.API.Services;
+
+public class TeamService : ITeamService
+{
+    private readonly SprintMonitorDbContext _context;
+
+    public TeamService(SprintMonitorDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IEnumerable<TeamDto>> GetAllTeamsAsync()
+    {
+        return await _context.Teams
+            .Include(t => t.Sprints)
+            .Where(t => t.IsActive)
+            .Select(t => new TeamDto
+            {
+                TeamId = t.TeamId,
+                TeamName = t.TeamName,
+                Description = t.Description,
+                CreatedAt = t.CreatedAt,
+                IsActive = t.IsActive,
+                SprintCount = t.Sprints.Count
+            })
+            .ToListAsync();
+    }
+
+    public async Task<TeamDto?> GetTeamByIdAsync(int teamId)
+    {
+        var team = await _context.Teams
+            .Include(t => t.Sprints)
+            .FirstOrDefaultAsync(t => t.TeamId == teamId);
+
+        if (team == null) return null;
+
+        return new TeamDto
+        {
+            TeamId = team.TeamId,
+            TeamName = team.TeamName,
+            Description = team.Description,
+            CreatedAt = team.CreatedAt,
+            IsActive = team.IsActive,
+            SprintCount = team.Sprints.Count
+        };
+    }
+
+    public async Task<TeamDto> CreateTeamAsync(CreateTeamDto dto)
+    {
+        var team = new Team
+        {
+            TeamName = dto.TeamName,
+            Description = dto.Description,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _context.Teams.Add(team);
+        await _context.SaveChangesAsync();
+
+        return new TeamDto
+        {
+            TeamId = team.TeamId,
+            TeamName = team.TeamName,
+            Description = team.Description,
+            CreatedAt = team.CreatedAt,
+            IsActive = team.IsActive,
+            SprintCount = 0
+        };
+    }
+
+    public async Task<TeamDto?> UpdateTeamAsync(int teamId, UpdateTeamDto dto)
+    {
+        var team = await _context.Teams
+            .Where(t => t.IsActive)
+            .FirstOrDefaultAsync(t => t.TeamId == teamId);
+
+        if (team == null) return null;
+
+        if (dto.TeamName != null) team.TeamName = dto.TeamName;
+        if (dto.Description != null) team.Description = dto.Description;
+        if (dto.IsActive.HasValue) team.IsActive = dto.IsActive.Value;
+
+        await _context.SaveChangesAsync();
+
+        return await GetTeamByIdAsync(teamId);
+    }
+
+    public async Task<bool> DeleteTeamAsync(int teamId)
+    {
+        var team = await _context.Teams.FindAsync(teamId);
+        if (team == null) return false;
+
+        // Soft delete
+        team.IsActive = false;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+}

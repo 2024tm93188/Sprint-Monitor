@@ -1,0 +1,266 @@
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using SprintMonitor.API.Controllers;
+using SprintMonitor.API.DTOs;
+using SprintMonitor.API.Services;
+using Xunit;
+
+namespace SprintMonitor.Tests.Controllers;
+
+/// <summary>
+/// Unit tests for RiskAssessmentController
+/// </summary>
+public class RiskAssessmentControllerTests
+{
+    private readonly Mock<IRiskAssessmentService> _mockRiskService;
+    private readonly RiskAssessmentController _controller;
+
+    public RiskAssessmentControllerTests()
+    {
+        _mockRiskService = new Mock<IRiskAssessmentService>();
+        _controller = new RiskAssessmentController(_mockRiskService.Object);
+    }
+
+    #region EvaluateRisk Tests
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsOk_WhenValidRequest()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = 30,
+            TeamAvailability = 100,
+            ExternalDependencies = 2
+        };
+        var assessment = new RiskAssessmentDto
+        {
+            AssessmentId = 1,
+            TeamId = 1,
+            RiskLevel = "LOW",
+            TotalScore = 3,
+            Confidence = "HIGH",
+            Factors = new List<RiskFactorDto>(),
+            Recommendations = new List<RecommendationDto>()
+        };
+        _mockRiskService.Setup(s => s.EvaluateRiskAsync(It.IsAny<RiskAssessmentRequestDto>())).ReturnsAsync(assessment);
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAssessment = Assert.IsType<RiskAssessmentDto>(okResult.Value);
+        Assert.Equal("LOW", returnedAssessment.RiskLevel);
+    }
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsBadRequest_WhenPlannedCommitmentIsZero()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = 0,
+            TeamAvailability = 100
+        };
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsBadRequest_WhenPlannedCommitmentIsNegative()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = -10,
+            TeamAvailability = 100
+        };
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsBadRequest_WhenTeamAvailabilityIsNegative()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = 30,
+            TeamAvailability = -10
+        };
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsBadRequest_WhenTeamAvailabilityExceeds100()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = 30,
+            TeamAvailability = 150
+        };
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task EvaluateRisk_ReturnsBadRequest_WhenServiceThrows()
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = 30,
+            TeamAvailability = 100
+        };
+        _mockRiskService.Setup(s => s.EvaluateRiskAsync(It.IsAny<RiskAssessmentRequestDto>()))
+            .ThrowsAsync(new InvalidOperationException("Team not found"));
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    #endregion
+
+    #region GetAssessmentHistory Tests
+
+    [Fact]
+    public async Task GetAssessmentHistory_ReturnsOk_WithAssessments()
+    {
+        // Arrange
+        var assessments = new List<RiskAssessmentDto>
+        {
+            new RiskAssessmentDto { AssessmentId = 1, TeamId = 1, RiskLevel = "LOW" },
+            new RiskAssessmentDto { AssessmentId = 2, TeamId = 1, RiskLevel = "MODERATE" }
+        };
+        _mockRiskService.Setup(s => s.GetAssessmentHistoryAsync(1)).ReturnsAsync(assessments);
+
+        // Act
+        var result = await _controller.GetAssessmentHistory(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAssessments = Assert.IsAssignableFrom<IEnumerable<RiskAssessmentDto>>(okResult.Value);
+        Assert.Equal(2, returnedAssessments.Count());
+    }
+
+    [Fact]
+    public async Task GetAssessmentHistory_ReturnsEmptyList_WhenNoAssessments()
+    {
+        // Arrange
+        _mockRiskService.Setup(s => s.GetAssessmentHistoryAsync(999)).ReturnsAsync(new List<RiskAssessmentDto>());
+
+        // Act
+        var result = await _controller.GetAssessmentHistory(999);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAssessments = Assert.IsAssignableFrom<IEnumerable<RiskAssessmentDto>>(okResult.Value);
+        Assert.Empty(returnedAssessments);
+    }
+
+    #endregion
+
+    #region GetAssessment Tests
+
+    [Fact]
+    public async Task GetAssessment_ReturnsOk_WhenAssessmentExists()
+    {
+        // Arrange
+        var assessment = new RiskAssessmentDto
+        {
+            AssessmentId = 1,
+            TeamId = 1,
+            RiskLevel = "LOW",
+            TotalScore = 3
+        };
+        _mockRiskService.Setup(s => s.GetAssessmentByIdAsync(1)).ReturnsAsync(assessment);
+
+        // Act
+        var result = await _controller.GetAssessment(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAssessment = Assert.IsType<RiskAssessmentDto>(okResult.Value);
+        Assert.Equal(1, returnedAssessment.AssessmentId);
+    }
+
+    [Fact]
+    public async Task GetAssessment_ReturnsNotFound_WhenAssessmentDoesNotExist()
+    {
+        // Arrange
+        _mockRiskService.Setup(s => s.GetAssessmentByIdAsync(999)).ReturnsAsync((RiskAssessmentDto?)null);
+
+        // Act
+        var result = await _controller.GetAssessment(999);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    #endregion
+
+    #region Risk Level Validation Tests
+
+    [Theory]
+    [InlineData(30, 100, "LOW")]
+    [InlineData(50, 80, "MODERATE")]
+    [InlineData(60, 60, "HIGH")]
+    public async Task EvaluateRisk_ReturnsExpectedRiskLevel(int plannedCommitment, int availability, string expectedLevel)
+    {
+        // Arrange
+        var request = new RiskAssessmentRequestDto
+        {
+            TeamId = 1,
+            PlannedCommitment = plannedCommitment,
+            TeamAvailability = availability,
+            ExternalDependencies = 1
+        };
+        var assessment = new RiskAssessmentDto
+        {
+            AssessmentId = 1,
+            TeamId = 1,
+            RiskLevel = expectedLevel,
+            Factors = new List<RiskFactorDto>(),
+            Recommendations = new List<RecommendationDto>()
+        };
+        _mockRiskService.Setup(s => s.EvaluateRiskAsync(It.IsAny<RiskAssessmentRequestDto>())).ReturnsAsync(assessment);
+
+        // Act
+        var result = await _controller.EvaluateRisk(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAssessment = Assert.IsType<RiskAssessmentDto>(okResult.Value);
+        Assert.Equal(expectedLevel, returnedAssessment.RiskLevel);
+    }
+
+    #endregion
+}

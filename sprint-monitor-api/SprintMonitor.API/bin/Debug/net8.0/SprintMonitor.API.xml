@@ -1,0 +1,1173 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SprintMonitor.API</name>
+    </assembly>
+    <members>
+        <member name="T:SprintMonitor.API.Controllers.AuthController">
+            <summary>
+            Authentication controller for user login, registration, and token management
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.Login(SprintMonitor.API.DTOs.LoginRequestDto)">
+            <summary>
+            Authenticate user with email and password
+            </summary>
+            <param name="request">Login credentials</param>
+            <returns>JWT token and user information</returns>
+            <response code="200">Login successful</response>
+            <response code="401">Invalid credentials</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.Register(SprintMonitor.API.DTOs.RegisterRequestDto)">
+            <summary>
+            Register a new user account
+            </summary>
+            <param name="request">Registration details</param>
+            <returns>JWT token and user information</returns>
+            <response code="201">Registration successful</response>
+            <response code="400">Invalid registration data or email already exists</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.RefreshToken(SprintMonitor.API.DTOs.RefreshTokenRequestDto)">
+            <summary>
+            Refresh JWT token using refresh token
+            </summary>
+            <param name="request">Current token and refresh token</param>
+            <returns>New JWT token and refresh token</returns>
+            <response code="200">Token refreshed successfully</response>
+            <response code="401">Invalid or expired refresh token</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.Logout">
+            <summary>
+            Logout current user and invalidate refresh token
+            </summary>
+            <response code="200">Logout successful</response>
+            <response code="401">User not authenticated</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.GetCurrentUser">
+            <summary>
+            Get current authenticated user's information
+            </summary>
+            <returns>User details</returns>
+            <response code="200">User information retrieved</response>
+            <response code="401">User not authenticated</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.ChangePassword(SprintMonitor.API.DTOs.ChangePasswordRequestDto)">
+            <summary>
+            Change current user's password
+            </summary>
+            <param name="request">Current and new password</param>
+            <response code="200">Password changed successfully</response>
+            <response code="400">Invalid current password</response>
+            <response code="401">User not authenticated</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.UpdateProfile(SprintMonitor.API.DTOs.UpdateProfileRequestDto)">
+            <summary>
+            Update current user's profile
+            </summary>
+            <param name="request">Updated profile information</param>
+            <returns>Updated user details</returns>
+            <response code="200">Profile updated successfully</response>
+            <response code="401">User not authenticated</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.GetAllUsers">
+            <summary>
+            Get all users (Admin only)
+            </summary>
+            <returns>List of all users</returns>
+            <response code="200">Users retrieved successfully</response>
+            <response code="401">User not authenticated</response>
+            <response code="403">User not authorized</response>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.AuthController.ValidateToken">
+            <summary>
+            Validate if the current token is valid
+            </summary>
+            <response code="200">Token is valid</response>
+            <response code="401">Token is invalid or expired</response>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.FeasibilityController">
+            <summary>
+            API endpoints for Feasibility Study Management
+            Supports industry mentor validation workflow
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.GetAllFeasibilityStudies">
+            <summary>
+            Get all feasibility studies
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.GetFeasibilityById(System.Int32)">
+            <summary>
+            Get feasibility study by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.GetLatestForTeam(System.Int32)">
+            <summary>
+            Get latest feasibility study for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.GetFeasibilitySummary">
+            <summary>
+            Get feasibility summary statistics
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.CreateFeasibilityStudy(SprintMonitor.API.DTOs.CreateFeasibilityDto)">
+            <summary>
+            Create a new feasibility study
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.UpdateFeasibilityStudy(System.Int32,SprintMonitor.API.DTOs.UpdateFeasibilityDto)">
+            <summary>
+            Update an existing feasibility study
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.UpdateFeasibilityStatus(System.Int32,SprintMonitor.API.Controllers.UpdateStatusRequest)">
+            <summary>
+            Update feasibility study status (approval workflow)
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.FeasibilityController.DeleteFeasibilityStudy(System.Int32)">
+            <summary>
+            Delete a feasibility study
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.UpdateStatusRequest">
+            <summary>
+            Request model for status update
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.MetricsController">
+            <summary>
+            API endpoints for sprint metrics
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.MetricsController.GetTeamMetrics(System.Int32,System.Int32)">
+            <summary>
+            Get computed metrics for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.MetricsController.GetVelocityChartData(System.Int32,System.Int32)">
+            <summary>
+            Get velocity chart data for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.MetricsController.GetSpilloverAnalysis(System.Int32)">
+            <summary>
+            Get spillover analysis for a team
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.RiskAssessmentController">
+            <summary>
+            API endpoints for risk assessment
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskAssessmentController.EvaluateRisk(SprintMonitor.API.DTOs.RiskAssessmentRequestDto)">
+            <summary>
+            Evaluate sprint risk based on historical data
+            </summary>
+            <remarks>
+            This is the core functionality of Sprint Monitor.
+            It analyzes historical sprint data and provides a risk assessment
+            with actionable recommendations.
+            </remarks>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskAssessmentController.GetAssessmentHistory(System.Int32)">
+            <summary>
+            Get risk assessment history for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskAssessmentController.GetAssessment(System.Int32)">
+            <summary>
+            Get a specific assessment by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskAssessmentController.UpdateOutcome(System.Int32,SprintMonitor.API.DTOs.UpdateAssessmentOutcomeDto)">
+            <summary>
+            Update assessment with actual outcome (for validation)
+            </summary>
+            <remarks>
+            After a sprint completes, use this endpoint to record the actual outcome.
+            This helps validate the accuracy of risk predictions over time.
+            </remarks>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.RiskFeedbackController">
+            <summary>
+            API endpoints for Human Relevance Feedback
+            Enables prediction accuracy tracking and system calibration
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.SubmitFeedback(SprintMonitor.API.DTOs.CreateRiskFeedbackDto)">
+            <summary>
+            Submit feedback for a risk assessment
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetFeedbackById(System.Int32)">
+            <summary>
+            Get feedback by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetFeedbacksForTeam(System.Int32)">
+            <summary>
+            Get all feedbacks for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetFeedbackForAssessment(System.Int32)">
+            <summary>
+            Get feedback for a specific assessment
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetPredictionAccuracy(System.Int32)">
+            <summary>
+            Calculate prediction accuracy for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetSprintComparison(System.Int32)">
+            <summary>
+            Get comparison of last 3 sprint assessments
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.GetCalibrationStatus(System.Int32)">
+            <summary>
+            Get calibration status for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.RiskFeedbackController.MarkAsUsedForCalibration(System.Int32)">
+            <summary>
+            Mark feedback as used for calibration
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.SprintsController">
+            <summary>
+            API endpoints for managing sprints
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.GetSprintsByTeam(System.Int32)">
+            <summary>
+            Get all sprints for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.GetRecentSprints(System.Int32,System.Int32)">
+            <summary>
+            Get recent sprints for a team (for metrics calculation)
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.GetSprint(System.Int32)">
+            <summary>
+            Get a specific sprint by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.CreateSprint(SprintMonitor.API.DTOs.CreateSprintDto)">
+            <summary>
+            Create a new sprint
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.UpdateSprint(System.Int32,SprintMonitor.API.DTOs.UpdateSprintDto)">
+            <summary>
+            Update an existing sprint
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.DeleteSprint(System.Int32)">
+            <summary>
+            Delete a sprint
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.ImportFromCsv(System.Int32,Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            Import sprints from CSV file
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.SprintsController.ImportFromCsvString(System.Int32,SprintMonitor.API.Controllers.CsvImportRequest)">
+            <summary>
+            Import sprints from CSV string (for testing/API usage)
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Controllers.TeamsController">
+            <summary>
+            API endpoints for managing teams
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.TeamsController.GetAllTeams">
+            <summary>
+            Get all active teams
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.TeamsController.GetTeam(System.Int32)">
+            <summary>
+            Get a specific team by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.TeamsController.CreateTeam(SprintMonitor.API.DTOs.CreateTeamDto)">
+            <summary>
+            Create a new team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.TeamsController.UpdateTeam(System.Int32,SprintMonitor.API.DTOs.UpdateTeamDto)">
+            <summary>
+            Update an existing team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Controllers.TeamsController.DeleteTeam(System.Int32)">
+            <summary>
+            Delete (deactivate) a team
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Data.DbSeeder">
+            <summary>
+            Seeds the database with sample data for demonstration
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Data.SprintMonitorDbContext">
+            <summary>
+            Entity Framework DbContext for Sprint Monitor
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.LoginRequestDto">
+            <summary>
+            Login request DTO
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RegisterRequestDto">
+            <summary>
+            Registration request DTO
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.AuthResponseDto">
+            <summary>
+            Authentication response with tokens
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UserDto">
+            <summary>
+            User information DTO (without sensitive data)
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RefreshTokenRequestDto">
+            <summary>
+            Refresh token request DTO
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.ChangePasswordRequestDto">
+            <summary>
+            Change password request DTO
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UpdateProfileRequestDto">
+            <summary>
+            Update user profile DTO
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.FeasibilityDto">
+            <summary>
+            DTO for displaying feasibility study information
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CreateFeasibilityDto">
+            <summary>
+            DTO for creating a new feasibility study
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UpdateFeasibilityDto">
+            <summary>
+            DTO for updating feasibility study
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.FeasibilitySummaryDto">
+            <summary>
+            Summary DTO for feasibility overview
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RiskAssessmentRequestDto">
+            <summary>
+            DTO for risk assessment request
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RiskAssessmentDto">
+            <summary>
+            DTO for risk assessment response
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RiskFactorDto">
+            <summary>
+            DTO for risk factor
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RecommendationDto">
+            <summary>
+            DTO for recommendation
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.SprintMetricsDto">
+            <summary>
+            DTO for computed sprint metrics
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UpdateAssessmentOutcomeDto">
+            <summary>
+            DTO for updating assessment with actual outcome
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.RiskFeedbackDto">
+            <summary>
+            DTO for displaying risk feedback
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CreateRiskFeedbackDto">
+            <summary>
+            DTO for submitting risk feedback
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.DTOs.CreateRiskFeedbackDto.AgreementLevel">
+            <summary>
+            Agreement level: Accurate, PartiallyAccurate, Incorrect
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.PredictionAccuracyDto">
+            <summary>
+            DTO for prediction accuracy statistics
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.SprintComparisonDto">
+            <summary>
+            DTO for sprint comparison (last 3 dashboards)
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.SprintComparisonAnalysisDto">
+            <summary>
+            DTO for comparative analysis of last N sprints
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CalibrationStatusDto">
+            <summary>
+            DTO for calibration status
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CreateSprintDto">
+            <summary>
+            DTO for creating a new sprint
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.SprintDto">
+            <summary>
+            DTO for sprint response
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UpdateSprintDto">
+            <summary>
+            DTO for updating a sprint
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CsvImportResultDto">
+            <summary>
+            DTO for CSV import result
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.CreateTeamDto">
+            <summary>
+            DTO for creating a new team
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.TeamDto">
+            <summary>
+            DTO for team response
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.DTOs.UpdateTeamDto">
+            <summary>
+            DTO for updating a team
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:SprintMonitor.API.Migrations.AddUserAuthentication">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.AddUserAuthentication.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.AddUserAuthentication.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:SprintMonitor.API.Migrations.AddUserAuthentication.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:SprintMonitor.API.Models.ImplementationFeasibility">
+            <summary>
+            Feasibility Validation Module
+            Tracks technical, operational, and organizational feasibility 
+            with industry mentor validation for practical deployment viability.
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.TeamId">
+            <summary>
+            Team this feasibility study applies to
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.EvaluationDate">
+            <summary>
+            Date when feasibility was evaluated
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.TechnicalFeasibility">
+            <summary>
+            Technical Feasibility - Can the system be built with available technology?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.TechnicalNotes">
+            <summary>
+            Technical feasibility details and notes
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.OperationalFeasibility">
+            <summary>
+            Operational Feasibility - Will the system work in daily operations?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.OperationalNotes">
+            <summary>
+            Operational feasibility details and notes
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.OrganizationalFeasibility">
+            <summary>
+            Organizational Feasibility - Does it fit with company culture/processes?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.OrganizationalNotes">
+            <summary>
+            Organizational feasibility details and notes
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.IntegrationFeasibility">
+            <summary>
+            Integration possibility with existing Agile tools (Jira, Azure DevOps, etc.)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.IntegrationNotes">
+            <summary>
+            Integration feasibility details
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.MentorComments">
+            <summary>
+            Industry mentor's comments and validation
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.ApprovedBy">
+            <summary>
+            Name of the person who approved (industry mentor)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.Status">
+            <summary>
+            Approval status: Proposed, Under Review, Approved, Deferred, Rejected
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.ExpectedBenefits">
+            <summary>
+            Expected benefits from implementation
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.AdoptionChallenges">
+            <summary>
+            Identified adoption challenges
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.ScalabilityConsiderations">
+            <summary>
+            Scalability considerations
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.OverallScore">
+            <summary>
+            Overall feasibility score (0-100)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.CreatedAt">
+            <summary>
+            Record creation timestamp
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.ImplementationFeasibility.UpdatedAt">
+            <summary>
+            Last update timestamp
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.RecommendationPriority">
+            <summary>
+            Recommendation priority levels
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.ActionType">
+            <summary>
+            Types of recommended actions
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.Recommendation">
+            <summary>
+            Actionable recommendation based on risk assessment
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.Title">
+            <summary>
+            Short title
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.Description">
+            <summary>
+            Detailed recommendation text
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.Priority">
+            <summary>
+            Priority of this recommendation
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.AddressesRiskFactor">
+            <summary>
+            Which risk factor this addresses
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.ActionType">
+            <summary>
+            Suggested action type
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.SuggestedChange">
+            <summary>
+            Quantified impact if available
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Recommendation.WasApplied">
+            <summary>
+            Whether the recommendation was applied
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.RiskLevel">
+            <summary>
+            Risk level classification
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.SprintOutcome">
+            <summary>
+            Actual sprint outcome (for validation)
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.AssessmentConfidence">
+            <summary>
+            Confidence level based on data quality
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.RiskAssessment">
+            <summary>
+            Records a risk assessment for a planned sprint.
+            Used to track prediction accuracy over time.
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.SprintId">
+            <summary>
+            Optional link to a specific sprint
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.PlannedCommitment">
+            <summary>
+            Story points planned for the assessed sprint
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.TeamAvailability">
+            <summary>
+            Team availability at time of assessment
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.ExternalDependencies">
+            <summary>
+            External dependencies count
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.RiskLevel">
+            <summary>
+            Computed risk level
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.TotalScore">
+            <summary>
+            Total risk score (0-14)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.MaxPossibleScore">
+            <summary>
+            Maximum possible score
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.Confidence">
+            <summary>
+            Confidence in the assessment
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.ActualOutcome">
+            <summary>
+            Actual outcome after sprint completion (for validation)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.ActualCompletedPoints">
+            <summary>
+            Actual completed points (filled after sprint ends)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskAssessment.Notes">
+            <summary>
+            Notes or comments
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.RiskFactor">
+            <summary>
+            Individual risk factor with score and explanation
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.FactorName">
+            <summary>
+            Name of the risk factor (e.g., "CVR", "Spillover Rate")
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.Score">
+            <summary>
+            Score contribution (0-3)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.MaxScore">
+            <summary>
+            Maximum score for this factor
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.Description">
+            <summary>
+            Human-readable explanation
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.MetricValue">
+            <summary>
+            The metric value that triggered this score
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFactor.Threshold">
+            <summary>
+            Threshold that was exceeded (if any)
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.RiskFeedback">
+            <summary>
+            Human Relevance Feedback Model
+            Captures user feedback on risk predictions to enable:
+            - Prediction accuracy measurement
+            - System calibration and improvement
+            - Comparison between predicted vs actual outcomes
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.AssessmentId">
+            <summary>
+            Reference to the risk assessment being evaluated
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.SprintId">
+            <summary>
+            Sprint ID this feedback relates to
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.UserId">
+            <summary>
+            User who provided the feedback (Scrum Master, Team Lead)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.UserName">
+            <summary>
+            Name of the user who provided feedback
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.UserRole">
+            <summary>
+            User's role (Scrum Master, Team Lead, Developer, etc.)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.PredictedRisk">
+            <summary>
+            The risk level predicted by the system
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.ActualOutcome">
+            <summary>
+            The actual outcome after sprint completion
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.UserAgreement">
+            <summary>
+            Did the user agree with the prediction?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.AgreementLevel">
+            <summary>
+            Agreement level: Accurate, Partially Accurate, Incorrect
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.RecommendationsHelpful">
+            <summary>
+            Were the recommendations helpful?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.RecommendationRating">
+            <summary>
+            Rating for recommendations (1-5 stars)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.FeedbackComments">
+            <summary>
+            User's detailed feedback comments
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.ImprovementSuggestions">
+            <summary>
+            Suggestions for improving the risk engine
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.ActualPointsCompleted">
+            <summary>
+            Actual story points completed (for accuracy measurement)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.ActualSpillover">
+            <summary>
+            Was there spillover in this sprint?
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.ActualSpilloverPoints">
+            <summary>
+            Actual spillover points
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.CreatedAt">
+            <summary>
+            Feedback submission timestamp
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.RiskFeedback.UsedForCalibration">
+            <summary>
+            Flag indicating if feedback was used for calibration
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.PredictionAccuracyStats">
+            <summary>
+            Aggregated prediction accuracy statistics
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.Sprint">
+            <summary>
+            Represents a sprint with planning and completion data.
+            Core entity for historical analysis.
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.CommittedPoints">
+            <summary>
+            Story points committed at sprint start
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.CompletedPoints">
+            <summary>
+            Story points actually completed by sprint end
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.AddedPoints">
+            <summary>
+            Points added mid-sprint (scope creep)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.RemovedPoints">
+            <summary>
+            Points removed mid-sprint
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.TeamAvailability">
+            <summary>
+            Team availability percentage (0-100)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.TeamSize">
+            <summary>
+            Number of team members
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.SprintDuration">
+            <summary>
+            Sprint duration in days (typically 7 or 14)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.HadSpillover">
+            <summary>
+            Whether work spilled over to next sprint
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.Sprint.ExternalDependencies">
+            <summary>
+            Number of external dependencies
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.Team">
+            <summary>
+            Represents a team using Sprint Monitor
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.TeamSetting">
+            <summary>
+            Team-specific configuration settings
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.TeamSetting.SettingKey">
+            <summary>
+            Setting key (e.g., "CVR_THRESHOLD_HIGH")
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.TeamSetting.SettingValue">
+            <summary>
+            Setting value (stored as string, parsed as needed)
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.TeamSetting.Description">
+            <summary>
+            Description of what this setting controls
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.UserRole">
+            <summary>
+            User roles in the system
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Models.User">
+            <summary>
+            User entity for authentication and authorization
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.User.TeamId">
+            <summary>
+            Optional team association
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.User.RefreshToken">
+            <summary>
+            Refresh token for JWT refresh
+            </summary>
+        </member>
+        <member name="P:SprintMonitor.API.Models.User.RefreshTokenExpiry">
+            <summary>
+            Refresh token expiry time
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.AuthService">
+            <summary>
+            Authentication service implementation with JWT support
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.CsvImportService">
+            <summary>
+            Service for importing sprint data from CSV files
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.IFeasibilityService">
+            <summary>
+            Interface for Feasibility Service
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.FeasibilityService">
+            <summary>
+            Feasibility Service Implementation
+            Manages technical, operational, and organizational feasibility validation
+            with industry mentor approval workflow.
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.GetAllFeasibilityStudiesAsync">
+            <summary>
+            Get all feasibility studies
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.GetFeasibilityByIdAsync(System.Int32)">
+            <summary>
+            Get feasibility study by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.GetLatestFeasibilityForTeamAsync(System.Int32)">
+            <summary>
+            Get latest feasibility study for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.CreateFeasibilityStudyAsync(SprintMonitor.API.DTOs.CreateFeasibilityDto)">
+            <summary>
+            Create a new feasibility study
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.UpdateFeasibilityStudyAsync(System.Int32,SprintMonitor.API.DTOs.UpdateFeasibilityDto)">
+            <summary>
+            Update an existing feasibility study
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.UpdateFeasibilityStatusAsync(System.Int32,System.String,System.String)">
+            <summary>
+            Update feasibility status (approval workflow)
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.GetFeasibilitySummaryAsync">
+            <summary>
+            Get feasibility summary statistics
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.FeasibilityService.DeleteFeasibilityStudyAsync(System.Int32)">
+            <summary>
+            Delete a feasibility study
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.IAuthService">
+            <summary>
+            Authentication service interface
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.LoginAsync(SprintMonitor.API.DTOs.LoginRequestDto)">
+            <summary>
+            Authenticate user with email and password
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.RegisterAsync(SprintMonitor.API.DTOs.RegisterRequestDto)">
+            <summary>
+            Register a new user
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.RefreshTokenAsync(SprintMonitor.API.DTOs.RefreshTokenRequestDto)">
+            <summary>
+            Refresh JWT token using refresh token
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.LogoutAsync(System.Int32)">
+            <summary>
+            Logout user and invalidate refresh token
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.GetUserByIdAsync(System.Int32)">
+            <summary>
+            Get user by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.GetUserByEmailAsync(System.String)">
+            <summary>
+            Get user by email
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.ChangePasswordAsync(System.Int32,SprintMonitor.API.DTOs.ChangePasswordRequestDto)">
+            <summary>
+            Change user password
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.UpdateProfileAsync(System.Int32,SprintMonitor.API.DTOs.UpdateProfileRequestDto)">
+            <summary>
+            Update user profile
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.GetAllUsersAsync">
+            <summary>
+            Get all users (admin only)
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.IAuthService.ValidateTokenAsync(System.String)">
+            <summary>
+            Validate JWT token
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.MetricsService">
+            <summary>
+            Service for calculating sprint metrics.
+            All calculations are deterministic and explainable.
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.MetricsService.CalculateMetrics(System.Collections.Generic.IEnumerable{SprintMonitor.API.Models.Sprint},System.Int32)">
+            <summary>
+            Calculate all sprint metrics from historical data
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.MetricsService.CalculateVelocityTrend(System.Collections.Generic.IEnumerable{SprintMonitor.API.Models.Sprint})">
+            <summary>
+            Calculate velocity trend (improving, stable, declining)
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.MetricsService.CalculateRecommendedCommitment(System.Collections.Generic.IEnumerable{SprintMonitor.API.Models.Sprint},System.Int32)">
+            <summary>
+            Calculate the recommended commitment based on historical data
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.RiskAssessmentService">
+            <summary>
+            Risk Assessment Service
+            Core evaluation engine that aggregates metrics into risk assessment.
+            Implements deterministic, explainable risk scoring.
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskAssessmentService.EvaluateRiskAsync(SprintMonitor.API.DTOs.RiskAssessmentRequestDto)">
+            <summary>
+            Perform complete risk evaluation and save to database
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.IRiskFeedbackService">
+            <summary>
+            Interface for Risk Feedback Service
+            </summary>
+        </member>
+        <member name="T:SprintMonitor.API.Services.RiskFeedbackService">
+            <summary>
+            Risk Feedback Service Implementation
+            Manages human relevance feedback for prediction accuracy and system calibration.
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.SubmitFeedbackAsync(SprintMonitor.API.DTOs.CreateRiskFeedbackDto)">
+            <summary>
+            Submit user feedback for a risk assessment
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.GetFeedbacksForTeamAsync(System.Int32)">
+            <summary>
+            Get all feedbacks for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.GetFeedbackByIdAsync(System.Int32)">
+            <summary>
+            Get feedback by ID
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.GetFeedbackForAssessmentAsync(System.Int32)">
+            <summary>
+            Get feedback for a specific assessment
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.CalculatePredictionAccuracyAsync(System.Int32)">
+            <summary>
+            Calculate prediction accuracy for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.GetLastThreeSprintComparisonAsync(System.Int32)">
+            <summary>
+            Get comparison of last 3 sprint assessments with recommendations
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.GetCalibrationStatusAsync(System.Int32)">
+            <summary>
+            Get calibration status for a team
+            </summary>
+        </member>
+        <member name="M:SprintMonitor.API.Services.RiskFeedbackService.MarkFeedbackAsUsedForCalibrationAsync(System.Int32)">
+            <summary>
+            Mark feedback as used for calibration
+            </summary>
+        </member>
+    </members>
+</doc>

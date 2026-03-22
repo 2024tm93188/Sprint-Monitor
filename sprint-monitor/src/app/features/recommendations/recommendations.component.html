@@ -1,0 +1,91 @@
+<mat-card class="recommendations-card" *ngIf="recommendations && recommendations.length > 0">
+  <mat-card-header>
+    <mat-icon mat-card-avatar>lightbulb</mat-icon>
+    <mat-card-title>Planning Recommendations</mat-card-title>
+    <mat-card-subtitle>
+      {{recommendations.length}} suggestion{{recommendations.length > 1 ? 's' : ''}} to reduce risk
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="recommendations-list">
+      <mat-accordion>
+        <mat-expansion-panel
+          *ngFor="let rec of recommendations; let i = index"
+          [expanded]="i === 0"
+          class="recommendation-panel"
+          [ngClass]="getPriorityClass(rec.priority)">
+
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon class="action-icon">{{getActionIcon(rec.actionType)}}</mat-icon>
+              {{rec.title}}
+            </mat-panel-title>
+            <mat-panel-description>
+              <mat-chip [ngClass]="getPriorityChipClass(rec.priority)" size="small">
+                {{rec.priority}}
+              </mat-chip>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="recommendation-content">
+            <p class="description">{{rec.description}}</p>
+
+            <div class="meta-info">
+              <div class="meta-item" *ngIf="rec.suggestedChange">
+                <mat-icon>trending_down</mat-icon>
+                <span class="suggested-change">{{rec.suggestedChange}}</span>
+              </div>
+              <div class="meta-item">
+                <mat-icon>category</mat-icon>
+                <span>Addresses: {{rec.addressesRiskFactor}}</span>
+              </div>
+            </div>
+
+            <div class="action-buttons">
+              <button mat-stroked-button color="primary" (click)="onApplyRecommendation(rec)">
+                <mat-icon>check</mat-icon>
+                Apply This
+              </button>
+              <button mat-button (click)="onDismissRecommendation(rec)">
+                <mat-icon>close</mat-icon>
+                Dismiss
+              </button>
+            </div>
+          </div>
+
+        </mat-expansion-panel>
+      </mat-accordion>
+    </div>
+
+    <!-- Quick Actions Summary -->
+    <mat-divider></mat-divider>
+
+    <div class="quick-summary">
+      <h4>Quick Summary</h4>
+      <div class="summary-items">
+        <div class="summary-item" *ngIf="getReduceScopeRecommendation()">
+          <mat-icon color="warn">remove_circle</mat-icon>
+          <span>{{getReduceScopeRecommendation()?.suggestedChange}}</span>
+        </div>
+        <div class="summary-item" *ngIf="hasActionType(ActionType.SPLIT_STORIES)">
+          <mat-icon color="primary">call_split</mat-icon>
+          <span>Consider splitting large stories</span>
+        </div>
+        <div class="summary-item" *ngIf="hasActionType(ActionType.ADD_BUFFER)">
+          <mat-icon color="accent">security</mat-icon>
+          <span>Reserve buffer for unplanned work</span>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- No Recommendations State -->
+<mat-card class="no-recommendations-card" *ngIf="!recommendations || recommendations.length === 0">
+  <div class="no-recommendations">
+    <mat-icon>thumb_up</mat-icon>
+    <h3>No Recommendations Needed</h3>
+    <p>Your sprint plan looks good! Risk factors are within acceptable limits.</p>
+  </div>
+</mat-card>

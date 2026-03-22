@@ -1,0 +1,2847 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Sprint Monitor API",
+    "description": "\r\n## Sprint Risk Detection and Planning Analysis API\r\n\r\nA data-driven sprint feasibility and spillover risk detection system for Agile teams.\r\n\r\n### Key Features:\r\n- **Sprint Management**: Track and analyze sprint data\r\n- **Risk Assessment**: Evaluate sprint risks using deterministic rule-based logic\r\n- **Feasibility Study**: Industry validation with mentor approval workflow\r\n- **Human Feedback**: Prediction accuracy feedback for system calibration\r\n- **Sprint Comparison**: Analyze last 3 sprints with predictions vs outcomes\r\n\r\n### API Modules:\r\n1. **Teams** - Manage Scrum teams\r\n2. **Sprints** - CRUD operations for sprint data\r\n3. **Risk Assessment** - Evaluate sprint risk factors\r\n4. **Metrics** - Calculate velocity and performance metrics\r\n5. **Feasibility** - Implementation viability assessments\r\n6. **Risk Feedback** - Human relevance feedback loop\r\n\r\n---\r\n*Sprint Monitor v1.0 | M.Tech Dissertation Project*\r\n        ",
+    "contact": {
+      "name": "Sprint Monitor Team",
+      "email": "support@sprintmonitor.dev"
+    },
+    "license": {
+      "name": "Academic Use Only",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Feasibility": {
+      "get": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Get all feasibility studies",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeasibilityDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Create a new feasibility study",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFeasibilityDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFeasibilityDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFeasibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeasibilityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Feasibility/{feasibilityId}": {
+      "get": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Get feasibility study by ID",
+        "parameters": [
+          {
+            "name": "feasibilityId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeasibilityDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Update an existing feasibility study",
+        "parameters": [
+          {
+            "name": "feasibilityId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeasibilityDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeasibilityDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeasibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeasibilityDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Delete a feasibility study",
+        "parameters": [
+          {
+            "name": "feasibilityId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Feasibility/team/{teamId}/latest": {
+      "get": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Get latest feasibility study for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeasibilityDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Feasibility/summary": {
+      "get": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Get feasibility summary statistics",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeasibilitySummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Feasibility/{feasibilityId}/status": {
+      "patch": {
+        "tags": [
+          "Feasibility"
+        ],
+        "summary": "Update feasibility study status (approval workflow)",
+        "parameters": [
+          {
+            "name": "feasibilityId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Metrics/team/{teamId}": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get computed metrics for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "plannedPoints",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintMetricsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Metrics/team/{teamId}/velocity-chart": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get velocity chart data for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "lastN",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VelocityChartDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Metrics/team/{teamId}/spillover-analysis": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get spillover analysis for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpilloverAnalysisDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskAssessment/evaluate": {
+      "post": {
+        "tags": [
+          "RiskAssessment"
+        ],
+        "summary": "Evaluate sprint risk based on historical data",
+        "description": "This is the core functionality of Sprint Monitor.\r\nIt analyzes historical sprint data and provides a risk assessment\r\nwith actionable recommendations.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskAssessmentRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskAssessmentRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskAssessmentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskAssessment/history/{teamId}": {
+      "get": {
+        "tags": [
+          "RiskAssessment"
+        ],
+        "summary": "Get risk assessment history for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiskAssessmentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskAssessment/{assessmentId}": {
+      "get": {
+        "tags": [
+          "RiskAssessment"
+        ],
+        "summary": "Get a specific assessment by ID",
+        "parameters": [
+          {
+            "name": "assessmentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessmentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskAssessment/{assessmentId}/outcome": {
+      "patch": {
+        "tags": [
+          "RiskAssessment"
+        ],
+        "summary": "Update assessment with actual outcome (for validation)",
+        "description": "After a sprint completes, use this endpoint to record the actual outcome.\r\nThis helps validate the accuracy of risk predictions over time.",
+        "parameters": [
+          {
+            "name": "assessmentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAssessmentOutcomeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAssessmentOutcomeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAssessmentOutcomeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessmentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback": {
+      "post": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Submit feedback for a risk assessment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskFeedbackDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskFeedbackDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskFeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFeedbackDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/{feedbackId}": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Get feedback by ID",
+        "parameters": [
+          {
+            "name": "feedbackId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFeedbackDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/team/{teamId}": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Get all feedbacks for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiskFeedbackDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/assessment/{assessmentId}": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Get feedback for a specific assessment",
+        "parameters": [
+          {
+            "name": "assessmentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFeedbackDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/team/{teamId}/accuracy": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Calculate prediction accuracy for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionAccuracyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/team/{teamId}/comparison": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Get comparison of last 3 sprint assessments",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintComparisonAnalysisDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/team/{teamId}/calibration": {
+      "get": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Get calibration status for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/RiskFeedback/{feedbackId}/mark-calibrated": {
+      "patch": {
+        "tags": [
+          "RiskFeedback"
+        ],
+        "summary": "Mark feedback as used for calibration",
+        "parameters": [
+          {
+            "name": "feedbackId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints/team/{teamId}": {
+      "get": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Get all sprints for a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SprintDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints/team/{teamId}/recent": {
+      "get": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Get recent sprints for a team (for metrics calculation)",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SprintDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints/{sprintId}": {
+      "get": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Get a specific sprint by ID",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Update an existing sprint",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSprintDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSprintDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Delete a sprint",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints": {
+      "post": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Create a new sprint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSprintDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSprintDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints/import/{teamId}": {
+      "post": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Import sprints from CSV file",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sprints/import/{teamId}/string": {
+      "post": {
+        "tags": [
+          "Sprints"
+        ],
+        "summary": "Import sprints from CSV string (for testing/API usage)",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Teams": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Get all active teams",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Create a new team",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Teams/{teamId}": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Get a specific team by ID",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Update an existing team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Delete (deactivate) a team",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CalibrationStatusDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalFeedbacks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentAccuracy": {
+            "type": "number",
+            "format": "double"
+          },
+          "targetAccuracy": {
+            "type": "number",
+            "format": "double"
+          },
+          "needsCalibration": {
+            "type": "boolean"
+          },
+          "calibrationRecommendation": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastCalibrated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for calibration status"
+      },
+      "CreateFeasibilityDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "technicalFeasibility": {
+            "type": "boolean"
+          },
+          "technicalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "operationalFeasibility": {
+            "type": "boolean"
+          },
+          "operationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationalFeasibility": {
+            "type": "boolean"
+          },
+          "organizationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "integrationFeasibility": {
+            "type": "boolean"
+          },
+          "integrationNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "mentorComments": {
+            "type": "string",
+            "nullable": true
+          },
+          "approvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedBenefits": {
+            "type": "string",
+            "nullable": true
+          },
+          "adoptionChallenges": {
+            "type": "string",
+            "nullable": true
+          },
+          "scalabilityConsiderations": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for creating a new feasibility study"
+      },
+      "CreateRiskFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "assessmentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "userRole": {
+            "type": "string",
+            "nullable": true
+          },
+          "predictedRisk": {
+            "type": "string",
+            "nullable": true
+          },
+          "actualOutcome": {
+            "type": "string",
+            "nullable": true
+          },
+          "agreementLevel": {
+            "type": "string",
+            "description": "Agreement level: Accurate, PartiallyAccurate, Incorrect",
+            "nullable": true
+          },
+          "recommendationsHelpful": {
+            "type": "boolean"
+          },
+          "recommendationRating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feedbackComments": {
+            "type": "string",
+            "nullable": true
+          },
+          "improvementSuggestions": {
+            "type": "string",
+            "nullable": true
+          },
+          "actualPointsCompleted": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "actualSpillover": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "actualSpilloverPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for submitting risk feedback"
+      },
+      "CreateSprintDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "committedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "addedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "removedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamAvailability": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintDuration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hadSpillover": {
+            "type": "boolean"
+          },
+          "externalDependencies": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for creating a new sprint"
+      },
+      "CreateTeamDto": {
+        "type": "object",
+        "properties": {
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for creating a new team"
+      },
+      "CsvImportRequest": {
+        "type": "object",
+        "properties": {
+          "csvContent": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CsvImportResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "importedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skippedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "importedSprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for CSV import result"
+      },
+      "FeasibilityDto": {
+        "type": "object",
+        "properties": {
+          "feasibilityId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "evaluationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "technicalFeasibility": {
+            "type": "boolean"
+          },
+          "technicalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "operationalFeasibility": {
+            "type": "boolean"
+          },
+          "operationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationalFeasibility": {
+            "type": "boolean"
+          },
+          "organizationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "integrationFeasibility": {
+            "type": "boolean"
+          },
+          "integrationNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "mentorComments": {
+            "type": "string",
+            "nullable": true
+          },
+          "approvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedBenefits": {
+            "type": "string",
+            "nullable": true
+          },
+          "adoptionChallenges": {
+            "type": "string",
+            "nullable": true
+          },
+          "scalabilityConsiderations": {
+            "type": "string",
+            "nullable": true
+          },
+          "overallScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for displaying feasibility study information"
+      },
+      "FeasibilitySummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalStudies": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "approvedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pendingCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejectedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averageScore": {
+            "type": "number",
+            "format": "double"
+          },
+          "latestStudy": {
+            "$ref": "#/components/schemas/FeasibilityDto"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Summary DTO for feasibility overview"
+      },
+      "PredictionAccuracyDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFeedbacks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "accuratePredictions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "partiallyAccurate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incorrectPredictions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "accuracyPercentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "partialAccuracyPercentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "averageRecommendationRating": {
+            "type": "number",
+            "format": "double"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accuracyTrend": {
+            "type": "string",
+            "nullable": true
+          },
+          "trendPercentage": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for prediction accuracy statistics"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "RecommendationDto": {
+        "type": "object",
+        "properties": {
+          "recommendationId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressesRiskFactor": {
+            "type": "string",
+            "nullable": true
+          },
+          "actionType": {
+            "type": "string",
+            "nullable": true
+          },
+          "suggestedChange": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for recommendation"
+      },
+      "RiskAssessmentDto": {
+        "type": "object",
+        "properties": {
+          "assessmentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plannedCommitment": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "riskLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalScore": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxPossibleScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "confidence": {
+            "type": "string",
+            "nullable": true
+          },
+          "assessedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "factors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskFactorDto"
+            },
+            "nullable": true
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendationDto"
+            },
+            "nullable": true
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/SprintMetricsDto"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for risk assessment response"
+      },
+      "RiskAssessmentRequestDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plannedCommitment": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamAvailability": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "externalDependencies": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for risk assessment request"
+      },
+      "RiskFactorDto": {
+        "type": "object",
+        "properties": {
+          "factorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "metricValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "threshold": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for risk factor"
+      },
+      "RiskFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "feedbackId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assessmentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "userRole": {
+            "type": "string",
+            "nullable": true
+          },
+          "predictedRisk": {
+            "type": "string",
+            "nullable": true
+          },
+          "actualOutcome": {
+            "type": "string",
+            "nullable": true
+          },
+          "userAgreement": {
+            "type": "boolean"
+          },
+          "agreementLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendationsHelpful": {
+            "type": "boolean"
+          },
+          "recommendationRating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feedbackComments": {
+            "type": "string",
+            "nullable": true
+          },
+          "improvementSuggestions": {
+            "type": "string",
+            "nullable": true
+          },
+          "actualPointsCompleted": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "actualSpillover": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "actualSpilloverPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for displaying risk feedback"
+      },
+      "SpilloverAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "totalSprints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintsWithSpillover": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "spilloverRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCommittedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCompletedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalAddedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalRemovedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "scopeChangeRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "sprintDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintSpilloverDetail"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SprintComparisonAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintComparisonDto"
+            },
+            "nullable": true
+          },
+          "overallAccuracy": {
+            "type": "number",
+            "format": "double"
+          },
+          "improvementTrend": {
+            "type": "string",
+            "nullable": true
+          },
+          "recurringRiskFactors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "keyInsights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for comparative analysis of last N sprints"
+      },
+      "SprintComparisonDto": {
+        "type": "object",
+        "properties": {
+          "sprintId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "predictedRisk": {
+            "type": "string",
+            "nullable": true
+          },
+          "predictedScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "confidenceLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "actualOutcome": {
+            "type": "string",
+            "nullable": true
+          },
+          "committedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hadSpillover": {
+            "type": "boolean"
+          },
+          "spilloverPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "wasAccurate": {
+            "type": "boolean"
+          },
+          "accuracyLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasFeedback": {
+            "type": "boolean"
+          },
+          "feedback": {
+            "$ref": "#/components/schemas/RiskFeedbackDto"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for sprint comparison (last 3 dashboards)"
+      },
+      "SprintDto": {
+        "type": "object",
+        "properties": {
+          "sprintId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "committedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "addedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "removedPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamAvailability": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sprintDuration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hadSpillover": {
+            "type": "boolean"
+          },
+          "externalDependencies": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "spilloverPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for sprint response"
+      },
+      "SprintMetricsDto": {
+        "type": "object",
+        "properties": {
+          "averageVelocity": {
+            "type": "number",
+            "format": "double"
+          },
+          "velocityStandardDeviation": {
+            "type": "number",
+            "format": "double"
+          },
+          "velocityCoefficient": {
+            "type": "number",
+            "format": "double"
+          },
+          "spilloverRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "effectiveCapacity": {
+            "type": "number",
+            "format": "double"
+          },
+          "cvr": {
+            "type": "number",
+            "format": "double"
+          },
+          "sprintCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "velocityTrend": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendedCommitment": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for computed sprint metrics"
+      },
+      "SprintOutcome": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "Actual sprint outcome (for validation)",
+        "format": "int32"
+      },
+      "SprintSpilloverDetail": {
+        "type": "object",
+        "properties": {
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "committed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "added": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "removed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "spilloverPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hadSpillover": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TeamDto": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "sprintCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for team response"
+      },
+      "UpdateAssessmentOutcomeDto": {
+        "type": "object",
+        "properties": {
+          "actualOutcome": {
+            "$ref": "#/components/schemas/SprintOutcome"
+          },
+          "actualCompletedPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for updating assessment with actual outcome"
+      },
+      "UpdateFeasibilityDto": {
+        "type": "object",
+        "properties": {
+          "technicalFeasibility": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "technicalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "operationalFeasibility": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "operationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationalFeasibility": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "organizationalNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "integrationFeasibility": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "integrationNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "mentorComments": {
+            "type": "string",
+            "nullable": true
+          },
+          "approvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedBenefits": {
+            "type": "string",
+            "nullable": true
+          },
+          "adoptionChallenges": {
+            "type": "string",
+            "nullable": true
+          },
+          "scalabilityConsiderations": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for updating feasibility study"
+      },
+      "UpdateSprintDto": {
+        "type": "object",
+        "properties": {
+          "sprintName": {
+            "type": "string",
+            "nullable": true
+          },
+          "committedPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "completedPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "addedPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "removedPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamAvailability": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hadSpillover": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "externalDependencies": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for updating a sprint"
+      },
+      "UpdateStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "approvedBy": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request model for status update"
+      },
+      "UpdateTeamDto": {
+        "type": "object",
+        "properties": {
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO for updating a team"
+      },
+      "VelocityChartDto": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "committed": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "completed": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "added": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "removed": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
+}

@@ -1,0 +1,137 @@
+/* Global styles for Sprint Monitor */
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #fafafa;
+  color: rgba(0, 0, 0, 0.87);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Angular Material Theme Overrides */
+.mat-mdc-card {
+  border-radius: 12px !important;
+}
+
+.mat-mdc-raised-button {
+  border-radius: 8px !important;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+/* Custom Snackbar Colors */
+.snackbar-low {
+  --mdc-snackbar-container-color: #4caf50 !important;
+  --mdc-snackbar-supporting-text-color: #fff !important;
+  --mat-snack-bar-button-color: #c8e6c9 !important;
+}
+
+.snackbar-medium {
+  --mdc-snackbar-container-color: #ff9800 !important;
+  --mdc-snackbar-supporting-text-color: #fff !important;
+  --mat-snack-bar-button-color: #ffe0b2 !important;
+}
+
+.snackbar-high {
+  --mdc-snackbar-container-color: #f44336 !important;
+  --mdc-snackbar-supporting-text-color: #fff !important;
+  --mat-snack-bar-button-color: #ffcdd2 !important;
+}
+
+/* Ensure snackbar appears above other elements */
+.mat-mdc-snack-bar-container {
+  margin-bottom: 20px !important;
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__surface {
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  min-height: 48px !important;
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__label {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
+
+/* Risk Color Classes */
+.risk-low { color: #4caf50; }
+.risk-medium { color: #ff9800; }
+.risk-high { color: #f44336; }
+
+.bg-risk-low { background-color: #e8f5e9; }
+.bg-risk-medium { background-color: #fff3e0; }
+.bg-risk-high { background-color: #ffebee; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  mat-toolbar, .app-footer {
+    display: none !important;
+  }
+
+  .tab-content {
+    padding: 0 !important;
+  }
+}

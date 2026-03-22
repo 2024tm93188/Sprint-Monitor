@@ -1,0 +1,325 @@
+﻿using SprintMonitor.API.Models;
+using SprintMonitor.API.Services;
+using Xunit;
+
+namespace SprintMonitor.Tests.Services;
+
+/// <summary>
+/// Unit tests for MetricsService
+/// </summary>
+public class MetricsServiceTests
+{
+    private readonly MetricsService _service;
+
+    public MetricsServiceTests()
+    {
+        _service = new MetricsService();
+    }
+
+    #region CalculateMetrics Tests
+
+    [Fact]
+    public void CalculateMetrics_ReturnsValidMetrics_WithSprintData()
+    {
+        // Arrange
+        var sprints = CreateTestSprints();
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        Assert.NotNull(metrics);
+        Assert.True(metrics.AverageVelocity > 0);
+        Assert.True(metrics.VelocityStandardDeviation >= 0);
+        Assert.True(metrics.SpilloverRate >= 0);
+        Assert.True(metrics.SpilloverRate <= 100);
+    }
+
+    [Fact]
+    public void CalculateMetrics_ReturnsZeroValues_WithEmptySprints()
+    {
+        // Arrange
+        var sprints = new List<Sprint>();
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        Assert.Equal(0, metrics.AverageVelocity);
+        Assert.Equal(0, metrics.VelocityStandardDeviation);
+    }
+
+    [Fact]
+    public void CalculateMetrics_CalculatesCorrectAverageVelocity()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 30, 30), // 100% completion
+            CreateSprint(2, 30, 25), // 83% completion
+            CreateSprint(3, 30, 28), // 93% completion
+            CreateSprint(4, 30, 27), // 90% completion
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        // Average velocity: (30 + 25 + 28 + 27) / 4 = 27.5
+        Assert.Equal(27.5m, metrics.AverageVelocity);
+    }
+
+    [Fact]
+    public void CalculateMetrics_HandlesZeroCommittedPoints()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 0, 0),
+            CreateSprint(2, 30, 28),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        // Should not throw, should handle gracefully
+        Assert.True(metrics.AverageVelocity >= 0);
+    }
+
+    #endregion
+
+    #region CVR (Commitment vs Velocity Ratio) Tests
+
+    [Fact]
+    public void CalculateMetrics_CalculatesCVR_WhenPlannedCommitmentProvided()
+    {
+        // Arrange
+        var sprints = CreateTestSprints();
+        int plannedCommitment = 30;
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, plannedCommitment);
+
+        // Assert
+        // CVR = plannedCommitment / averageVelocity
+        Assert.True(metrics.CVR > 0);
+    }
+
+    [Fact]
+    public void CalculateMetrics_CVRIsOne_WhenCommitmentEqualsVelocity()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 30, 30),
+            CreateSprint(2, 30, 30),
+            CreateSprint(3, 30, 30),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        Assert.Equal(1.0m, metrics.CVR);
+    }
+
+    [Fact]
+    public void CalculateMetrics_CVRGreaterThanOne_WhenOvercommitting()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 25, 25),
+            CreateSprint(2, 25, 25),
+            CreateSprint(3, 25, 25),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 35); // Planning 35, avg velocity is 25
+
+        // Assert
+        Assert.True(metrics.CVR > 1.0m);
+    }
+
+    #endregion
+
+    #region Velocity Coefficient of Variation Tests
+
+    [Fact]
+    public void CalculateMetrics_LowCV_WithConsistentVelocity()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 30, 29),
+            CreateSprint(2, 30, 30),
+            CreateSprint(3, 30, 28),
+            CreateSprint(4, 30, 29),
+            CreateSprint(5, 30, 30),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        // Consistent velocities should have low CV (< 0.15)
+        Assert.True(metrics.VelocityCoefficient < 0.15m);
+    }
+
+    [Fact]
+    public void CalculateMetrics_HighCV_WithInconsistentVelocity()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 50, 45),
+            CreateSprint(2, 30, 15),
+            CreateSprint(3, 40, 38),
+            CreateSprint(4, 25, 10),
+            CreateSprint(5, 45, 40),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        // Inconsistent velocities should have higher CV
+        Assert.True(metrics.VelocityCoefficient > 0.25m);
+    }
+
+    #endregion
+
+    #region Spillover Rate Tests
+
+    [Fact]
+    public void CalculateMetrics_CalculatesSpilloverRate()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprintWithSpillover(1, 30, 28, false, 0),
+            CreateSprintWithSpillover(2, 30, 25, true, 5),
+            CreateSprintWithSpillover(3, 30, 26, true, 4),
+            CreateSprintWithSpillover(4, 30, 30, false, 0),
+            CreateSprintWithSpillover(5, 30, 27, false, 0),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        // 2 out of 5 sprints have spillover = 40%
+        Assert.Equal(40, metrics.SpilloverRate);
+    }
+
+    [Fact]
+    public void CalculateMetrics_ZeroSpilloverRate_WhenNoSpillover()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprintWithSpillover(1, 30, 30, false, 0),
+            CreateSprintWithSpillover(2, 30, 28, false, 0),
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        Assert.Equal(0, metrics.SpilloverRate);
+    }
+
+    #endregion
+
+    #region Edge Cases Tests
+
+    [Fact]
+    public void CalculateMetrics_HandlesSingleSprint()
+    {
+        // Arrange
+        var sprints = new List<Sprint>
+        {
+            CreateSprint(1, 30, 28)
+        };
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 30);
+
+        // Assert
+        Assert.Equal(28, metrics.AverageVelocity);
+        Assert.Equal(0, metrics.VelocityStandardDeviation); // No variance with single data point
+    }
+
+    [Fact]
+    public void CalculateMetrics_HandlesVeryHighCommitment()
+    {
+        // Arrange
+        var sprints = CreateTestSprints();
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 100);
+
+        // Assert
+        Assert.True(metrics.CVR > 2.0m); // Very high CVR indicates overcommitment
+    }
+
+    [Fact]
+    public void CalculateMetrics_HandlesVeryLowCommitment()
+    {
+        // Arrange
+        var sprints = CreateTestSprints();
+
+        // Act
+        var metrics = _service.CalculateMetrics(sprints, 10);
+
+        // Assert
+        Assert.True(metrics.CVR < 0.5m); // Low CVR indicates undercommitment
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private List<Sprint> CreateTestSprints()
+    {
+        return new List<Sprint>
+        {
+            CreateSprint(1, 30, 28),
+            CreateSprint(2, 32, 30),
+            CreateSprint(3, 28, 26),
+            CreateSprint(4, 35, 32),
+            CreateSprint(5, 30, 29)
+        };
+    }
+
+    private Sprint CreateSprint(int id, int committed, int completed)
+    {
+        return new Sprint
+        {
+            SprintId = id,
+            TeamId = 1,
+            SprintName = $"Sprint {id}",
+            CommittedPoints = committed,
+            CompletedPoints = completed,
+            TeamSize = 5,
+            TeamAvailability = 100,
+            HadSpillover = false,
+            ExternalDependencies = 0,
+            StartDate = DateTime.UtcNow.AddDays(-14 * id),
+            EndDate = DateTime.UtcNow.AddDays(-14 * (id - 1)),
+            CreatedAt = DateTime.UtcNow.AddDays(-14 * id)
+        };
+    }
+
+    private Sprint CreateSprintWithSpillover(int id, int committed, int completed, bool hadSpillover, int spilloverPoints)
+    {
+        var sprint = CreateSprint(id, committed, completed);
+        sprint.HadSpillover = hadSpillover;
+        // SpilloverPoints is computed, cannot be set directly
+        // It's calculated as: CommittedPoints + AddedPoints - RemovedPoints - CompletedPoints
+        return sprint;
+    }
+
+    #endregion
+}
