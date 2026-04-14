@@ -8,6 +8,12 @@ namespace SprintMonitor.API.DTOs;
 public class RiskAssessmentRequestDto
 {
     public int TeamId { get; set; }
+
+    /// <summary>
+    /// Optional: Link this assessment to a specific sprint record
+    /// </summary>
+    public int? SprintId { get; set; }
+
     public int PlannedCommitment { get; set; }
     public int TeamAvailability { get; set; } = 100;
     public int ExternalDependencies { get; set; } = 0;
@@ -20,6 +26,7 @@ public class RiskAssessmentDto
 {
     public int AssessmentId { get; set; }
     public int TeamId { get; set; }
+    public int? SprintId { get; set; }
     public int PlannedCommitment { get; set; }
     public string RiskLevel { get; set; } = string.Empty;
     public decimal TotalScore { get; set; }

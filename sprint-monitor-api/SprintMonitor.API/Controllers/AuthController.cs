@@ -218,6 +218,42 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Request a password reset token
+    /// </summary>
+    /// <param name="request">Email address for the account</param>
+    /// <response code="200">Reset token generated (returned in response for local/academic use)</response>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ForgotPasswordResponseDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ForgotPasswordResponseDto>> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+    {
+        var response = await _authService.ForgotPasswordAsync(request);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Reset password using a valid reset token
+    /// </summary>
+    /// <param name="request">Email, token, and new password</param>
+    /// <response code="200">Password reset successful</response>
+    /// <response code="400">Invalid or expired token</response>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AuthResponseDto>> ResetPassword([FromBody] ResetPasswordRequestDto request)
+    {
+        var response = await _authService.ResetPasswordAsync(request);
+
+        if (!response.Success)
+        {
+            return BadRequest(response);
+        }
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Validate if the current token is valid
     /// </summary>
     /// <response code="200">Token is valid</response>

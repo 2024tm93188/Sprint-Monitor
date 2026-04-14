@@ -491,6 +491,13 @@ namespace SprintMonitor.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiry")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RefreshToken")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");

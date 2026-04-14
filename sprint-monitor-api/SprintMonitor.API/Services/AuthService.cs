@@ -381,6 +381,104 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request)
+    {
+        try
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+            if (user == null)
+            {
+                // Don't reveal whether the email exists
+                return new ForgotPasswordResponseDto
+                {
+                    Success = true,
+                    Message = "If an account with that email exists, a reset token has been generated."
+                };
+            }
+
+            // Generate a 6-digit reset token
+            var resetToken = new Random().Next(100000, 999999).ToString();
+            user.PasswordResetToken = resetToken;
+            user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Password reset token generated for {Email}", user.Email);
+
+            return new ForgotPasswordResponseDto
+            {
+                Success = true,
+                Message = "Password reset token generated. Use this token to reset your password.",
+                ResetToken = resetToken // Returned directly (no email service in academic project)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during forgot password for {Email}", request.Email);
+            return new ForgotPasswordResponseDto
+            {
+                Success = false,
+                Message = "An error occurred. Please try again."
+            };
+        }
+    }
+
+    public async Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordRequestDto request)
+    {
+        try
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+            if (user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid email or reset token"
+                };
+            }
+
+            // Verify token
+            if (user.PasswordResetToken != request.Token ||
+                user.PasswordResetTokenExpiry == null ||
+                user.PasswordResetTokenExpiry < DateTime.UtcNow)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid or expired reset token"
+                };
+            }
+
+            // Update password
+            user.PasswordHash = HashPassword(request.NewPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Password reset successful for {Email}", user.Email);
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Password has been reset successfully. Please login with your new password."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during password reset for {Email}", request.Email);
+            return new AuthResponseDto
+            {
+                Success = false,
+                Message = "An error occurred during password reset"
+            };
+        }
+    }
+
     #region Private Helper Methods
 
     private string GenerateJwtToken(User user)

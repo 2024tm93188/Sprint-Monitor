@@ -64,6 +64,7 @@ public class RiskAssessmentService : IRiskAssessmentService
         var assessment = new RiskAssessment
         {
             TeamId = request.TeamId,
+            SprintId = request.SprintId,
             PlannedCommitment = request.PlannedCommitment,
             TeamAvailability = request.TeamAvailability,
             ExternalDependencies = request.ExternalDependencies,
@@ -116,6 +117,7 @@ public class RiskAssessmentService : IRiskAssessmentService
         {
             AssessmentId = assessment.AssessmentId,
             TeamId = assessment.TeamId,
+            SprintId = assessment.SprintId,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = riskLevel.ToString(),
             TotalScore = totalScore,
@@ -525,6 +527,7 @@ public class RiskAssessmentService : IRiskAssessmentService
         {
             AssessmentId = assessment.AssessmentId,
             TeamId = assessment.TeamId,
+            SprintId = assessment.SprintId,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = assessment.RiskLevel.ToString(),
             TotalScore = assessment.TotalScore,

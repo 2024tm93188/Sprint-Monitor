@@ -56,4 +56,14 @@ public interface IAuthService
     /// Validate JWT token
     /// </summary>
     Task<bool> ValidateTokenAsync(string token);
+
+    /// <summary>
+    /// Generate a password reset token for a user
+    /// </summary>
+    Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request);
+
+    /// <summary>
+    /// Reset password using a valid reset token
+    /// </summary>
+    Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordRequestDto request);
 }

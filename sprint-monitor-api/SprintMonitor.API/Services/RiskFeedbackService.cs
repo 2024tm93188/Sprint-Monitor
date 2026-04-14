@@ -212,7 +212,13 @@ public class RiskFeedbackService : IRiskFeedbackService
                 EndDate = sprint.EndDate,
                 PredictedRisk = assessment?.RiskLevel.ToString() ?? "Unknown",
                 PredictedScore = (int)(assessment?.TotalScore ?? 0),
-                ConfidenceLevel = (double)(int)(assessment?.Confidence ?? 0),
+                ConfidenceLevel = assessment?.Confidence switch
+                {
+                    AssessmentConfidence.HIGH => 100,
+                    AssessmentConfidence.MEDIUM => 66,
+                    AssessmentConfidence.LOW => 33,
+                    _ => 0
+                },
                 ActualOutcome = feedback?.ActualOutcome ?? DetermineActualOutcome(sprint),
                 CommittedPoints = sprint.CommittedPoints,
                 CompletedPoints = sprint.CompletedPoints,
@@ -274,34 +280,49 @@ public class RiskFeedbackService : IRiskFeedbackService
         var accuracy = await CalculatePredictionAccuracyAsync(teamId);
 
         bool needsCalibration = accuracy.AccuracyPercentage < 60;
-        string recommendation = "";
+        string recommendation;
 
         if (accuracy.AccuracyPercentage < 40)
-        {
             recommendation = "CRITICAL: Accuracy is very low. Consider reviewing risk thresholds and rules.";
-        }
         else if (accuracy.AccuracyPercentage < 60)
-        {
             recommendation = "WARNING: Accuracy below target. Adjust sensitivity thresholds.";
-        }
         else if (accuracy.AccuracyPercentage < 80)
-        {
             recommendation = "MODERATE: System is performing adequately. Minor tuning may help.";
-        }
         else
-        {
             recommendation = "GOOD: System accuracy is within acceptable range.";
-        }
+
+        // Find actual last-calibrated date from DB (most recent feedback used for calibration)
+        var lastCalibratedFeedback = await _context.RiskFeedbacks
+            .Where(f => f.UsedForCalibration && f.Assessment != null && f.Assessment.TeamId == teamId)
+            .OrderByDescending(f => f.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        var lastCalibrated = lastCalibratedFeedback?.CreatedAt ?? DateTime.UtcNow.AddYears(-1);
+
+        // Count feedback stats
+        var totalFeedbacks = await _context.RiskFeedbacks
+            .Where(f => f.Assessment != null && f.Assessment.TeamId == teamId)
+            .CountAsync();
+
+        var usedForCalibration = await _context.RiskFeedbacks
+            .Where(f => f.UsedForCalibration && f.Assessment != null && f.Assessment.TeamId == teamId)
+            .CountAsync();
+
+        int pendingFeedbacks = totalFeedbacks - usedForCalibration;
 
         return new CalibrationStatusDto
         {
             TeamId = teamId,
             TotalFeedbacks = accuracy.TotalFeedbacks,
+            FeedbacksUsedForCalibration = usedForCalibration,
+            PendingFeedbacks = pendingFeedbacks,
             CurrentAccuracy = accuracy.AccuracyPercentage,
             TargetAccuracy = 80.0,
-            NeedsCalibration = needsCalibration,
+            CalibrationNeeded = needsCalibration,
             CalibrationRecommendation = recommendation,
-            LastCalibrated = DateTime.UtcNow.AddDays(-30) // Placeholder
+            LastCalibrated = lastCalibrated,
+            AccuracyTrend = accuracy.AccuracyTrend,
+            TrendPercentage = accuracy.TrendPercentage
         };
     }
 

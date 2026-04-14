@@ -117,3 +117,43 @@ public class UpdateProfileRequestDto
 
     public int? TeamId { get; set; }
 }
+
+/// <summary>
+/// Forgot password request DTO
+/// </summary>
+public class ForgotPasswordRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Forgot password response DTO
+/// </summary>
+public class ForgotPasswordResponseDto
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    /// <summary>
+    /// Reset token (returned directly since no email service — academic/local use only)
+    /// </summary>
+    public string? ResetToken { get; set; }
+}
+
+/// <summary>
+/// Reset password request DTO
+/// </summary>
+public class ResetPasswordRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Token { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6)]
+    public string NewPassword { get; set; } = string.Empty;
+}

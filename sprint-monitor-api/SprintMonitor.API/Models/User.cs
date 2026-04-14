@@ -58,6 +58,17 @@ public class User
     /// </summary>
     public DateTime? RefreshTokenExpiry { get; set; }
 
+    /// <summary>
+    /// Password reset token (6-digit code)
+    /// </summary>
+    [MaxLength(100)]
+    public string? PasswordResetToken { get; set; }
+
+    /// <summary>
+    /// Password reset token expiry (15 minutes)
+    /// </summary>
+    public DateTime? PasswordResetTokenExpiry { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

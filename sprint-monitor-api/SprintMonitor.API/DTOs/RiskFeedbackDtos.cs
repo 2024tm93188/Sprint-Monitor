@@ -147,9 +147,15 @@ public class CalibrationStatusDto
 {
     public int TeamId { get; set; }
     public int TotalFeedbacks { get; set; }
+    public int FeedbacksUsedForCalibration { get; set; }
+    public int PendingFeedbacks { get; set; }
     public double CurrentAccuracy { get; set; }
     public double TargetAccuracy { get; set; } = 80.0;
-    public bool NeedsCalibration { get; set; }
+    /// <summary>Alias for NeedsCalibration — kept for frontend compatibility</summary>
+    public bool CalibrationNeeded { get; set; }
+    public bool NeedsCalibration { get => CalibrationNeeded; set => CalibrationNeeded = value; }
     public string CalibrationRecommendation { get; set; } = string.Empty;
     public DateTime LastCalibrated { get; set; }
+    public string AccuracyTrend { get; set; } = "STABLE"; // IMPROVING, DECLINING, STABLE
+    public double TrendPercentage { get; set; }
 }
