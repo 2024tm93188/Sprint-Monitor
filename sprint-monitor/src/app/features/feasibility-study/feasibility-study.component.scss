@@ -1,5 +1,5 @@
 .feasibility-container {
-  padding: 24px;
+  padding: 18px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -9,13 +9,13 @@
   
   h1 {
     font-size: 28px;
-    font-weight: 600;
-    color: #1a1a2e;
+    font-weight: 700;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
   }
   
   .subtitle {
-    color: #666;
+    color: var(--text-secondary);
     margin: 0;
   }
 }
@@ -29,13 +29,14 @@
 }
 
 .summary-card {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 14px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-glass);
   
   &.approved {
     border-left: 4px solid #28a745;
@@ -57,12 +58,12 @@
   .card-value {
     font-size: 24px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--text-primary);
   }
   
   .card-label {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
   }
 }
 
@@ -74,17 +75,17 @@
 .btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   
   &.btn-primary {
-    background: #4361ee;
+    background: var(--brand);
     color: white;
     
     &:hover {
-      background: #3651d4;
+      background: var(--brand-strong);
     }
   }
   
@@ -114,10 +115,11 @@
 
 // Form Container
 .feasibility-form-container {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-soft);
   margin-bottom: 24px;
   
   .form-header {
@@ -136,7 +138,7 @@
 .form-section {
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(15, 35, 42, 0.12);
   
   h3 {
     font-size: 16px;
@@ -147,9 +149,10 @@
 }
 
 .score-preview {
-  background: #f8f9fa;
+  background: #edf8f6;
+  border: 1px solid rgba(15, 118, 110, 0.14);
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 16px;
   
   .score-success { color: #28a745; }
@@ -168,8 +171,9 @@
 }
 
 .feasibility-item {
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: linear-gradient(180deg, #f7fbfb, #f0f7f6);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-radius: 10px;
   padding: 16px;
   
   .checkbox-label {
@@ -201,7 +205,8 @@
     
     &:focus {
       outline: none;
-      border-color: #4361ee;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
   }
 }
@@ -235,7 +240,8 @@
     
     &:focus {
       outline: none;
-      border-color: #4361ee;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
   }
 }
@@ -266,10 +272,11 @@
 }
 
 .study-card {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-glass);
   
   .study-header {
     display: flex;
@@ -376,10 +383,11 @@
 
 // Detail View
 .study-detail {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-soft);
   
   .detail-header {
     display: flex;
@@ -405,9 +413,9 @@
 }
 
 .detail-section {
-  background: #f8f9fa;
+  background: #f3faf8;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   
   h4 {
     margin: 0 0 8px 0;
@@ -458,8 +466,9 @@
 .empty-state {
   text-align: center;
   padding: 60px;
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  border: 1px solid rgba(15, 118, 110, 0.12);
   
   .empty-icon {
     font-size: 64px;

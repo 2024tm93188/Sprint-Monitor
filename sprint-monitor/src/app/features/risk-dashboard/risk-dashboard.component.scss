@@ -1,7 +1,7 @@
 .dashboard-container {
   display: grid;
   gap: 20px;
-  padding: 20px;
+  padding: 14px;
   max-width: 900px;
   margin: 0 auto;
 }
@@ -13,20 +13,22 @@
   justify-content: space-between;
   padding: 24px;
   border-left: 6px solid;
+  border-radius: 16px;
+  box-shadow: var(--shadow-glass);
 
   &.low {
     border-color: #4caf50;
-    background: linear-gradient(90deg, #e8f5e9, white);
+    background: linear-gradient(90deg, #e8fbe8, #ffffff);
   }
 
   &.medium {
     border-color: #ff9800;
-    background: linear-gradient(90deg, #fff3e0, white);
+    background: linear-gradient(90deg, #fff4df, #ffffff);
   }
 
   &.high {
     border-color: #f44336;
-    background: linear-gradient(90deg, #ffebee, white);
+    background: linear-gradient(90deg, #ffebee, #ffffff);
   }
 }
 
@@ -84,7 +86,7 @@
   .score {
     font-size: 36px;
     font-weight: 700;
-    color: #333;
+    color: var(--text-primary);
   }
 
   .max-score {
@@ -137,8 +139,9 @@ mat-chip {
 
 .metric-item {
   padding: 12px;
-  background: #fafafa;
-  border-radius: 8px;
+  background: linear-gradient(180deg, #f7fbfb, #f0f7f6);
+  border-radius: 10px;
+  border: 1px solid rgba(15, 118, 110, 0.08);
 
   .metric-header {
     display: flex;
@@ -224,7 +227,7 @@ mat-chip {
 
   .factor-name {
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
   }
 
   .factor-score {
@@ -269,7 +272,7 @@ mat-chip {
 .no-assessment {
   text-align: center;
   padding: 60px 20px;
-  color: #888;
+  color: var(--text-secondary);
 
   mat-icon {
     font-size: 64px;
@@ -280,6 +283,23 @@ mat-chip {
 
   h3 {
     margin: 16px 0 8px;
-    color: #666;
+    color: var(--text-secondary);
+  }
+}
+
+@media (max-width: 680px) {
+  .risk-badge-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .risk-badge {
+    width: 100%;
+  }
+
+  .score-display {
+    width: 100%;
+    text-align: left;
   }
 }

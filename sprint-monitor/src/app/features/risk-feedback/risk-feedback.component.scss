@@ -1,5 +1,5 @@
 .feedback-container {
-  padding: 24px;
+  padding: 18px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -9,13 +9,13 @@
   
   h1 {
     font-size: 28px;
-    font-weight: 600;
-    color: #1a1a2e;
+    font-weight: 700;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
   }
   
   .subtitle {
-    color: #666;
+    color: var(--text-secondary);
     margin: 0;
   }
 }
@@ -37,13 +37,14 @@
 }
 
 .accuracy-card {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 14px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-glass);
   
   &.main {
     flex-direction: column;
@@ -67,7 +68,7 @@
   .card-value {
     font-size: 28px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--text-primary);
     
     &.value-success { color: #28a745; }
     &.value-warning { color: #ffc107; }
@@ -76,7 +77,7 @@
   
   .card-label {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
   }
   
   .card-breakdown {
@@ -103,10 +104,11 @@
 }
 
 .calibration-card {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-glass);
   
   &.needs-calibration {
     border-left: 4px solid #ffc107;
@@ -157,7 +159,7 @@
       
       .stat-label {
         font-size: 13px;
-        color: #666;
+        color: var(--text-secondary);
       }
       
       &.trend {
@@ -171,7 +173,7 @@
   .last-calibration {
     margin: 12px 0 0 0;
     font-size: 13px;
-    color: #666;
+    color: var(--text-secondary);
   }
 }
 
@@ -202,7 +204,8 @@ select {
   
   &:focus {
     outline: none;
-    border-color: #4361ee;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
   }
 }
 
@@ -210,17 +213,17 @@ select {
 .btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   
   &.btn-primary {
-    background: #4361ee;
+    background: var(--brand);
     color: white;
     
     &:hover {
-      background: #3651d4;
+      background: var(--brand-strong);
     }
   }
   
@@ -253,10 +256,11 @@ select {
 
 // Feedback Form
 .feedback-form-container {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-soft);
   margin-bottom: 24px;
   
   .form-header {
@@ -302,7 +306,8 @@ select {
     
     &:focus {
       outline: none;
-      border-color: #4361ee;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
   }
   
@@ -333,7 +338,7 @@ select {
     flex-direction: column;
     align-items: center;
     padding: 16px;
-    border: 2px solid #e9ecef;
+    border: 2px solid rgba(15, 35, 42, 0.12);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
@@ -343,12 +348,12 @@ select {
     }
     
     &.selected {
-      border-color: #4361ee;
-      background: #f0f3ff;
+      border-color: var(--brand);
+      background: #eaf8f6;
     }
     
     &:hover {
-      border-color: #4361ee;
+      border-color: var(--brand);
     }
     
     .option-icon {
@@ -380,7 +385,7 @@ select {
       -webkit-appearance: none;
       width: 20px;
       height: 20px;
-      background: #4361ee;
+      background: var(--brand);
       border-radius: 50%;
       cursor: pointer;
     }
@@ -409,10 +414,11 @@ select {
 }
 
 .feedback-card {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  box-shadow: var(--shadow-glass);
   margin-bottom: 16px;
   
   .feedback-header {
@@ -423,7 +429,7 @@ select {
     
     .feedback-date {
       font-size: 13px;
-      color: #666;
+      color: var(--text-secondary);
     }
   }
   
@@ -443,7 +449,7 @@ select {
     gap: 16px;
     margin-bottom: 12px;
     font-size: 13px;
-    color: #666;
+    color: var(--text-secondary);
   }
   
   .feedback-rating {
@@ -468,9 +474,9 @@ select {
   
   .feedback-comment,
   .feedback-outcome {
-    background: #f8f9fa;
+    background: #f3faf8;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 12px;
     
     strong {

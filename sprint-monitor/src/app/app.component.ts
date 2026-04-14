@@ -71,10 +71,31 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
 
       <!-- Team Selector -->
       <div class="team-selector" *ngIf="teams.length > 0">
-        <mat-icon class="team-icon">group</mat-icon>
-        <select class="team-select" [(ngModel)]="selectedTeamId" (change)="onTeamChange()">
-          <option *ngFor="let team of teams" [value]="team.teamId">{{ team.teamName }}</option>
-        </select>
+        <mat-icon class="team-icon">groups</mat-icon>
+        <mat-form-field appearance="outline" class="team-field">
+          <mat-select
+            [(ngModel)]="selectedTeamId"
+            (selectionChange)="onTeamChange()"
+            panelClass="team-select-panel"
+            aria-label="Select team">
+            <mat-select-trigger>
+              <span class="selected-team-chip">
+                <span class="team-avatar">{{ getTeamInitials(selectedTeamId) }}</span>
+                <span class="selected-team-name">{{ getTeamName(selectedTeamId) }}</span>
+              </span>
+            </mat-select-trigger>
+            <mat-option *ngFor="let team of teams" [value]="team.teamId">
+              <div class="team-option-row">
+                <span class="team-avatar">{{ getTeamInitials(team.teamId) }}</span>
+                <div class="team-option-text">
+                  <span class="team-option-name">{{ team.teamName }}</span>
+                  <span class="team-option-meta">{{ team.sprintCount }} sprints</span>
+                </div>
+                <mat-icon class="team-option-icon">{{ getTeamIcon(team.teamName) }}</mat-icon>
+              </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
       
       <!-- User Menu -->
@@ -197,26 +218,34 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      color: var(--text-primary);
     }
 
     .app-toolbar {
       position: sticky;
       top: 0;
       z-index: 100;
+      height: 72px;
+      padding: 0 20px;
+      background: linear-gradient(120deg, rgba(13, 95, 88, 0.95), rgba(15, 118, 110, 0.9));
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 24px rgba(10, 42, 42, 0.2);
 
       mat-icon:first-child {
-        margin-right: 12px;
+        margin-right: 10px;
       }
 
       .title {
-        font-weight: 600;
-        font-size: 20px;
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        letter-spacing: 0.02em;
       }
 
       .subtitle {
-        margin-left: 12px;
-        font-size: 14px;
-        opacity: 0.8;
+        margin-left: 10px;
+        font-size: 13px;
+        opacity: 0.84;
       }
 
       .spacer {
@@ -227,25 +256,128 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-right: 16px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 6px;
-        padding: 4px 12px;
+        margin-right: 12px;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 4px 10px;
 
         .team-icon {
           font-size: 18px;
           width: 18px;
           height: 18px;
-          color: rgba(255,255,255,0.9);
+          color: rgba(255, 255, 255, 0.92);
           margin-right: 0;
         }
 
+        .team-field {
+          width: 240px;
+
+          ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+            display: none;
+          }
+
+          ::ng-deep .mdc-notched-outline__leading,
+          ::ng-deep .mdc-notched-outline__notch,
+          ::ng-deep .mdc-notched-outline__trailing {
+            border-color: rgba(255, 255, 255, 0.22) !important;
+          }
+
+          ::ng-deep .mat-mdc-select-trigger {
+            min-height: 30px;
+          }
+
+          ::ng-deep .mat-mdc-select-value-text,
+          ::ng-deep .mat-mdc-select-arrow {
+            color: #fff;
+          }
+        }
+
+        .selected-team-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .selected-team-name {
+          font-size: 13px;
+          font-weight: 700;
+          max-width: 136px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .team-avatar {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.24);
+          color: #fff;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.03em;
+        }
+
+
+      .team-option-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+
+        .team-avatar {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          background: #d7f1ee;
+          color: #0d5f58;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.03em;
+          flex-shrink: 0;
+        }
+
+        .team-option-text {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .team-option-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: #11313a;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .team-option-meta {
+          font-size: 11px;
+          color: #54707a;
+        }
+
+        .team-option-icon {
+          color: #0f766e;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
         .team-select {
           background: transparent;
           border: none;
           color: white;
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
           outline: none;
           padding: 2px 4px;
@@ -259,10 +391,29 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
 
       .user-menu-btn {
         color: white;
+        border-radius: 10px;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.14);
+        }
         
         .user-name {
           margin: 0 4px;
         }
+      }
+
+      ::ng-deep .team-select-panel {
+        border-radius: 12px !important;
+        border: 1px solid rgba(15, 118, 110, 0.16);
+        overflow: hidden;
+      }
+
+      ::ng-deep .team-select-panel .mat-mdc-option {
+        min-height: 52px;
+      }
+
+      ::ng-deep .team-select-panel .mat-mdc-option.mdc-list-item--selected {
+        background: #e9f7f5;
       }
     }
 
@@ -271,13 +422,13 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
       align-items: center;
       gap: 12px;
       padding: 16px;
-      background: #f5f5f5;
+      background: linear-gradient(180deg, #eef7f6, #f8fdfd);
 
       mat-icon {
         font-size: 36px;
         width: 36px;
         height: 36px;
-        color: #1976d2;
+        color: var(--brand);
       }
 
       .user-fullname {
@@ -291,26 +442,35 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
 
       .user-role {
         font-size: 11px;
-        color: #1976d2;
+        color: var(--brand);
         text-transform: uppercase;
       }
     }
 
     .app-content {
       flex: 1;
-      background: #f5f5f5;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
     }
 
     .main-tabs {
-      background: white;
+      width: min(1320px, 100%);
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(15, 35, 42, 0.08);
+      box-shadow: 0 18px 36px rgba(11, 34, 38, 0.1);
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(8px);
 
       ::ng-deep .mat-mdc-tab-labels {
-        background: #fafafa;
-        border-bottom: 1px solid #e0e0e0;
+        background: rgba(247, 251, 250, 0.92);
+        border-bottom: 1px solid rgba(15, 35, 42, 0.08);
       }
 
       ::ng-deep .mat-mdc-tab {
         min-width: 160px;
+        font-weight: 600;
 
         mat-icon {
           margin-right: 8px;
@@ -319,42 +479,76 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
     }
 
     .tab-content {
-      padding: 20px;
-      min-height: calc(100vh - 200px);
-      background: #f5f5f5;
+      padding: 22px;
+      min-height: 0;
+      background: transparent;
+      animation: riseIn 0.35s ease-out;
     }
 
     .badge {
       margin-left: 8px;
-      padding: 2px 8px;
-      border-radius: 12px;
+      padding: 3px 9px;
+      border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
 
-      &.low { background: #e8f5e9; color: #2e7d32; }
-      &.medium { background: #fff3e0; color: #ef6c00; }
-      &.high { background: #ffebee; color: #c62828; }
+      &.low { background: #dcfce7; color: #166534; }
+      &.medium { background: #ffedd5; color: #9a3412; }
+      &.high { background: #fee2e2; color: #991b1b; }
     }
 
     .count-badge {
       margin-left: 8px;
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 2px 8px;
-      border-radius: 12px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 3px 8px;
+      border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
     }
 
     .app-footer {
-      background: #333;
-      color: #aaa;
+      background: linear-gradient(180deg, rgba(10, 34, 36, 0.96), rgba(15, 45, 49, 0.98));
+      color: #c8d5d8;
       text-align: center;
-      padding: 16px;
+      padding: 18px;
       font-size: 12px;
 
       p {
         margin: 0;
+        letter-spacing: 0.02em;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .app-toolbar {
+        padding: 0 10px;
+
+        .subtitle,
+        .user-name {
+          display: none;
+        }
+
+        .team-selector {
+          max-width: 185px;
+          overflow: hidden;
+
+          .team-field {
+            width: 150px;
+          }
+
+          .selected-team-name {
+            max-width: 88px;
+          }
+        }
+      }
+
+      .app-content {
+        padding: 12px;
+      }
+
+      .tab-content {
+        padding: 14px;
       }
     }
   `]
@@ -379,6 +573,8 @@ export class AppComponent implements OnInit {
   selectedTeamId: number = 1;
 
   ngOnInit(): void {
+    this.teamService.loadTeams();
+
     // Load available teams and keep in sync
     this.teamService.getTeams().subscribe(teams => {
       this.teams = teams;
@@ -476,6 +672,29 @@ export class AppComponent implements OnInit {
   getRiskClass(): string {
     if (!this.currentAssessment) return '';
     return this.currentAssessment.overallRisk.toLowerCase();
+  }
+
+  getTeamName(teamId: number): string {
+    const team = this.teams.find(t => t.teamId === +teamId);
+    return team?.teamName || 'Select team';
+  }
+
+  getTeamInitials(teamId: number): string {
+    const name = this.getTeamName(teamId);
+    const words = name.split(' ').filter(Boolean);
+    if (words.length === 0) return 'TM';
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  getTeamIcon(teamName: string): string {
+    const name = teamName.toLowerCase();
+    if (name.includes('mobile') || name.includes('app')) return 'devices';
+    if (name.includes('data') || name.includes('analytics')) return 'insights';
+    if (name.includes('platform') || name.includes('infra')) return 'dns';
+    if (name.includes('qa') || name.includes('quality')) return 'fact_check';
+    if (name.includes('api') || name.includes('backend')) return 'hub';
+    return 'groups_2';
   }
 
   /** Dismiss any currently visible snackbar */

@@ -143,18 +143,26 @@ import { UserRole } from '../../../core/models/auth.model';
   `,
   styles: [`
     .register-container {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
-      padding: 20px;
+      background:
+        radial-gradient(580px 320px at 8% 14%, rgba(245, 158, 11, 0.24), transparent 74%),
+        radial-gradient(760px 380px at 90% 88%, rgba(15, 118, 110, 0.28), transparent 76%),
+        linear-gradient(140deg, #0b2b3b 0%, #0f766e 58%, #1f9d90 100%);
+      padding: 24px;
     }
 
     .register-card {
       width: 100%;
-      max-width: 450px;
-      padding: 20px;
+      max-width: 500px;
+      padding: 22px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 30px 70px rgba(2, 16, 27, 0.45);
+      backdrop-filter: blur(10px);
     }
 
     .header-content {
@@ -167,17 +175,18 @@ import { UserRole } from '../../../core/models/auth.model';
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #1976d2;
+      color: var(--brand);
       margin-bottom: 10px;
     }
 
     mat-card-title {
-      font-size: 24px;
+      font-size: 26px;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
       margin-bottom: 5px;
     }
 
     mat-card-subtitle {
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--text-secondary);
     }
 
     .name-row {
@@ -199,7 +208,7 @@ import { UserRole } from '../../../core/models/auth.model';
 
     .submit-btn {
       margin-top: 20px;
-      height: 48px;
+      height: 50px;
       font-size: 16px;
     }
 
@@ -207,10 +216,10 @@ import { UserRole } from '../../../core/models/auth.model';
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #f44336;
-      background: #ffebee;
+      color: #991b1b;
+      background: #fee2e2;
       padding: 12px;
-      border-radius: 4px;
+      border-radius: 10px;
       margin-bottom: 10px;
     }
 
@@ -231,9 +240,9 @@ import { UserRole } from '../../../core/models/auth.model';
     }
 
     .login-link a {
-      color: #1976d2;
+      color: var(--brand);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 700;
     }
 
     .login-link a:hover {
@@ -242,6 +251,13 @@ import { UserRole } from '../../../core/models/auth.model';
 
     mat-spinner {
       display: inline-block;
+    }
+
+    @media (max-width: 640px) {
+      .name-row {
+        flex-direction: column;
+        gap: 0;
+      }
     }
   `]
 })

@@ -122,11 +122,14 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
   `,
   styles: [`
     .auth-container {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+      background:
+        radial-gradient(560px 320px at 8% 10%, rgba(245, 158, 11, 0.24), transparent 70%),
+        radial-gradient(720px 380px at 90% 90%, rgba(15, 118, 110, 0.28), transparent 76%),
+        linear-gradient(140deg, #0b2b3b 0%, #0f766e 58%, #1f9d90 100%);
       padding: 24px;
     }
 
@@ -134,6 +137,11 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
       width: 100%;
       max-width: 460px;
       padding: 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.93);
+      box-shadow: 0 30px 70px rgba(2, 16, 27, 0.45);
+      backdrop-filter: blur(10px);
     }
 
     .header-content {
@@ -146,17 +154,18 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #1d4ed8;
+      color: var(--brand);
       margin-bottom: 10px;
     }
 
     mat-card-title {
-      font-size: 24px;
+      font-size: 26px;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
       margin-bottom: 5px;
     }
 
     mat-card-subtitle {
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--text-secondary);
     }
 
     .full-width {
@@ -186,7 +195,7 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
 
     .submit-btn {
       margin-top: 10px;
-      height: 48px;
+      height: 50px;
       font-size: 16px;
     }
 
@@ -201,9 +210,9 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
     }
 
     .footer-link a {
-      color: #1d4ed8;
+      color: var(--brand);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 700;
     }
 
     .footer-link a:hover {
