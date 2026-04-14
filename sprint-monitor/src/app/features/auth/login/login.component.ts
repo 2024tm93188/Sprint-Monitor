@@ -66,6 +66,10 @@ import { AuthService } from '../../../core/services/auth.service';
               </mat-error>
             </mat-form-field>
 
+            <div class="helper-row">
+              <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+            </div>
+
             <div class="error-message" *ngIf="errorMessage()">
               <mat-icon>error</mat-icon>
               <span>{{ errorMessage() }}</span>
@@ -134,6 +138,23 @@ import { AuthService } from '../../../core/services/auth.service';
 
     mat-form-field {
       margin-bottom: 10px;
+    }
+
+    .helper-row {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 10px;
+    }
+
+    .forgot-link {
+      color: #1976d2;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
     }
 
     .submit-btn {

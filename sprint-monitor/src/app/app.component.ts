@@ -1,5 +1,6 @@
-import { Component, inject, ViewChild } from '@angular/core';
+import { Component, inject, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +9,8 @@ import { MatSnackBar, MatSnackBarModule, MatSnackBarRef, TextOnlySnackBar } from
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 import { SprintInputComponent } from './features/sprint-input/sprint-input.component';
 import { RiskDashboardComponent } from './features/risk-dashboard/risk-dashboard.component';
@@ -20,6 +23,8 @@ import { SprintService } from './core/services/sprint.service';
 import { MetricsService } from './core/services/metrics.service';
 import { RiskEngineService } from './core/services/risk-engine.service';
 import { AuthService } from './core/services/auth.service';
+import { TeamService } from './core/services/team.service';
+import { TeamDto } from './core/services/api.service';
 import { SprintPlanningInput, SprintMetrics } from './core/models/sprint.model';
 import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.model';
 
@@ -39,6 +44,7 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
@@ -47,6 +53,8 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
     MatMenuModule,
     MatTooltipModule,
     MatDividerModule,
+    MatSelectModule,
+    MatFormFieldModule,
     SprintInputComponent,
     RiskDashboardComponent,
     RecommendationsComponent,
@@ -60,6 +68,14 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
       <span class="title">Sprint Monitor</span>
       <span class="subtitle">Risk Detection System</span>
       <span class="spacer"></span>
+
+      <!-- Team Selector -->
+      <div class="team-selector" *ngIf="teams.length > 0">
+        <mat-icon class="team-icon">group</mat-icon>
+        <select class="team-select" [(ngModel)]="selectedTeamId" (change)="onTeamChange()">
+          <option *ngFor="let team of teams" [value]="team.teamId">{{ team.teamName }}</option>
+        </select>
+      </div>
       
       <!-- User Menu -->
       <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn">
@@ -207,6 +223,40 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
         flex: 1;
       }
 
+      .team-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-right: 16px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 6px;
+        padding: 4px 12px;
+
+        .team-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: rgba(255,255,255,0.9);
+          margin-right: 0;
+        }
+
+        .team-select {
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          outline: none;
+          padding: 2px 4px;
+
+          option {
+            color: #333;
+            background: white;
+          }
+        }
+      }
+
       .user-menu-btn {
         color: white;
         
@@ -309,7 +359,7 @@ import { RiskAssessment, Recommendation, ActionType } from './core/models/risk.m
     }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   @ViewChild(SprintInputComponent) sprintInput!: SprintInputComponent;
   
   private sprintService = inject(SprintService);
@@ -317,12 +367,44 @@ export class AppComponent {
   private riskEngine = inject(RiskEngineService);
   private snackBar = inject(MatSnackBar);
   authService = inject(AuthService);
+  teamService = inject(TeamService);
 
   currentAssessment: RiskAssessment | null = null;
   currentMetrics: SprintMetrics | null = null;
   currentPlanningInput: SprintPlanningInput | null = null;
   isLoading = false;
   private activeSnackBarRef: MatSnackBarRef<TextOnlySnackBar> | null = null;
+
+  teams: TeamDto[] = [];
+  selectedTeamId: number = 1;
+
+  ngOnInit(): void {
+    // Load available teams and keep in sync
+    this.teamService.getTeams().subscribe(teams => {
+      this.teams = teams;
+      const current = this.teamService.getSelectedTeamSnapshot();
+      if (current) {
+        this.selectedTeamId = current.teamId;
+      } else if (teams.length > 0) {
+        this.selectedTeamId = teams[0].teamId;
+      }
+    });
+  }
+
+  /**
+   * Handle team selection change from toolbar dropdown
+   */
+  onTeamChange(): void {
+    const team = this.teams.find(t => t.teamId === +this.selectedTeamId);
+    if (team) {
+      this.teamService.setSelectedTeam(team);
+      // Reset current assessment when switching teams
+      this.currentAssessment = null;
+      this.currentMetrics = null;
+      this.currentPlanningInput = null;
+      this.showSnackBar(`Switched to team: ${team.teamName}`, 'OK', 2500);
+    }
+  }
 
   /**
    * Logout current user
@@ -345,7 +427,8 @@ export class AppComponent {
       input.plannedStoryPoints,
       input.teamAvailability,
       input.teamSize,
-      input.externalDependencies
+      input.externalDependencies,
+      input.sprintId
     ).subscribe({
       next: (assessment) => {
         this.currentAssessment = assessment;

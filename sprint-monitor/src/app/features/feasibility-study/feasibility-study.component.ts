@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FeasibilityService } from '../../core/services/feasibility.service';
+import { TeamService } from '../../core/services/team.service';
 import { 
   Feasibility, 
   CreateFeasibility, 
@@ -19,6 +20,7 @@ import {
 export class FeasibilityStudyComponent implements OnInit {
   private fb = inject(FormBuilder);
   private feasibilityService = inject(FeasibilityService);
+  private teamService = inject(TeamService);
 
   feasibilityStudies: Feasibility[] = [];
   summary: FeasibilitySummary | null = null;
@@ -55,27 +57,30 @@ export class FeasibilityStudyComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadData();
+    // Reload when team changes
+    this.teamService.getSelectedTeam().subscribe(team => {
+      if (team) this.loadData();
+    });
   }
 
   loadData(): void {
     this.loading = true;
+    this.error = null;
     this.feasibilityService.getAllFeasibilityStudies().subscribe({
       next: (studies) => {
         this.feasibilityStudies = studies;
         this.loading = false;
       },
-      error: (err) => {
-        this.error = 'Failed to load feasibility studies';
+      error: () => {
+        this.error = 'Failed to load feasibility studies. Please ensure the API is running.';
+        this.feasibilityStudies = [];
         this.loading = false;
-        // Use mock data for demo
-        this.useMockData();
       }
     });
 
     this.feasibilityService.getFeasibilitySummary().subscribe({
       next: (summary) => this.summary = summary,
-      error: () => this.useMockSummary()
+      error: () => { this.summary = null; }
     });
   }
 
@@ -83,7 +88,7 @@ export class FeasibilityStudyComponent implements OnInit {
     this.isEditing = false;
     this.selectedStudy = null;
     this.feasibilityForm.reset({
-      teamId: 1,
+      teamId: this.teamService.getSelectedTeamId(),
       technicalFeasibility: false,
       operationalFeasibility: false,
       organizationalFeasibility: false,
@@ -166,43 +171,5 @@ export class FeasibilityStudyComponent implements OnInit {
   cancelForm(): void {
     this.showForm = false;
     this.selectedStudy = null;
-  }
-
-  private useMockData(): void {
-    this.feasibilityStudies = [
-      {
-        feasibilityId: 1,
-        teamId: 1,
-        teamName: 'Alpha Team',
-        evaluationDate: new Date(),
-        technicalFeasibility: true,
-        technicalNotes: 'Angular 17+ and .NET 8 stack fully supports requirements',
-        operationalFeasibility: true,
-        operationalNotes: 'Can integrate with existing Scrum ceremonies',
-        organizationalFeasibility: true,
-        organizationalNotes: 'Management supports adoption of predictive tools',
-        integrationFeasibility: true,
-        integrationNotes: 'API-first design allows Jira/Azure DevOps integration',
-        mentorComments: 'System demonstrates practical applicability. Approved for pilot deployment.',
-        approvedBy: 'Dr. Industry Mentor',
-        status: 'Approved',
-        expectedBenefits: 'Reduced sprint risk by 30%, improved predictability',
-        adoptionChallenges: 'Initial training required for Scrum Masters',
-        scalabilityConsiderations: 'Cloud-native architecture supports multi-team scaling',
-        overallScore: 100,
-        createdAt: new Date()
-      }
-    ];
-  }
-
-  private useMockSummary(): void {
-    this.summary = {
-      totalStudies: 1,
-      approvedCount: 1,
-      pendingCount: 0,
-      rejectedCount: 0,
-      averageScore: 100,
-      latestStudy: this.feasibilityStudies[0]
-    };
   }
 }

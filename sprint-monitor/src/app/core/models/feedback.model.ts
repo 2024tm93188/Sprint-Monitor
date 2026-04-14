@@ -1,64 +1,62 @@
 /**
  * Risk Feedback Models
- * Human relevance feedback for prediction accuracy and calibration
+ * Human relevance feedback for prediction accuracy and calibration.
+ * Field names are aligned with the backend C# DTOs.
  */
 
 export interface RiskFeedback {
   feedbackId: number;
-  riskAssessmentId: number;
-  teamId: number;
+  /** Maps to backend AssessmentId */
+  assessmentId: number;
   sprintId?: number;
   sprintName?: string;
-  
+
   userId?: string;
   userName?: string;
   userRole?: string;
-  providedBy?: string;
-  
+
   predictedRisk?: string;
   actualOutcome?: string;
   userAgreement?: boolean;
   agreementLevel: AgreementLevel;
-  
-  recommendationHelpful: boolean;
+
+  /** Maps to backend RecommendationsHelpful */
+  recommendationsHelpful: boolean;
   recommendationRating: number;
-  
-  userComments?: string;
+
   feedbackComments?: string;
   improvementSuggestions?: string;
-  
+
   actualPointsCompleted?: number;
   actualSpillover?: boolean;
   actualSpilloverPoints?: number;
-  
-  feedbackDate: Date;
+
+  createdAt: Date;
   usedForCalibration: boolean;
-  createdAt?: Date;
 }
 
 export type AgreementLevel = 'Accurate' | 'PartiallyAccurate' | 'Incorrect';
 
 export interface CreateRiskFeedback {
-  riskAssessmentId: number;
-  teamId: number;
+  /** Maps to backend AssessmentId */
+  assessmentId: number;
   sprintId?: number;
-  
+
   userId?: string;
   userName?: string;
   userRole?: string;
-  providedBy?: string;
-  
+
   predictedRisk?: string;
   actualOutcome?: string;
   agreementLevel: AgreementLevel;
-  
-  recommendationHelpful: boolean;
+
+  /** Maps to backend RecommendationsHelpful */
+  recommendationsHelpful: boolean;
   recommendationRating: number;
-  
-  userComments?: string;
+
   feedbackComments?: string;
   improvementSuggestions?: string;
-  
+
   actualPointsCompleted?: number;
   actualSpillover?: boolean;
   actualSpilloverPoints?: number;
@@ -67,20 +65,22 @@ export interface CreateRiskFeedback {
 export interface PredictionAccuracy {
   teamId: number;
   teamName?: string;
-  
+
   totalFeedbacks: number;
-  accurateCount: number;
-  partiallyAccurateCount: number;
-  inaccurateCount: number;
-  
+  /** Maps to backend AccuratePredictions */
+  accuratePredictions: number;
+  /** Maps to backend PartiallyAccurate */
+  partiallyAccurate: number;
+  /** Maps to backend IncorrectPredictions */
+  incorrectPredictions: number;
+
   accuracyPercentage: number;
-  partialAccuracyPercentage?: number;
+  partialAccuracyPercentage: number;
   averageRecommendationRating: number;
-  helpfulnessPercentage: number;
-  
+
   accuracyTrend?: 'IMPROVING' | 'DECLINING' | 'STABLE';
   trendPercentage?: number;
-  
+
   calculatedAt?: Date;
 }
 
@@ -96,73 +96,69 @@ export interface RecommendationOutcome {
   effective: boolean | null;
 }
 
+/** Matches backend SprintComparisonDto exactly */
 export interface SprintComparison {
   sprintId: number;
   sprintName: string;
   startDate?: Date;
   endDate?: Date;
-  
+
   // Prediction Data
-  predictedRiskLevel: string;
-  actualRiskLevel: string;
-  predictedVelocity: number;
-  actualVelocity: number;
-  
-  // Risk Analysis
-  topRisks: RiskItem[];
-  
+  predictedRisk: string;
+  predictedScore: number;
+  confidenceLevel: number;
+
+  // Actual Outcome
+  actualOutcome: string;
+  committedPoints: number;
+  completedPoints: number;
+  hadSpillover: boolean;
+  spilloverPoints: number;
+
   // Recommendations
-  recommendations: RecommendationOutcome[];
-  
+  recommendations: string[];
+
   // Accuracy
-  accuracyScore: number;
-  feedbackCount: number;
-  
-  // Legacy fields
-  predictedRisk?: string;
-  predictedScore?: number;
-  confidenceLevel?: number;
-  actualOutcome?: string;
-  committedPoints?: number;
-  completedPoints?: number;
-  hadSpillover?: boolean;
-  spilloverPoints?: number;
-  wasAccurate?: boolean;
-  accuracyLevel?: 'Accurate' | 'PartiallyAccurate' | 'Incorrect' | 'Pending';
-  hasFeedback?: boolean;
+  wasAccurate: boolean;
+  accuracyLevel: 'Accurate' | 'PartiallyAccurate' | 'Incorrect' | 'Pending' | 'Unknown';
+
+  // Feedback
+  hasFeedback: boolean;
   feedback?: RiskFeedback;
+
+  // Computed UI helpers
+  accuracyScore?: number;
+  predictedVelocity?: number;
+  actualVelocity?: number;
 }
 
+/** Matches backend SprintComparisonAnalysisDto exactly */
 export interface SprintComparisonAnalysis {
   teamId: number;
   teamName: string;
-  
+
   sprints: SprintComparison[];
-  
-  averageAccuracy: number;
-  accuracyTrend: string;
-  mostAccurateArea: string;
-  needsImprovementArea: string;
+
+  // Aggregated metrics
+  overallAccuracy: number;
+  improvementTrend: 'IMPROVING' | 'DECLINING' | 'STABLE';
+  recurringRiskFactors: string[];
   keyInsights: string[];
-  
-  // Legacy fields
-  overallAccuracy?: number;
-  improvementTrend?: 'IMPROVING' | 'DECLINING' | 'STABLE';
-  recurringRiskFactors?: string[];
-  
+
   generatedAt?: Date;
 }
 
+/** Matches backend CalibrationStatusDto exactly */
 export interface CalibrationStatus {
   teamId: number;
-  totalFeedbacks?: number;
+  totalFeedbacks: number;
   feedbacksUsedForCalibration: number;
   pendingFeedbacks: number;
-  currentAccuracy?: number;
-  targetAccuracy?: number;
+  currentAccuracy: number;
+  targetAccuracy: number;
   calibrationNeeded: boolean;
-  calibrationRecommendation?: string;
-  lastCalibrationDate: Date;
+  calibrationRecommendation: string;
+  lastCalibrated: Date;
   accuracyTrend: string;
   trendPercentage: number;
 }

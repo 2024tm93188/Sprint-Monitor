@@ -52,7 +52,8 @@ export class RiskEngineService {
     plannedPoints: number,
     teamAvailability: number,
     teamSize: number,
-    externalDependencies: number
+    externalDependencies: number,
+    sprintId?: number
   ): Observable<RiskAssessment> {
     if (!this.useApiEvaluation) {
       // Use local calculation
@@ -63,6 +64,7 @@ export class RiskEngineService {
 
     const request: RiskAssessmentRequestDto = {
       teamId: this.sprintService.getCurrentTeamId(),
+      sprintId: sprintId || undefined,
       plannedCommitment: plannedPoints,
       teamAvailability,
       externalDependencies

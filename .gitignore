@@ -1,0 +1,18 @@
+.angular/
+node_modules/
+dist/
+.vs/
+bin/
+obj/
+
+# Common generated outputs in nested projects
+**/.angular/
+**/node_modules/
+**/dist/
+**/.vs/
+**/bin/
+**/obj/
+
+# Coverage and logs
+coverage/
+*.log

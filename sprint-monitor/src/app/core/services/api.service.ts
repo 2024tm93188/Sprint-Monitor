@@ -66,6 +66,8 @@ export interface RecommendationDto {
 
 export interface RiskAssessmentRequestDto {
   teamId: number;
+  /** Optional: link assessment to a specific existing sprint record */
+  sprintId?: number;
   plannedCommitment: number;
   teamAvailability: number;
   externalDependencies: number;
@@ -74,6 +76,7 @@ export interface RiskAssessmentRequestDto {
 export interface RiskAssessmentResponseDto {
   assessmentId: number;
   teamId: number;
+  sprintId?: number | null;
   plannedCommitment: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   totalScore: number;

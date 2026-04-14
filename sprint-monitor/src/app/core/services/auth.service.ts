@@ -11,6 +11,9 @@ import {
   AuthResponse,
   RefreshTokenRequest,
   ChangePasswordRequest,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
   UpdateProfileRequest,
   JwtPayload
 } from '../models/auth.model';
@@ -145,6 +148,24 @@ export class AuthService {
    */
   changePassword(request: ChangePasswordRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/change-password`, request).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Request a password reset token
+   */
+  forgotPassword(request: ForgotPasswordRequest): Observable<ForgotPasswordResponse> {
+    return this.http.post<ForgotPasswordResponse>(`${this.apiUrl}/forgot-password`, request).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Reset password using a token
+   */
+  resetPassword(request: ResetPasswordRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/reset-password`, request).pipe(
       catchError(this.handleError)
     );
   }

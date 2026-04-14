@@ -55,6 +55,13 @@ export interface SprintPlanningInput {
 
   /** Number of external dependencies */
   externalDependencies: number;
+
+  /**
+   * Optional: DB SprintId to link this assessment to an existing sprint record.
+   * Creates a direct FK relationship: RiskAssessment.SprintId → Sprint.SprintId.
+   * Enables feedback linkage and sprint comparison traceability.
+   */
+  sprintId?: number;
 }
 
 /**

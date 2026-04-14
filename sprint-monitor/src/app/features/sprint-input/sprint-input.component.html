@@ -6,6 +6,45 @@
   </mat-card-header>
 
   <mat-card-content>
+
+    <!-- ===================== CSV IMPORT SECTION ===================== -->
+    <div class="section-title">
+      <mat-icon>upload_file</mat-icon>
+      Import Historical Sprints from CSV
+    </div>
+
+    <div class="csv-import-zone">
+      <p class="csv-hint">
+        Upload a CSV file with past sprint data to populate the team's history.
+        <br>
+        <span class="csv-format">
+          Required columns: <code>SprintName, CommittedPoints, CompletedPoints, HadSpillover</code>
+        </span>
+      </p>
+
+      <div class="csv-actions">
+        <label class="csv-upload-btn" [class.disabled]="csvImporting">
+          <mat-icon>attach_file</mat-icon>
+          {{ csvImporting ? 'Uploading…' : 'Choose CSV File' }}
+          <input type="file" accept=".csv" (change)="onCsvFileSelected($event)"
+                 [disabled]="csvImporting" style="display:none">
+        </label>
+
+        <span *ngIf="csvFileName" class="csv-filename">
+          <mat-icon>description</mat-icon> {{ csvFileName }}
+        </span>
+      </div>
+
+      <mat-progress-bar *ngIf="csvImporting" mode="indeterminate" color="accent"
+                        class="csv-progress"></mat-progress-bar>
+
+      <div *ngIf="csvSuccess" class="csv-success">{{ csvSuccess }}</div>
+      <div *ngIf="csvError" class="csv-error">{{ csvError }}</div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- ===================== PLANNING FORM ===================== -->
     <form [formGroup]="planningForm" (ngSubmit)="onSubmit()">
 
       <!-- Historical Data Summary -->
@@ -17,20 +56,59 @@
         <div class="summary-grid">
           <div class="metric">
             <span class="label">Avg Velocity</span>
-            <span class="value">{{historicalMetrics.averageVelocity}} pts</span>
+            <span class="value">{{historicalMetrics.averageVelocity | number:'1.0-1'}} pts</span>
           </div>
           <div class="metric">
             <span class="label">Effective Capacity</span>
-            <span class="value">{{historicalMetrics.effectiveCapacity}} pts</span>
+            <span class="value">{{historicalMetrics.effectiveCapacity | number:'1.0-1'}} pts</span>
           </div>
           <div class="metric">
             <span class="label">Spillover Rate</span>
-            <span class="value">{{historicalMetrics.spilloverRate}}%</span>
+            <span class="value">{{historicalMetrics.spilloverRate | number:'1.0-1'}}%</span>
           </div>
         </div>
       </div>
 
+      <!-- No data hint -->
+      <div class="no-data-hint" *ngIf="!historicalMetrics">
+        <mat-icon>info_outline</mat-icon>
+        No historical sprint data found. Import a CSV above or add sprints first.
+      </div>
+
       <mat-divider></mat-divider>
+
+      <!-- ── Sprint Link (optional) ── -->
+      <div class="section-title">
+        <mat-icon>link</mat-icon>
+        Link to Existing Sprint (Optional)
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Select Sprint to Link Assessment To</mat-label>
+        <mat-select formControlName="sprintId"
+                    (selectionChange)="onSprintSelected($event.value)">
+          <mat-option [value]="null">— None (standalone assessment) —</mat-option>
+          <mat-option *ngFor="let s of availableSprints" [value]="s.sprintId">
+            {{ s.sprintName }}
+            ({{ s.committedPoints }} pts committed, {{ s.completedPoints }} pts done)
+          </mat-option>
+        </mat-select>
+        <mat-icon matSuffix
+          matTooltip="Linking to a sprint creates a direct DB relationship, enabling feedback and comparison accuracy tracking">
+          help_outline
+        </mat-icon>
+        <mat-hint>
+          Linking builds the Assessment → Sprint → Feedback traceability chain
+        </mat-hint>
+      </mat-form-field>
+
+      <mat-divider></mat-divider>
+
+      <!-- ── Planning Fields ── -->
+      <div class="section-title">
+        <mat-icon>edit_note</mat-icon>
+        Sprint Commitment Details
+      </div>
 
       <!-- Planned Story Points -->
       <mat-form-field appearance="outline" class="full-width">
@@ -41,7 +119,7 @@
           help_outline
         </mat-icon>
         <mat-hint *ngIf="historicalMetrics">
-          Recommended: {{recommendedCommitment}} points (80% of velocity)
+          Recommended: {{recommendedCommitment}} points (85% of velocity)
         </mat-hint>
         <mat-error *ngIf="planningForm.get('plannedPoints')?.hasError('required')">
           Please enter planned story points
@@ -83,9 +161,12 @@
         <mat-label>External Dependencies</mat-label>
         <input matInput type="number" formControlName="externalDependencies" min="0">
         <mat-icon matSuffix
-          matTooltip="Number of stories dependent on external teams or systems">
+          matTooltip="Number of stories dependent on external teams or systems (scored 0–5+)">
           help_outline
         </mat-icon>
+        <mat-hint>
+          0 = no risk | 1–2 = low | 3–4 = medium | 5+ = high
+        </mat-hint>
       </mat-form-field>
 
       <mat-divider></mat-divider>

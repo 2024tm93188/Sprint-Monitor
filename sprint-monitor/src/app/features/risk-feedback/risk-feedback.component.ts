@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RiskFeedbackService } from '../../core/services/feedback.service';
 import { ApiService, RiskAssessmentResponseDto, UpdateAssessmentOutcomeDto } from '../../core/services/api.service';
-import { SprintService } from '../../core/services/sprint.service';
-import { 
-  RiskFeedback, 
-  CreateRiskFeedback, 
+import { TeamService } from '../../core/services/team.service';
+import {
+  RiskFeedback,
+  CreateRiskFeedback,
   PredictionAccuracy,
   CalibrationStatus,
   AgreementLevel
@@ -23,7 +23,7 @@ export class RiskFeedbackComponent implements OnInit {
   private fb = inject(FormBuilder);
   private feedbackService = inject(RiskFeedbackService);
   private apiService = inject(ApiService);
-  private sprintService = inject(SprintService);
+  private teamService = inject(TeamService);
 
   feedbacks: RiskFeedback[] = [];
   accuracy: PredictionAccuracy | null = null;
@@ -36,15 +36,14 @@ export class RiskFeedbackComponent implements OnInit {
   outcomeSuccess: string | null = null;
 
   feedbackForm: FormGroup = this.fb.group({
-    riskAssessmentId: [null, Validators.required],
-    teamId: [1],
-    sprintId: [null],
+    assessmentId: [null, Validators.required],
     agreementLevel: ['Accurate', Validators.required],
     userComments: [''],
     recommendationRating: [5, [Validators.min(1), Validators.max(5)]],
-    recommendationHelpful: [true],
+    recommendationsHelpful: [true],
     actualOutcome: [''],
-    providedBy: ['']
+    userName: [''],
+    userRole: ['']
   });
 
   outcomeForm: FormGroup = this.fb.group({
@@ -67,17 +66,20 @@ export class RiskFeedbackComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadData();
+    // Reload when team changes
+    this.teamService.getSelectedTeam().subscribe(team => {
+      if (team) this.loadData();
+    });
   }
 
   private get teamId(): number {
-    return this.sprintService.getCurrentTeamId();
+    return this.teamService.getSelectedTeamId();
   }
 
   loadData(): void {
     this.loading = true;
     this.error = null;
-    
+
     this.feedbackService.getFeedbacksForTeam(this.teamId).subscribe({
       next: (feedbacks: RiskFeedback[]) => {
         this.feedbacks = feedbacks;
@@ -92,41 +94,34 @@ export class RiskFeedbackComponent implements OnInit {
 
     this.feedbackService.getPredictionAccuracy(this.teamId).subscribe({
       next: (accuracy: PredictionAccuracy) => this.accuracy = accuracy,
-      error: () => {
-        this.accuracy = null;
-      }
+      error: () => { this.accuracy = null; }
     });
 
     this.feedbackService.getCalibrationStatus(this.teamId).subscribe({
       next: (calibration: CalibrationStatus) => this.calibration = calibration,
-      error: () => {
-        this.calibration = null;
-      }
+      error: () => { this.calibration = null; }
     });
 
     // Load assessments for dropdown selection
     this.apiService.getAssessmentHistory(this.teamId).subscribe({
       next: (assessments) => this.assessments = assessments,
-      error: () => {
-        this.assessments = [];
-      }
+      error: () => { this.assessments = []; }
     });
   }
 
   openFeedbackForm(assessmentId?: number): void {
-    const selectedAssessment = assessmentId 
-      ? this.assessments.find(a => a.assessmentId === assessmentId) 
+    const selectedAssessment = assessmentId
+      ? this.assessments.find(a => a.assessmentId === assessmentId)
       : null;
 
     this.feedbackForm.reset({
-      riskAssessmentId: assessmentId || null,
-      teamId: this.teamId,
-      sprintId: null,
+      assessmentId: assessmentId || null,
       agreementLevel: 'Accurate',
       recommendationRating: 5,
-      recommendationHelpful: true,
+      recommendationsHelpful: true,
       actualOutcome: selectedAssessment ? `Predicted: ${selectedAssessment.riskLevel}` : '',
-      providedBy: ''
+      userName: '',
+      userRole: ''
     });
     this.showForm = true;
   }
@@ -147,26 +142,24 @@ export class RiskFeedbackComponent implements OnInit {
 
     const formValues = this.feedbackForm.value;
 
-    // Map form values to match backend CreateRiskFeedbackDto
-    const data: any = {
-      assessmentId: formValues.riskAssessmentId,
-      sprintId: formValues.sprintId,
-      predictedRisk: this.getAssessmentRiskLevel(formValues.riskAssessmentId),
+    const data: CreateRiskFeedback = {
+      assessmentId: formValues.assessmentId,
+      predictedRisk: this.getAssessmentRiskLevel(formValues.assessmentId),
       actualOutcome: formValues.actualOutcome || 'Pending',
       agreementLevel: formValues.agreementLevel,
-      recommendationsHelpful: formValues.recommendationHelpful,
+      recommendationsHelpful: formValues.recommendationsHelpful,
       recommendationRating: formValues.recommendationRating,
       feedbackComments: formValues.userComments,
-      userName: formValues.providedBy,
-      userRole: formValues.providedBy
+      userName: formValues.userName,
+      userRole: formValues.userRole
     };
-    
+
     this.feedbackService.submitFeedback(data).subscribe({
       next: () => {
         this.loadData();
         this.showForm = false;
       },
-      error: (err) => {
+      error: () => {
         this.error = 'Failed to submit feedback. Please try again.';
         this.showForm = false;
       }
@@ -186,7 +179,7 @@ export class RiskFeedbackComponent implements OnInit {
     this.apiService.updateAssessmentOutcome(formValues.assessmentId, dto).subscribe({
       next: () => {
         this.outcomeSuccess = 'Actual outcome recorded successfully!';
-        this.loadData(); // Refresh data
+        this.loadData();
         setTimeout(() => {
           this.showOutcomeForm = false;
           this.outcomeSuccess = null;

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RiskFeedbackService } from '../../core/services/feedback.service';
-import { SprintService } from '../../core/services/sprint.service';
+import { TeamService } from '../../core/services/team.service';
 import { SprintComparisonAnalysis, SprintComparison } from '../../core/models/feedback.model';
 
 @Component({
@@ -13,7 +13,7 @@ import { SprintComparisonAnalysis, SprintComparison } from '../../core/models/fe
 })
 export class SprintComparisonComponent implements OnInit {
   private feedbackService = inject(RiskFeedbackService);
-  private sprintService = inject(SprintService);
+  private teamService = inject(TeamService);
 
   comparison: SprintComparisonAnalysis | null = null;
   loading = false;
@@ -21,15 +21,18 @@ export class SprintComparisonComponent implements OnInit {
   selectedSprint: SprintComparison | null = null;
 
   ngOnInit(): void {
-    this.loadComparison();
+    // Reload when team changes
+    this.teamService.getSelectedTeam().subscribe(team => {
+      if (team) this.loadComparison();
+    });
   }
 
   loadComparison(): void {
     this.loading = true;
     this.error = null;
-    
-    const teamId = this.sprintService.getCurrentTeamId();
-    
+
+    const teamId = this.teamService.getSelectedTeamId();
+
     this.feedbackService.getSprintComparison(teamId).subscribe({
       next: (data: SprintComparisonAnalysis) => {
         this.comparison = data;
@@ -37,7 +40,7 @@ export class SprintComparisonComponent implements OnInit {
       },
       error: () => {
         this.comparison = null;
-        this.error = 'Could not load sprint comparison data. Please ensure the backend API is running and assessments with feedback exist.';
+        this.error = 'Could not load sprint comparison data. Please ensure the backend API is running and assessments exist.';
         this.loading = false;
       }
     });
@@ -59,28 +62,38 @@ export class SprintComparisonComponent implements OnInit {
     return this.feedbackService.getTrendIcon(trend);
   }
 
-  getVelocityDiff(sprint: SprintComparison): number {
-    return (sprint.actualVelocity || 0) - (sprint.predictedVelocity || 0);
+  /** Completion rate for a sprint (committed → completed) */
+  getCompletionRate(sprint: SprintComparison): number {
+    if (!sprint.committedPoints) return 100;
+    return Math.round((sprint.completedPoints / sprint.committedPoints) * 100);
   }
 
-  getVelocityDiffClass(sprint: SprintComparison): string {
-    const diff = this.getVelocityDiff(sprint);
-    if (diff >= 0) return 'positive';
-    if (diff >= -5) return 'neutral';
+  getCompletionRateClass(sprint: SprintComparison): string {
+    const rate = this.getCompletionRate(sprint);
+    if (rate >= 95) return 'positive';
+    if (rate >= 80) return 'neutral';
     return 'negative';
   }
 
-  getOverallTrend(): string {
-    if (!this.comparison?.sprints || this.comparison.sprints.length < 2) {
-      return 'stable';
+  getAccuracyLevelColor(level: string): string {
+    switch (level) {
+      case 'Accurate': return 'success';
+      case 'PartiallyAccurate': return 'warning';
+      case 'Incorrect': return 'danger';
+      default: return 'secondary';
     }
-    
-    const sprints = this.comparison.sprints;
-    const recentAccuracy = sprints[0]?.accuracyScore || 0;
-    const previousAccuracy = sprints[1]?.accuracyScore || 0;
-    
-    if (recentAccuracy > previousAccuracy + 5) return 'improving';
-    if (recentAccuracy < previousAccuracy - 5) return 'declining';
-    return 'stable';
+  }
+
+  getAccuracyLevelIcon(level: string): string {
+    switch (level) {
+      case 'Accurate': return '✅';
+      case 'PartiallyAccurate': return '⚠️';
+      case 'Incorrect': return '❌';
+      default: return '⏳';
+    }
+  }
+
+  getOverallTrend(): string {
+    return this.comparison?.improvementTrend ?? 'STABLE';
   }
 }

@@ -6,3 +6,4 @@ export * from './risk-engine.service';
 export * from './feasibility.service';
 export * from './feedback.service';
 export * from './auth.service';
+export * from './team.service';

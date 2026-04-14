@@ -68,6 +68,31 @@ export interface ChangePasswordRequest {
 }
 
 /**
+ * Forgot password request payload
+ */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+/**
+ * Forgot password response payload
+ */
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+  resetToken?: string;
+}
+
+/**
+ * Reset password request payload
+ */
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+/**
  * Update profile request payload
  */
 export interface UpdateProfileRequest {

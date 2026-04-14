@@ -2,17 +2,19 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 import { Sprint, SprintPlanningInput } from '../models/sprint.model';
 import { ApiService, SprintDto } from './api.service';
+import { TeamService } from './team.service';
 
 /**
  * Sprint Service
  * Manages sprint data storage and retrieval.
- * Fetches data from the BFF mock server API.
+ * Uses TeamService for the current team ID (no hardcoding).
  */
 @Injectable({
   providedIn: 'root'
 })
 export class SprintService {
   private apiService = inject(ApiService);
+  private teamService = inject(TeamService);
 
   /** Observable stream of historical sprints */
   private historicalSprints$ = new BehaviorSubject<Sprint[]>([]);
@@ -23,22 +25,23 @@ export class SprintService {
   /** Loading state */
   private loading$ = new BehaviorSubject<boolean>(false);
 
-  /** Current team ID */
-  private currentTeamId = 1;
-
   constructor() {
-    // Load sprints from API on initialization
-    this.loadSprintsFromApi();
+    // When selected team changes, reload sprints
+    this.teamService.getSelectedTeam().subscribe(team => {
+      if (team) {
+        this.loadSprintsFromApi(team.teamId);
+      }
+    });
   }
 
   /**
-   * Load sprints from the API
+   * Load sprints from the API for a specific team
    */
-  loadSprintsFromApi(teamId: number = 1): void {
+  loadSprintsFromApi(teamId?: number): void {
+    const id = teamId ?? this.getCurrentTeamId();
     this.loading$.next(true);
-    this.currentTeamId = teamId;
 
-    this.apiService.getTeamSprints(teamId).pipe(
+    this.apiService.getTeamSprints(id).pipe(
       map(dtos => this.mapSprintDtosToSprints(dtos)),
       tap(sprints => {
         this.historicalSprints$.next(sprints);
@@ -48,7 +51,6 @@ export class SprintService {
       error: (err) => {
         console.error('Failed to load sprints from API:', err);
         this.loading$.next(false);
-        // Fallback to empty array if API fails
         this.historicalSprints$.next([]);
       }
     });
@@ -108,10 +110,10 @@ export class SprintService {
   }
 
   /**
-   * Get current team ID
+   * Get current team ID from TeamService
    */
   getCurrentTeamId(): number {
-    return this.currentTeamId;
+    return this.teamService.getSelectedTeamId();
   }
 
   /**
@@ -159,7 +161,7 @@ export class SprintService {
    * Refresh data from API
    */
   refresh(): void {
-    this.loadSprintsFromApi(this.currentTeamId);
+    this.loadSprintsFromApi();
   }
 
   /**
