@@ -1,8 +1,20 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { Sprint, SprintPlanningInput } from '../models/sprint.model';
 import { ApiService, SprintDto } from './api.service';
 import { TeamService } from './team.service';
+import {
+  addHistoricalSprint,
+  clearSprints,
+  loadSprints,
+  loadSprintsFailure,
+  loadSprintsSuccess,
+  setHistoricalSprints
+} from '../store/sprint.actions';
+import { selectHistoricalSprints, selectSprintsLoading } from '../store/sprint.selectors';
+import { setPlanningInput } from '../store/planning-evaluation.actions';
+import { selectCurrentPlanningInput } from '../store/planning-evaluation.selectors';
 
 /**
  * Sprint Service
@@ -15,17 +27,15 @@ import { TeamService } from './team.service';
 export class SprintService {
   private apiService = inject(ApiService);
   private teamService = inject(TeamService);
+  private store = inject(Store);
 
-  /** Observable stream of historical sprints */
-  private historicalSprints$ = new BehaviorSubject<Sprint[]>([]);
-
-  /** Observable stream of current planning input */
-  private planningInput$ = new BehaviorSubject<SprintPlanningInput | null>(null);
-
-  /** Loading state */
-  private loading$ = new BehaviorSubject<boolean>(false);
+  private historicalSprintsSnapshot: Sprint[] = [];
 
   constructor() {
+    this.store.select(selectHistoricalSprints).subscribe(sprints => {
+      this.historicalSprintsSnapshot = sprints;
+    });
+
     // When selected team changes, reload sprints
     this.teamService.getSelectedTeam().subscribe(team => {
       if (team) {
@@ -39,19 +49,17 @@ export class SprintService {
    */
   loadSprintsFromApi(teamId?: number): void {
     const id = teamId ?? this.getCurrentTeamId();
-    this.loading$.next(true);
+    this.store.dispatch(loadSprints());
 
     this.apiService.getTeamSprints(id).pipe(
-      map(dtos => this.mapSprintDtosToSprints(dtos)),
-      tap(sprints => {
-        this.historicalSprints$.next(sprints);
-        this.loading$.next(false);
-      })
+      map(dtos => this.mapSprintDtosToSprints(dtos))
     ).subscribe({
+      next: (sprints) => {
+        this.store.dispatch(loadSprintsSuccess({ sprints }));
+      },
       error: (err) => {
         console.error('Failed to load sprints from API:', err);
-        this.loading$.next(false);
-        this.historicalSprints$.next([]);
+        this.store.dispatch(loadSprintsFailure());
       }
     });
   }
@@ -78,35 +86,35 @@ export class SprintService {
    * Get historical sprints as observable
    */
   getHistoricalSprints(): Observable<Sprint[]> {
-    return this.historicalSprints$.asObservable();
+    return this.store.select(selectHistoricalSprints);
   }
 
   /**
    * Get current historical sprints value
    */
   getHistoricalSprintsSnapshot(): Sprint[] {
-    return this.historicalSprints$.getValue();
+    return this.historicalSprintsSnapshot;
   }
 
   /**
    * Get loading state
    */
   isLoading(): Observable<boolean> {
-    return this.loading$.asObservable();
+    return this.store.select(selectSprintsLoading);
   }
 
   /**
    * Get planning input as observable
    */
   getPlanningInput(): Observable<SprintPlanningInput | null> {
-    return this.planningInput$.asObservable();
+    return this.store.select(selectCurrentPlanningInput);
   }
 
   /**
    * Update planning input for risk evaluation
    */
   updatePlanningInput(input: SprintPlanningInput): void {
-    this.planningInput$.next(input);
+    this.store.dispatch(setPlanningInput({ input }));
   }
 
   /**
@@ -120,8 +128,7 @@ export class SprintService {
    * Add a new historical sprint
    */
   addHistoricalSprint(sprint: Sprint): void {
-    const current = this.historicalSprints$.getValue();
-    this.historicalSprints$.next([...current, sprint]);
+    this.store.dispatch(addHistoricalSprint({ sprint }));
   }
 
   /**
@@ -153,7 +160,7 @@ export class SprintService {
       }
     }
 
-    this.historicalSprints$.next(sprints);
+    this.store.dispatch(setHistoricalSprints({ sprints }));
     return sprints;
   }
 
@@ -168,6 +175,6 @@ export class SprintService {
    * Clear all historical data
    */
   clearHistory(): void {
-    this.historicalSprints$.next([]);
+    this.store.dispatch(clearSprints());
   }
 }

@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { ApiService, TeamDto } from './api.service';
+import { loadTeams, loadTeamsFailure, loadTeamsSuccess, setSelectedTeam } from '../store/team.actions';
+import { selectSelectedTeam, selectTeamLoading, selectTeams } from '../store/team.selectors';
 
 const SELECTED_TEAM_KEY = 'sprint_monitor_selected_team';
 
@@ -14,72 +17,92 @@ const SELECTED_TEAM_KEY = 'sprint_monitor_selected_team';
 })
 export class TeamService {
   private apiService = inject(ApiService);
+  private store = inject(Store);
 
-  private teams$ = new BehaviorSubject<TeamDto[]>([]);
-  private selectedTeam$ = new BehaviorSubject<TeamDto | null>(this.loadSelectedTeamFromStorage());
-  private loading$ = new BehaviorSubject<boolean>(false);
+  private teamsSnapshot: TeamDto[] = [];
+  private selectedTeamSnapshot: TeamDto | null = null;
 
   constructor() {
+    this.store.select(selectTeams).subscribe(teams => {
+      this.teamsSnapshot = teams;
+    });
+
+    this.store.select(selectSelectedTeam).subscribe(team => {
+      this.selectedTeamSnapshot = team;
+    });
+
     this.loadTeams();
   }
 
   /** Load all teams from API */
   loadTeams(): void {
-    this.loading$.next(true);
-    this.apiService.getTeams().pipe(
-      tap(teams => {
-        this.teams$.next(teams);
-        this.loading$.next(false);
+    this.store.dispatch(loadTeams());
 
-        // Auto-select: if nothing selected, pick stored or first team
-        const current = this.selectedTeam$.getValue();
+    this.apiService.getTeams().subscribe({
+      next: (teams) => {
+        this.store.dispatch(loadTeamsSuccess({ teams }));
+
+        const stored = this.loadSelectedTeamFromStorage();
+        const current = this.selectedTeamSnapshot;
+
         if (!current && teams.length > 0) {
-          this.setSelectedTeam(teams[0]);
-        } else if (current) {
-          // Refresh from API data to get latest team info
-          const fresh = teams.find(t => t.teamId === current.teamId);
-          if (fresh) this.selectedTeam$.next(fresh);
+          if (stored) {
+            const matched = teams.find(t => t.teamId === stored.teamId);
+            this.setSelectedTeam(matched ?? teams[0]);
+          } else {
+            this.setSelectedTeam(teams[0]);
+          }
+          return;
         }
-      })
-    ).subscribe({
-      error: () => this.loading$.next(false)
+
+        if (current) {
+          const fresh = teams.find(t => t.teamId === current.teamId);
+          if (fresh) {
+            this.store.dispatch(setSelectedTeam({ team: fresh }));
+            localStorage.setItem(SELECTED_TEAM_KEY, JSON.stringify(fresh));
+          }
+        }
+      },
+      error: () => {
+        this.store.dispatch(loadTeamsFailure());
+      }
     });
   }
 
   /** Get all available teams as observable */
   getTeams(): Observable<TeamDto[]> {
-    return this.teams$.asObservable();
+    return this.store.select(selectTeams);
   }
 
   /** Get all teams snapshot */
   getTeamsSnapshot(): TeamDto[] {
-    return this.teams$.getValue();
+    return this.teamsSnapshot;
   }
 
   /** Get currently selected team as observable */
   getSelectedTeam(): Observable<TeamDto | null> {
-    return this.selectedTeam$.asObservable();
+    return this.store.select(selectSelectedTeam);
   }
 
   /** Get selected team ID (defaults to 1 if nothing selected) */
   getSelectedTeamId(): number {
-    return this.selectedTeam$.getValue()?.teamId ?? 1;
+    return this.selectedTeamSnapshot?.teamId ?? 1;
   }
 
   /** Get selected team snapshot */
   getSelectedTeamSnapshot(): TeamDto | null {
-    return this.selectedTeam$.getValue();
+    return this.selectedTeamSnapshot;
   }
 
   /** Set the currently active team */
   setSelectedTeam(team: TeamDto): void {
-    this.selectedTeam$.next(team);
+    this.store.dispatch(setSelectedTeam({ team }));
     localStorage.setItem(SELECTED_TEAM_KEY, JSON.stringify(team));
   }
 
   /** Whether teams are loading */
   isLoading(): Observable<boolean> {
-    return this.loading$.asObservable();
+    return this.store.select(selectTeamLoading);
   }
 
   private loadSelectedTeamFromStorage(): TeamDto | null {
