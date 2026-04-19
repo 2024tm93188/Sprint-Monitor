@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTabGroup } from '@angular/material/tabs';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -58,6 +59,8 @@ import { selectCurrentAssessment, selectCurrentMetrics } from './core/store/plan
 })
 export class AppComponent implements OnInit {
   @ViewChild(PlanningEvaluationComponent) planningEvaluation?: PlanningEvaluationComponent;
+  @ViewChild(RiskFeedbackComponent) riskFeedbackComponent?: RiskFeedbackComponent;
+  @ViewChild(SprintComparisonComponent) sprintComparisonComponent?: SprintComparisonComponent;
   @ViewChild(MatTabGroup) tabGroup?: MatTabGroup;
 
   private destroyRef = inject(DestroyRef);
@@ -102,6 +105,17 @@ export class AppComponent implements OnInit {
   onNavigateToRiskDashboard(): void {
     if (this.tabGroup) {
       this.tabGroup.selectedIndex = 1;
+    }
+  }
+
+  onTabChange(event: MatTabChangeEvent): void {
+    // Tabs are 0-based in template order.
+    if (event.index === 4) {
+      this.riskFeedbackComponent?.loadData();
+    }
+
+    if (event.index === 5) {
+      this.sprintComparisonComponent?.loadComparison();
     }
   }
 

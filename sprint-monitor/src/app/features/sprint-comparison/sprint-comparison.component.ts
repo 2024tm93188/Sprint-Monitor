@@ -64,6 +64,7 @@ export class SprintComparisonComponent implements OnInit {
 
   /** Completion rate for a sprint (committed → completed) */
   getCompletionRate(sprint: SprintComparison): number {
+    if (sprint.completedPoints === undefined || sprint.completedPoints === null) return 0;
     if (!sprint.committedPoints) return 100;
     return Math.round((sprint.completedPoints / sprint.committedPoints) * 100);
   }

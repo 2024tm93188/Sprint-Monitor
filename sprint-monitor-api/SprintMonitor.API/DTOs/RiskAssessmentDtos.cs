@@ -81,12 +81,3 @@ public class SprintMetricsDto
     public int RecommendedCommitment { get; set; }
 }
 
-/// <summary>
-/// DTO for updating assessment with actual outcome
-/// </summary>
-public class UpdateAssessmentOutcomeDto
-{
-    public SprintOutcome ActualOutcome { get; set; }
-    public int? ActualCompletedPoints { get; set; }
-    public string? Notes { get; set; }
-}

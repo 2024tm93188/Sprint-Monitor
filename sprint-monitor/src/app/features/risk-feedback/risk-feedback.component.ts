@@ -2,13 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RiskFeedbackService } from '../../core/services/feedback.service';
-import { ApiService, RiskAssessmentResponseDto, UpdateAssessmentOutcomeDto } from '../../core/services/api.service';
+import { ApiService, RiskAssessmentResponseDto } from '../../core/services/api.service';
 import { TeamService } from '../../core/services/team.service';
 import {
   RiskFeedback,
   CreateRiskFeedback,
   PredictionAccuracy,
-  CalibrationStatus,
   AgreementLevel,
   SprintComparison
 } from '../../core/models/feedback.model';
@@ -28,28 +27,20 @@ export class RiskFeedbackComponent implements OnInit {
 
   feedbacks: RiskFeedback[] = [];
   accuracy: PredictionAccuracy | null = null;
-  calibration: CalibrationStatus | null = null;
   assessments: RiskAssessmentResponseDto[] = [];
   comparisonSprints: SprintComparison[] = [];
   showForm = false;
-  showOutcomeForm = false;
   loading = false;
   error: string | null = null;
-  outcomeSuccess: string | null = null;
 
   feedbackForm: FormGroup = this.fb.group({
     assessmentId: [null, Validators.required],
+    actualOutcome: ['SUCCESS', Validators.required],
+    completedPoints: [null, [Validators.min(0)]],
     agreementLevel: ['Accurate', Validators.required],
     userComments: [''],
     recommendationRating: [5, [Validators.min(1), Validators.max(5)]],
     recommendationsHelpful: [true]
-  });
-
-  outcomeForm: FormGroup = this.fb.group({
-    assessmentId: [null, Validators.required],
-    actualOutcome: ['SUCCESS', Validators.required],
-    actualCompletedPoints: [null, [Validators.min(0)]],
-    notes: ['']
   });
 
   agreementOptions: AgreementLevel[] = [
@@ -58,7 +49,7 @@ export class RiskFeedbackComponent implements OnInit {
     'Incorrect'
   ];
 
-  outcomeOptions = [
+  actualOutcomeOptions = [
     { value: 'SUCCESS', label: '✅ Success — All committed work done' },
     { value: 'PARTIAL', label: '⚠️ Partial — Some spillover' },
     { value: 'FAILED', label: '❌ Failed — Significant spillover' }
@@ -96,14 +87,12 @@ export class RiskFeedbackComponent implements OnInit {
       error: () => { this.accuracy = null; }
     });
 
-    this.feedbackService.getCalibrationStatus(this.teamId).subscribe({
-      next: (calibration: CalibrationStatus) => this.calibration = calibration,
-      error: () => { this.calibration = null; }
-    });
-
     // Load assessments for dropdown selection
     this.apiService.getAssessmentHistory(this.teamId).subscribe({
-      next: (assessments) => this.assessments = assessments,
+      next: (assessments) => {
+        this.assessments = assessments;
+        this.syncOpenFormsWithLatestAssessment();
+      },
       error: () => { this.assessments = []; }
     });
 
@@ -116,15 +105,21 @@ export class RiskFeedbackComponent implements OnInit {
         this.comparisonSprints = [];
       }
     });
+
+    // If the forms are already open, keep them populated with the newest run for this team.
+    setTimeout(() => this.syncOpenFormsWithLatestAssessment(), 0);
   }
 
   openFeedbackForm(assessmentId?: number): void {
-    const selectedAssessment = assessmentId
-      ? this.assessments.find(a => a.assessmentId === assessmentId)
-      : null;
+    // Refresh latest data so newly evaluated runs appear immediately in dropdown.
+    this.loadData();
+
+    const resolvedAssessmentId = assessmentId ?? this.getLatestAssessmentId();
 
     this.feedbackForm.reset({
-      assessmentId: assessmentId || null,
+      assessmentId: resolvedAssessmentId,
+      actualOutcome: 'SUCCESS',
+      completedPoints: null,
       agreementLevel: 'Accurate',
       recommendationRating: 5,
       recommendationsHelpful: true,
@@ -133,28 +128,22 @@ export class RiskFeedbackComponent implements OnInit {
     this.showForm = true;
   }
 
-  openOutcomeForm(assessmentId?: number): void {
-    this.outcomeForm.reset({
-      assessmentId: assessmentId || null,
-      actualOutcome: 'SUCCESS',
-      actualCompletedPoints: null,
-      notes: ''
-    });
-    this.outcomeSuccess = null;
-    this.showOutcomeForm = true;
-  }
-
   submitFeedback(): void {
     if (this.feedbackForm.invalid) return;
 
     const formValues = this.feedbackForm.value;
     const selectedSprint = this.getSelectedComparisonSprint(formValues.assessmentId);
+    const sprintId = selectedSprint && selectedSprint.sprintId > 0
+      ? selectedSprint.sprintId
+      : undefined;
 
     const data: CreateRiskFeedback = {
       assessmentId: formValues.assessmentId,
-      sprintId: selectedSprint?.sprintId,
+      teamId: this.teamId,
+      sprintId,
       predictedRisk: this.getAssessmentRiskLevel(formValues.assessmentId),
-      actualOutcome: 'Pending',
+      actualOutcome: formValues.actualOutcome,
+      completedPoints: formValues.completedPoints,
       agreementLevel: formValues.agreementLevel,
       recommendationsHelpful: formValues.recommendationsHelpful,
       recommendationRating: formValues.recommendationRating,
@@ -173,48 +162,8 @@ export class RiskFeedbackComponent implements OnInit {
     });
   }
 
-  submitOutcome(): void {
-    if (this.outcomeForm.invalid) return;
-
-    const formValues = this.outcomeForm.value;
-    const dto: UpdateAssessmentOutcomeDto = {
-      actualOutcome: formValues.actualOutcome,
-      actualCompletedPoints: formValues.actualCompletedPoints,
-      notes: formValues.notes
-    };
-
-    this.apiService.updateAssessmentOutcome(formValues.assessmentId, dto).subscribe({
-      next: () => {
-        this.outcomeSuccess = 'Actual outcome recorded successfully!';
-        this.loadData();
-        setTimeout(() => {
-          this.showOutcomeForm = false;
-          this.outcomeSuccess = null;
-        }, 2000);
-      },
-      error: () => {
-        this.error = 'Failed to record actual outcome. Please try again.';
-      }
-    });
-  }
-
   cancelForm(): void {
     this.showForm = false;
-  }
-
-  cancelOutcomeForm(): void {
-    this.showOutcomeForm = false;
-  }
-
-  markForCalibration(feedback: RiskFeedback): void {
-    this.feedbackService.markAsUsedForCalibration(feedback.feedbackId).subscribe({
-      next: () => {
-        feedback.usedForCalibration = true;
-      },
-      error: () => {
-        this.error = 'Failed to mark feedback for calibration.';
-      }
-    });
   }
 
   getAssessmentRiskLevel(assessmentId: number): string {
@@ -235,11 +184,40 @@ export class RiskFeedbackComponent implements OnInit {
     }
 
     const comparisonAssessmentIds = new Set(this.comparisonSprints.map(s => s.assessmentId));
-    return this.assessments.filter(a => comparisonAssessmentIds.has(a.assessmentId));
+    const comparisonMatchedAssessments = this.assessments.filter(a => comparisonAssessmentIds.has(a.assessmentId));
+
+    // Fallback to all assessments so forms never become unusable when comparison data lags
+    // or does not include the newest assessment yet.
+    return comparisonMatchedAssessments.length > 0
+      ? comparisonMatchedAssessments
+      : this.assessments;
   }
 
   private getSelectedComparisonSprint(assessmentId: number): SprintComparison | undefined {
     return this.comparisonSprints.find(s => s.assessmentId === assessmentId);
+  }
+
+  private getLatestAssessmentId(): number | null {
+    if (!this.assessments.length) {
+      return null;
+    }
+
+    return [...this.assessments]
+      .sort((left, right) => new Date(right.assessedAt).getTime() - new Date(left.assessedAt).getTime())[0]
+      .assessmentId;
+  }
+
+  private syncOpenFormsWithLatestAssessment(): void {
+    const latestAssessmentId = this.getLatestAssessmentId();
+
+    if (latestAssessmentId == null) {
+      return;
+    }
+
+    if (this.showForm && !this.feedbackForm.get('assessmentId')?.value) {
+      this.feedbackForm.patchValue({ assessmentId: latestAssessmentId });
+    }
+
   }
 
   getAgreementColor(level: string): string {

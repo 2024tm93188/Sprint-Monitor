@@ -77,24 +77,4 @@ public class RiskAssessmentController : ControllerBase
         return Ok(assessment);
     }
 
-    /// <summary>
-    /// Update assessment with actual outcome (for validation)
-    /// </summary>
-    /// <remarks>
-    /// After a sprint completes, use this endpoint to record the actual outcome.
-    /// This helps validate the accuracy of risk predictions over time.
-    /// </remarks>
-    [HttpPatch("{assessmentId}/outcome")]
-    [ProducesResponseType(typeof(RiskAssessmentDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RiskAssessmentDto>> UpdateOutcome(
-        int assessmentId, 
-        [FromBody] UpdateAssessmentOutcomeDto dto)
-    {
-        var assessment = await _riskAssessmentService.UpdateAssessmentOutcomeAsync(assessmentId, dto);
-        if (assessment == null)
-            return NotFound(new { message = $"Assessment with ID {assessmentId} not found" });
-
-        return Ok(assessment);
-    }
 }

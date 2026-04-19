@@ -1,6 +1,6 @@
 <div class="feedback-container">
   <header class="page-header">
-    <h1>Feedback & Calibration</h1>
+    <h1>Feedback</h1>
   </header>
 
   <!-- Quick Stats -->
@@ -13,19 +13,12 @@
       <span class="stat-value">{{ accuracy.totalFeedbacks }}</span>
       <span class="stat-label">Feedbacks</span>
     </div>
-    <div class="stat-item" *ngIf="calibration">
-      <span class="stat-value">{{ calibration.feedbacksUsedForCalibration }}</span>
-      <span class="stat-label">Used</span>
-    </div>
   </div>
 
   <!-- Action Bar -->
   <div class="action-bar">
     <button class="btn btn-primary" (click)="openFeedbackForm()">
       ➕ Provide Feedback
-    </button>
-    <button class="btn btn-secondary" (click)="openOutcomeForm()">
-      📋 Record Outcome
     </button>
   </div>
 
@@ -39,52 +32,6 @@
   <div *ngIf="error" class="error-banner">
     ⚠️ {{ error }}
     <button (click)="error = null">×</button>
-  </div>
-
-  <!-- Success Message -->
-  <div *ngIf="outcomeSuccess" class="success-banner">
-    ✅ {{ outcomeSuccess }}
-  </div>
-
-  <!-- Outcome Form -->
-  <div *ngIf="showOutcomeForm" class="form-container">
-    <div class="form-header">
-      <h2>Record Sprint Outcome</h2>
-      <button class="btn-close" (click)="cancelOutcomeForm()">×</button>
-    </div>
-    
-    <form [formGroup]="outcomeForm" (ngSubmit)="submitOutcome()">
-      <div class="form-group">
-        <label>Assessment *</label>
-        <small class="help-text">Select the risk evaluation run that this actual sprint outcome belongs to.</small>
-        <select formControlName="assessmentId">
-          <option [ngValue]="null" disabled>-- Select --</option>
-          <option *ngFor="let a of selectableAssessments" [ngValue]="a.assessmentId">
-            {{ getAssessmentLabel(a) }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Outcome *</label>
-        <div class="options">
-          <label *ngFor="let option of outcomeOptions" class="option">
-            <input type="radio" formControlName="actualOutcome" [value]="option.value">
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Completed Points</label>
-        <input type="number" formControlName="actualCompletedPoints" placeholder="e.g., 35" min="0">
-      </div>
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="cancelOutcomeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="outcomeForm.invalid">Record</button>
-      </div>
-    </form>
   </div>
 
   <!-- Feedback Form -->
@@ -104,6 +51,21 @@
             {{ getAssessmentLabel(a) }}
           </option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label>Actual Outcome *</label>
+        <div class="options">
+          <label *ngFor="let option of actualOutcomeOptions" class="option">
+            <input type="radio" formControlName="actualOutcome" [value]="option.value">
+            <span>{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Completed Points (optional)</label>
+        <input type="number" formControlName="completedPoints" placeholder="e.g., 35" min="0">
       </div>
 
       <div class="form-group">
@@ -144,7 +106,7 @@
   </div>
 
   <!-- Feedback List -->
-  <div *ngIf="!showForm && !showOutcomeForm && feedbacks.length > 0" class="feedback-list">
+  <div *ngIf="!showForm && feedbacks.length > 0" class="feedback-list">
     <h2>Recent Feedback</h2>
     
     <div *ngFor="let feedback of feedbacks" class="feedback-card">
@@ -160,19 +122,11 @@
         <div *ngIf="feedback.feedbackComments"><strong>Note:</strong> {{ feedback.feedbackComments }}</div>
         <div *ngIf="feedback.recommendationRating">{{ getRatingStars(feedback.recommendationRating) }}</div>
       </div>
-
-      <div class="card-footer">
-        <button *ngIf="!feedback.usedForCalibration" class="btn btn-sm"
-                (click)="markForCalibration(feedback)">
-          Use for Calibration
-        </button>
-        <span *ngIf="feedback.usedForCalibration" class="calibrated">✓ Calibrated</span>
-      </div>
     </div>
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && !showForm && !showOutcomeForm && feedbacks.length === 0 && !error" class="empty-state">
+  <div *ngIf="!loading && !showForm && feedbacks.length === 0 && !error" class="empty-state">
     <h3>No Feedback Yet</h3>
     <button class="btn btn-primary" (click)="openFeedbackForm()">Provide Feedback</button>
   </div>

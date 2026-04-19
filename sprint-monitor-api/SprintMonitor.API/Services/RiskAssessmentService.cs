@@ -151,19 +151,6 @@ public class RiskAssessmentService : IRiskAssessmentService
         return assessment == null ? null : MapToDto(assessment);
     }
 
-    public async Task<RiskAssessmentDto?> UpdateAssessmentOutcomeAsync(int assessmentId, UpdateAssessmentOutcomeDto dto)
-    {
-        var assessment = await _context.RiskAssessments.FindAsync(assessmentId);
-        if (assessment == null) return null;
-
-        assessment.ActualOutcome = dto.ActualOutcome;
-        assessment.ActualCompletedPoints = dto.ActualCompletedPoints;
-        assessment.Notes = dto.Notes;
-
-        await _context.SaveChangesAsync();
-        return await GetAssessmentByIdAsync(assessmentId);
-    }
-
     #region Risk Scoring Logic
 
     private List<RiskFactorDto> ScoreAllFactors(SprintMetricsDto metrics, int plannedPoints, int teamAvailability, int externalDependencies = 0)

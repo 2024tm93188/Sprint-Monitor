@@ -30,8 +30,8 @@ public class RiskFeedbackController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RiskFeedbackDto>> SubmitFeedback([FromBody] CreateRiskFeedbackDto dto)
     {
-        if (string.IsNullOrEmpty(dto.PredictedRisk) || string.IsNullOrEmpty(dto.ActualOutcome))
-            return BadRequest(new { message = "PredictedRisk and ActualOutcome are required" });
+        if (dto.AssessmentId <= 0 || dto.TeamId <= 0 || string.IsNullOrWhiteSpace(dto.ActualOutcome))
+            return BadRequest(new { message = "AssessmentId, TeamId and ActualOutcome are required" });
 
         try
         {
@@ -107,29 +107,4 @@ public class RiskFeedbackController : ControllerBase
         return Ok(comparison);
     }
 
-    /// <summary>
-    /// Get calibration status for a team
-    /// </summary>
-    [HttpGet("team/{teamId}/calibration")]
-    [ProducesResponseType(typeof(CalibrationStatusDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CalibrationStatusDto>> GetCalibrationStatus(int teamId)
-    {
-        var status = await _feedbackService.GetCalibrationStatusAsync(teamId);
-        return Ok(status);
-    }
-
-    /// <summary>
-    /// Mark feedback as used for calibration
-    /// </summary>
-    [HttpPatch("{feedbackId}/mark-calibrated")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> MarkAsUsedForCalibration(int feedbackId)
-    {
-        var success = await _feedbackService.MarkFeedbackAsUsedForCalibrationAsync(feedbackId);
-        if (!success)
-            return NotFound(new { message = $"Feedback with ID {feedbackId} not found" });
-
-        return Ok(new { message = "Feedback marked as used for calibration" });
-    }
 }

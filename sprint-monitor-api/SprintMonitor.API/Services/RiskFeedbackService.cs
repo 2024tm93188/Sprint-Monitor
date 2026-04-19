@@ -16,8 +16,6 @@ public interface IRiskFeedbackService
     Task<RiskFeedbackDto?> GetFeedbackForAssessmentAsync(int assessmentId);
     Task<PredictionAccuracyDto> CalculatePredictionAccuracyAsync(int teamId);
     Task<SprintComparisonAnalysisDto> GetLastThreeSprintComparisonAsync(int teamId);
-    Task<CalibrationStatusDto> GetCalibrationStatusAsync(int teamId);
-    Task<bool> MarkFeedbackAsUsedForCalibrationAsync(int feedbackId);
 }
 
 /// <summary>
@@ -38,33 +36,63 @@ public class RiskFeedbackService : IRiskFeedbackService
     /// </summary>
     public async Task<RiskFeedbackDto> SubmitFeedbackAsync(CreateRiskFeedbackDto dto)
     {
+        var assessment = await _context.RiskAssessments
+            .FirstOrDefaultAsync(a => a.AssessmentId == dto.AssessmentId);
+
+        if (assessment == null)
+        {
+            throw new InvalidOperationException($"Assessment with ID {dto.AssessmentId} not found.");
+        }
+
+        if (assessment.TeamId != dto.TeamId)
+        {
+            throw new InvalidOperationException("Assessment does not belong to the selected team.");
+        }
+
         // Determine user agreement based on agreement level
         bool userAgreement = dto.AgreementLevel == "Accurate";
 
-        var feedback = new RiskFeedback
-        {
-            AssessmentId = dto.AssessmentId,
-            SprintId = dto.SprintId,
-            UserId = dto.UserId,
-            UserName = dto.UserName,
-            UserRole = dto.UserRole,
-            PredictedRisk = dto.PredictedRisk,
-            ActualOutcome = dto.ActualOutcome,
-            UserAgreement = userAgreement,
-            AgreementLevel = dto.AgreementLevel,
-            RecommendationsHelpful = dto.RecommendationsHelpful,
-            RecommendationRating = dto.RecommendationRating,
-            FeedbackComments = dto.FeedbackComments,
-            ImprovementSuggestions = dto.ImprovementSuggestions,
-            ActualPointsCompleted = dto.ActualPointsCompleted,
-            ActualSpillover = dto.ActualSpillover,
-            ActualSpilloverPoints = dto.ActualSpilloverPoints,
-            CreatedAt = DateTime.UtcNow,
-            UsedForCalibration = false
-        };
+        var feedback = await _context.RiskFeedbacks
+            .Include(f => f.Assessment)
+            .Include(f => f.Sprint)
+            .FirstOrDefaultAsync(f => f.AssessmentId == dto.AssessmentId);
 
-        _context.RiskFeedbacks.Add(feedback);
+        if (feedback == null)
+        {
+            feedback = new RiskFeedback
+            {
+                AssessmentId = dto.AssessmentId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.RiskFeedbacks.Add(feedback);
+        }
+
+        feedback.SprintId = dto.SprintId;
+        feedback.UserId = dto.UserId;
+        feedback.UserName = dto.UserName;
+        feedback.UserRole = dto.UserRole;
+        feedback.PredictedRisk = string.IsNullOrWhiteSpace(dto.PredictedRisk)
+            ? assessment.RiskLevel.ToString()
+            : dto.PredictedRisk;
+        feedback.ActualOutcome = dto.ActualOutcome;
+        feedback.UserAgreement = userAgreement;
+        feedback.AgreementLevel = dto.AgreementLevel;
+        feedback.RecommendationsHelpful = dto.RecommendationsHelpful;
+        feedback.RecommendationRating = dto.RecommendationRating;
+        feedback.FeedbackComments = dto.FeedbackComments;
+        feedback.ImprovementSuggestions = dto.ImprovementSuggestions;
+        feedback.ActualPointsCompleted = dto.CompletedPoints ?? dto.ActualPointsCompleted;
+        feedback.ActualSpillover = dto.ActualSpillover;
+        feedback.ActualSpilloverPoints = dto.ActualSpilloverPoints;
+
         await _context.SaveChangesAsync();
+
+        await _context.Entry(feedback).Reference(f => f.Assessment).LoadAsync();
+        if (feedback.SprintId.HasValue)
+        {
+            await _context.Entry(feedback).Reference(f => f.Sprint).LoadAsync();
+        }
 
         return MapToDto(feedback);
     }
@@ -89,6 +117,7 @@ public class RiskFeedbackService : IRiskFeedbackService
     public async Task<RiskFeedbackDto?> GetFeedbackByIdAsync(int feedbackId)
     {
         var feedback = await _context.RiskFeedbacks
+            .Include(f => f.Assessment)
             .Include(f => f.Sprint)
             .FirstOrDefaultAsync(f => f.FeedbackId == feedbackId);
 
@@ -101,6 +130,7 @@ public class RiskFeedbackService : IRiskFeedbackService
     public async Task<RiskFeedbackDto?> GetFeedbackForAssessmentAsync(int assessmentId)
     {
         var feedback = await _context.RiskFeedbacks
+            .Include(f => f.Assessment)
             .Include(f => f.Sprint)
             .FirstOrDefaultAsync(f => f.AssessmentId == assessmentId);
 
@@ -177,16 +207,14 @@ public class RiskFeedbackService : IRiskFeedbackService
             .Take(3)
             .ToListAsync();
 
-        // Get corresponding sprints
         var sprintIds = assessments
             .Where(a => a.SprintId.HasValue)
             .Select(a => a.SprintId!.Value)
+            .Distinct()
             .ToList();
 
         var sprints = await _context.Sprints
-            .Where(s => s.TeamId == teamId)
-            .OrderByDescending(s => s.EndDate ?? s.CreatedAt)
-            .Take(3)
+            .Where(s => sprintIds.Contains(s.SprintId))
             .ToListAsync();
 
         // Get feedbacks for these assessments
@@ -197,37 +225,36 @@ public class RiskFeedbackService : IRiskFeedbackService
 
         var comparisons = new List<SprintComparisonDto>();
 
-        foreach (var sprint in sprints)
+        foreach (var assessment in assessments)
         {
-            var assessment = assessments.FirstOrDefault(a => a.SprintId == sprint.SprintId)
-                ?? assessments.FirstOrDefault();
+            var sprint = assessment.SprintId.HasValue
+                ? sprints.FirstOrDefault(s => s.SprintId == assessment.SprintId.Value)
+                : null;
 
-            var feedback = assessment != null
-                ? feedbacks.FirstOrDefault(f => f.AssessmentId == assessment.AssessmentId)
-                : feedbacks.FirstOrDefault(f => f.SprintId == sprint.SprintId);
+            var feedback = feedbacks.FirstOrDefault(f => f.AssessmentId == assessment.AssessmentId);
 
             comparisons.Add(new SprintComparisonDto
             {
-                AssessmentId = assessment?.AssessmentId ?? 0,
-                SprintId = sprint.SprintId,
-                SprintName = sprint.SprintName ?? $"Sprint {sprint.SprintId}",
-                StartDate = sprint.StartDate,
-                EndDate = sprint.EndDate,
-                PredictedRisk = assessment?.RiskLevel.ToString() ?? "Unknown",
-                PredictedScore = (int)(assessment?.TotalScore ?? 0),
-                ConfidenceLevel = assessment?.Confidence switch
+                AssessmentId = assessment.AssessmentId,
+                SprintId = sprint?.SprintId ?? 0,
+                SprintName = sprint?.SprintName ?? (assessment.SprintId.HasValue ? $"Sprint {assessment.SprintId.Value}" : $"Assessment {assessment.AssessmentId}"),
+                StartDate = sprint?.StartDate,
+                EndDate = sprint?.EndDate,
+                PredictedRisk = assessment.RiskLevel.ToString(),
+                PredictedScore = (int)assessment.TotalScore,
+                ConfidenceLevel = assessment.Confidence switch
                 {
                     AssessmentConfidence.HIGH => 100,
                     AssessmentConfidence.MEDIUM => 66,
                     AssessmentConfidence.LOW => 33,
                     _ => 0
                 },
-                ActualOutcome = feedback?.ActualOutcome ?? DetermineActualOutcome(sprint),
-                CommittedPoints = sprint.CommittedPoints,
-                CompletedPoints = sprint.CompletedPoints,
-                HadSpillover = sprint.HadSpillover,
-                SpilloverPoints = sprint.SpilloverPoints,
-                Recommendations = assessment?.Recommendations?.Select(r => r.Title).ToList() ?? new List<string>(),
+                ActualOutcome = feedback?.ActualOutcome ?? "Pending",
+                CommittedPoints = sprint?.CommittedPoints ?? assessment.PlannedCommitment,
+                CompletedPoints = feedback?.ActualPointsCompleted,
+                HadSpillover = sprint?.HadSpillover ?? false,
+                SpilloverPoints = sprint?.SpilloverPoints ?? 0,
+                Recommendations = assessment.Recommendations?.Select(r => r.Title).ToList() ?? new List<string>(),
                 WasAccurate = feedback?.UserAgreement ?? false,
                 AccuracyLevel = feedback?.AgreementLevel ?? "Pending",
                 HasFeedback = feedback != null,
@@ -275,86 +302,6 @@ public class RiskFeedbackService : IRiskFeedbackService
         };
     }
 
-    /// <summary>
-    /// Get calibration status for a team
-    /// </summary>
-    public async Task<CalibrationStatusDto> GetCalibrationStatusAsync(int teamId)
-    {
-        var accuracy = await CalculatePredictionAccuracyAsync(teamId);
-
-        bool needsCalibration = accuracy.AccuracyPercentage < 60;
-        string recommendation;
-
-        if (accuracy.AccuracyPercentage < 40)
-            recommendation = "CRITICAL: Accuracy is very low. Consider reviewing risk thresholds and rules.";
-        else if (accuracy.AccuracyPercentage < 60)
-            recommendation = "WARNING: Accuracy below target. Adjust sensitivity thresholds.";
-        else if (accuracy.AccuracyPercentage < 80)
-            recommendation = "MODERATE: System is performing adequately. Minor tuning may help.";
-        else
-            recommendation = "GOOD: System accuracy is within acceptable range.";
-
-        // Find actual last-calibrated date from DB (most recent feedback used for calibration)
-        var lastCalibratedFeedback = await _context.RiskFeedbacks
-            .Where(f => f.UsedForCalibration && f.Assessment != null && f.Assessment.TeamId == teamId)
-            .OrderByDescending(f => f.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        var lastCalibrated = lastCalibratedFeedback?.CreatedAt ?? DateTime.UtcNow.AddYears(-1);
-
-        // Count feedback stats
-        var totalFeedbacks = await _context.RiskFeedbacks
-            .Where(f => f.Assessment != null && f.Assessment.TeamId == teamId)
-            .CountAsync();
-
-        var usedForCalibration = await _context.RiskFeedbacks
-            .Where(f => f.UsedForCalibration && f.Assessment != null && f.Assessment.TeamId == teamId)
-            .CountAsync();
-
-        int pendingFeedbacks = totalFeedbacks - usedForCalibration;
-
-        return new CalibrationStatusDto
-        {
-            TeamId = teamId,
-            TotalFeedbacks = accuracy.TotalFeedbacks,
-            FeedbacksUsedForCalibration = usedForCalibration,
-            PendingFeedbacks = pendingFeedbacks,
-            CurrentAccuracy = accuracy.AccuracyPercentage,
-            TargetAccuracy = 80.0,
-            CalibrationNeeded = needsCalibration,
-            CalibrationRecommendation = recommendation,
-            LastCalibrated = lastCalibrated,
-            AccuracyTrend = accuracy.AccuracyTrend,
-            TrendPercentage = accuracy.TrendPercentage
-        };
-    }
-
-    /// <summary>
-    /// Mark feedback as used for calibration
-    /// </summary>
-    public async Task<bool> MarkFeedbackAsUsedForCalibrationAsync(int feedbackId)
-    {
-        var feedback = await _context.RiskFeedbacks.FindAsync(feedbackId);
-        if (feedback == null) return false;
-
-        feedback.UsedForCalibration = true;
-        await _context.SaveChangesAsync();
-        return true;
-    }
-
-    // Helper: Determine actual outcome from sprint data
-    private string DetermineActualOutcome(Sprint sprint)
-    {
-        double completionRate = sprint.CommittedPoints > 0
-            ? (double)sprint.CompletedPoints / sprint.CommittedPoints * 100
-            : 100;
-
-        if (completionRate >= 95 && !sprint.HadSpillover) return "LOW";
-        if (completionRate >= 80) return "MEDIUM";
-        if (completionRate >= 60) return "HIGH";
-        return "CRITICAL";
-    }
-
     // Helper: Generate insights from comparison data
     private List<string> GenerateInsights(List<SprintComparisonDto> comparisons, List<RiskFeedback> feedbacks)
     {
@@ -364,7 +311,7 @@ public class RiskFeedbackService : IRiskFeedbackService
         if (comparisons.Count >= 2)
         {
             var rates = comparisons.Select(c => c.CommittedPoints > 0
-                ? (double)c.CompletedPoints / c.CommittedPoints * 100
+                ? (double)(c.CompletedPoints ?? 0) / c.CommittedPoints * 100
                 : 100).ToList();
 
             if (rates[0] > rates[1] + 5)
@@ -413,6 +360,7 @@ public class RiskFeedbackService : IRiskFeedbackService
         {
             FeedbackId = f.FeedbackId,
             AssessmentId = f.AssessmentId,
+            TeamId = f.Assessment?.TeamId ?? 0,
             SprintId = f.SprintId,
             SprintName = f.Sprint?.SprintName,
             UserId = f.UserId,

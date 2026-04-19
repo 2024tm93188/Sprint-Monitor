@@ -7,6 +7,7 @@ public class RiskFeedbackDto
 {
     public int FeedbackId { get; set; }
     public int AssessmentId { get; set; }
+    public int TeamId { get; set; }
     public int? SprintId { get; set; }
     public string? SprintName { get; set; }
     
@@ -38,6 +39,7 @@ public class RiskFeedbackDto
 public class CreateRiskFeedbackDto
 {
     public int AssessmentId { get; set; }
+    public int TeamId { get; set; }
     public int? SprintId { get; set; }
     
     public string? UserId { get; set; }
@@ -46,6 +48,7 @@ public class CreateRiskFeedbackDto
     
     public string PredictedRisk { get; set; } = string.Empty;
     public string ActualOutcome { get; set; } = string.Empty;
+    public int? CompletedPoints { get; set; }
     
     /// <summary>
     /// Agreement level: Accurate, PartiallyAccurate, Incorrect
@@ -106,7 +109,7 @@ public class SprintComparisonDto
     // Actual Outcome
     public string ActualOutcome { get; set; } = string.Empty;
     public int CommittedPoints { get; set; }
-    public int CompletedPoints { get; set; }
+    public int? CompletedPoints { get; set; }
     public bool HadSpillover { get; set; }
     public int SpilloverPoints { get; set; }
     
@@ -141,22 +144,3 @@ public class SprintComparisonAnalysisDto
     public DateTime GeneratedAt { get; set; }
 }
 
-/// <summary>
-/// DTO for calibration status
-/// </summary>
-public class CalibrationStatusDto
-{
-    public int TeamId { get; set; }
-    public int TotalFeedbacks { get; set; }
-    public int FeedbacksUsedForCalibration { get; set; }
-    public int PendingFeedbacks { get; set; }
-    public double CurrentAccuracy { get; set; }
-    public double TargetAccuracy { get; set; } = 80.0;
-    /// <summary>Alias for NeedsCalibration — kept for frontend compatibility</summary>
-    public bool CalibrationNeeded { get; set; }
-    public bool NeedsCalibration { get => CalibrationNeeded; set => CalibrationNeeded = value; }
-    public string CalibrationRecommendation { get; set; } = string.Empty;
-    public DateTime LastCalibrated { get; set; }
-    public string AccuracyTrend { get; set; } = "STABLE"; // IMPROVING, DECLINING, STABLE
-    public double TrendPercentage { get; set; }
-}

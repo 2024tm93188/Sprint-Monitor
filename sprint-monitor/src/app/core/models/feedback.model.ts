@@ -1,6 +1,6 @@
 /**
  * Risk Feedback Models
- * Human relevance feedback for prediction accuracy and calibration.
+ * Human relevance feedback for prediction accuracy and comparison.
  * Field names are aligned with the backend C# DTOs.
  */
 
@@ -8,6 +8,7 @@ export interface RiskFeedback {
   feedbackId: number;
   /** Maps to backend AssessmentId */
   assessmentId: number;
+  teamId: number;
   sprintId?: number;
   sprintName?: string;
 
@@ -27,12 +28,7 @@ export interface RiskFeedback {
   feedbackComments?: string;
   improvementSuggestions?: string;
 
-  actualPointsCompleted?: number;
-  actualSpillover?: boolean;
-  actualSpilloverPoints?: number;
-
   createdAt: Date;
-  usedForCalibration: boolean;
 }
 
 export type AgreementLevel = 'Accurate' | 'PartiallyAccurate' | 'Incorrect';
@@ -40,6 +36,7 @@ export type AgreementLevel = 'Accurate' | 'PartiallyAccurate' | 'Incorrect';
 export interface CreateRiskFeedback {
   /** Maps to backend AssessmentId */
   assessmentId: number;
+  teamId: number;
   sprintId?: number;
 
   userId?: string;
@@ -47,7 +44,8 @@ export interface CreateRiskFeedback {
   userRole?: string;
 
   predictedRisk?: string;
-  actualOutcome?: string;
+  actualOutcome: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+  completedPoints?: number;
   agreementLevel: AgreementLevel;
 
   /** Maps to backend RecommendationsHelpful */
@@ -56,10 +54,6 @@ export interface CreateRiskFeedback {
 
   feedbackComments?: string;
   improvementSuggestions?: string;
-
-  actualPointsCompleted?: number;
-  actualSpillover?: boolean;
-  actualSpilloverPoints?: number;
 }
 
 export interface PredictionAccuracy {
@@ -112,7 +106,7 @@ export interface SprintComparison {
   // Actual Outcome
   actualOutcome: string;
   committedPoints: number;
-  completedPoints: number;
+  completedPoints?: number;
   hadSpillover: boolean;
   spilloverPoints: number;
 
@@ -147,19 +141,4 @@ export interface SprintComparisonAnalysis {
   keyInsights: string[];
 
   generatedAt?: Date;
-}
-
-/** Matches backend CalibrationStatusDto exactly */
-export interface CalibrationStatus {
-  teamId: number;
-  totalFeedbacks: number;
-  feedbacksUsedForCalibration: number;
-  pendingFeedbacks: number;
-  currentAccuracy: number;
-  targetAccuracy: number;
-  calibrationNeeded: boolean;
-  calibrationRecommendation: string;
-  lastCalibrated: Date;
-  accuracyTrend: string;
-  trendPercentage: number;
 }

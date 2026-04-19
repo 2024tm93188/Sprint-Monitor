@@ -183,8 +183,16 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<SprintMonitorDbContext>();
     // Apply any pending migrations
     context.Database.Migrate();
-    // Seed database with sample data
-    DbSeeder.Seed(context);
+    // Seed only on first run (empty DB) so generated assessment history is preserved
+    if (!context.Teams.Any())
+    {
+        DbSeeder.Seed(context);
+    }
+    else
+    {
+        // Add any missing canonical teams/sprints without resetting existing runtime data.
+        DbSeeder.EnsureCanonicalTeamsAndSprints(context);
+    }
 }
 
 app.Run();

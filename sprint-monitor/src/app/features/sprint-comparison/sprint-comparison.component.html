@@ -47,7 +47,12 @@
 
             <div class="row">
               <span class="label">Points:</span>
-              <span class="value">{{ sprint.committedPoints }} → {{ sprint.completedPoints }} ({{ getCompletionRate(sprint) }}%)</span>
+              <span class="value">
+                {{ sprint.committedPoints }} → {{ sprint.completedPoints ?? 'Pending' }}
+                <span *ngIf="sprint.completedPoints !== undefined && sprint.completedPoints !== null">
+                  ({{ getCompletionRate(sprint) }}%)
+                </span>
+              </span>
             </div>
 
             <div class="row">
@@ -57,9 +62,9 @@
               </span>
             </div>
 
-            <div *ngIf="sprint.actualOutcome" class="row">
+            <div class="row">
               <span class="label">Outcome:</span>
-              <span class="value">{{ sprint.actualOutcome }}</span>
+              <span class="value">{{ sprint.actualOutcome || 'Pending' }}</span>
             </div>
           </div>
         </div>

@@ -178,18 +178,4 @@ export class ApiService {
   getAssessment(id: number): Observable<RiskAssessmentResponseDto> {
     return this.http.get<RiskAssessmentResponseDto>(`${this.baseUrl}/riskassessment/${id}`);
   }
-
-  // ---- Actual Outcome ----
-  updateAssessmentOutcome(assessmentId: number, dto: UpdateAssessmentOutcomeDto): Observable<RiskAssessmentResponseDto> {
-    return this.http.patch<RiskAssessmentResponseDto>(
-      `${this.baseUrl}/riskassessment/${assessmentId}/outcome`,
-      dto
-    );
-  }
-}
-
-export interface UpdateAssessmentOutcomeDto {
-  actualOutcome: 'PENDING' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
-  actualCompletedPoints?: number;
-  notes?: string;
 }

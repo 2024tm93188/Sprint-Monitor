@@ -6,13 +6,12 @@ import {
   RiskFeedback,
   CreateRiskFeedback,
   PredictionAccuracy,
-  SprintComparisonAnalysis,
-  CalibrationStatus
+  SprintComparisonAnalysis
 } from '../models/feedback.model';
 
 /**
  * Risk Feedback Service
- * Manages human relevance feedback for prediction accuracy and system calibration
+ * Manages human relevance feedback for prediction accuracy and sprint comparison
  */
 @Injectable({
   providedIn: 'root'
@@ -61,20 +60,6 @@ export class RiskFeedbackService {
    */
   getSprintComparison(teamId: number): Observable<SprintComparisonAnalysis> {
     return this.http.get<SprintComparisonAnalysis>(`${this.baseUrl}/team/${teamId}/comparison`);
-  }
-
-  /**
-   * Get calibration status for a team
-   */
-  getCalibrationStatus(teamId: number): Observable<CalibrationStatus> {
-    return this.http.get<CalibrationStatus>(`${this.baseUrl}/team/${teamId}/calibration`);
-  }
-
-  /**
-   * Mark feedback as used for calibration
-   */
-  markAsUsedForCalibration(feedbackId: number): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/${feedbackId}/mark-calibrated`, {});
   }
 
   /**

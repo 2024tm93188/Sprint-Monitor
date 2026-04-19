@@ -8,6 +8,25 @@ namespace SprintMonitor.API.Data;
 /// </summary>
 public static class DbSeeder
 {
+    private static readonly Dictionary<string, (int minCommitted, int maxCommitted, int availability, int deps, string pattern)> TeamPatterns =
+        new()
+        {
+            // RDA: Emergency-focused, high variability, many dependencies
+            { "RDA (Rapid Damage Assessment)", (18, 60, 85, 5, "Emergency") },
+            // catnet: Steady platform team, good predictability
+            { "catnet", (25, 45, 92, 2, "Steady") },
+            // oneplatform: Enablement team, scope creep challenges
+            { "oneplatform", (28, 55, 88, 4, "Enablement") },
+            // Property Insights: Product team, consistent performance
+            { "Property Insights", (22, 40, 90, 2, "Product") },
+            // Portfolio Insights: Analytics team, variable analytics work
+            { "Portfolio Insights", (20, 50, 87, 3, "Analytics") },
+            // Impact +: Fast-moving business impact team with moderate coordination overhead
+            { "Impact +", (24, 48, 89, 3, "Impact") },
+            // PUMA: Project Underwriting Management Application, regulated domain with dependency-heavy delivery
+            { "PUMA (Project Underwriting Management Application)", (26, 52, 86, 4, "Underwriting") }
+        };
+
     public static void Seed(SprintMonitorDbContext context)
     {
         ResetNonAuthData(context);
@@ -18,7 +37,9 @@ public static class DbSeeder
             ("catnet", 7, "Catnet platform engineering team"),
             ("oneplatform", 9, "Shared oneplatform enablement team"),
             ("Property Insights", 6, "Property insights product engineering team"),
-            ("Portfolio Insights", 6, "Portfolio insights analytics and delivery team")
+            ("Portfolio Insights", 6, "Portfolio insights analytics and delivery team"),
+            ("Impact +", 7, "Impact + product delivery and business outcomes team"),
+            ("PUMA (Project Underwriting Management Application)", 8, "Project Underwriting Management Application engineering team")
         };
 
         var teams = new List<Team>();
@@ -39,8 +60,55 @@ public static class DbSeeder
             EnsureDefaultTeamSettings(context, team.TeamId);
         }
 
-        // Seed 123 historical sprints across all teams
+        // Seed historical sprints across all teams
         SeedHistoricalSprints(context, teams);
+    }
+
+    /// <summary>
+    /// Add missing canonical teams and baseline sprint history to an existing DB without resetting data.
+    /// Safe to run on each startup.
+    /// </summary>
+    public static void EnsureCanonicalTeamsAndSprints(SprintMonitorDbContext context)
+    {
+        var canonicalTeams = new List<(string TeamName, int TeamSize, string Description)>
+        {
+            ("RDA (Rapid Damage Assessment)", 8, "Rapid Damage Assessment delivery team"),
+            ("catnet", 7, "Catnet platform engineering team"),
+            ("oneplatform", 9, "Shared oneplatform enablement team"),
+            ("Property Insights", 6, "Property insights product engineering team"),
+            ("Portfolio Insights", 6, "Portfolio insights analytics and delivery team"),
+            ("Impact +", 7, "Impact + product delivery and business outcomes team"),
+            ("PUMA (Project Underwriting Management Application)", 8, "Project Underwriting Management Application engineering team")
+        };
+
+        var addedTeams = new List<Team>();
+        foreach (var seed in canonicalTeams)
+        {
+            var exists = context.Teams.Any(t => t.TeamName == seed.TeamName);
+            if (exists)
+            {
+                continue;
+            }
+
+            var team = new Team
+            {
+                TeamName = seed.TeamName,
+                TeamSize = seed.TeamSize,
+                Description = seed.Description,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            context.Teams.Add(team);
+            context.SaveChanges();
+            EnsureDefaultTeamSettings(context, team.TeamId);
+            addedTeams.Add(team);
+        }
+
+        if (addedTeams.Count > 0)
+        {
+            SeedHistoricalSprints(context, addedTeams);
+        }
     }
 
     private static void ResetNonAuthData(SprintMonitorDbContext context)
@@ -107,26 +175,16 @@ public static class DbSeeder
         var sprints = new List<Sprint>();
         var baseDate = DateTime.UtcNow.AddMonths(-10);
 
-        // Team-specific sprint patterns
-        var teamPatterns = new Dictionary<string, (int minCommitted, int maxCommitted, int availability, int deps, string pattern)>
-        {
-            // RDA: Emergency-focused, high variability, many dependencies
-            { "RDA (Rapid Damage Assessment)", (18, 60, 85, 5, "Emergency") },
-            // catnet: Steady platform team, good predictability
-            { "catnet", (25, 45, 92, 2, "Steady") },
-            // oneplatform: Enablement team, scope creep challenges
-            { "oneplatform", (28, 55, 88, 4, "Enablement") },
-            // Property Insights: Product team, consistent performance
-            { "Property Insights", (22, 40, 90, 2, "Product") },
-            // Portfolio Insights: Analytics team, variable analytics work
-            { "Portfolio Insights", (20, 50, 87, 3, "Analytics") }
-        };
-
         int sprintIndex = 1;
         
         foreach (var team in teams)
         {
-            var (minCommitted, maxCommitted, availability, deps, pattern) = teamPatterns[team.TeamName];
+            if (!TeamPatterns.TryGetValue(team.TeamName, out var patternDef))
+            {
+                continue;
+            }
+
+            var (minCommitted, maxCommitted, availability, deps, pattern) = patternDef;
             var sprintsPerTeam = 30 + random.Next(0, 10); // 30-39 sprints per team
 
             for (int i = 0; i < sprintsPerTeam; i++)
@@ -178,6 +236,24 @@ public static class DbSeeder
                         removedPoints = random.Next(0, 4);
                         teamAvailability = random.Next(88, 98);
                         externalDeps = random.Next(0, 3);
+                        break;
+
+                    case "Impact": // Impact + - outcome-driven with moderate scope changes
+                        committedPoints = random.Next(minCommitted, maxCommitted);
+                        completedPoints = (int)(committedPoints * (0.85 + random.NextDouble() * 0.25)); // 85-110%
+                        addedPoints = random.Next(2, 10);
+                        removedPoints = random.Next(0, 4);
+                        teamAvailability = random.Next(86, 96);
+                        externalDeps = random.Next(1, 4);
+                        break;
+
+                    case "Underwriting": // PUMA - regulated workflow and higher dependency complexity
+                        committedPoints = random.Next(minCommitted, maxCommitted);
+                        completedPoints = (int)(committedPoints * (0.78 + random.NextDouble() * 0.28)); // 78-106%
+                        addedPoints = random.Next(4, 14);
+                        removedPoints = random.Next(1, 6);
+                        teamAvailability = random.Next(82, 93);
+                        externalDeps = random.Next(2, 6);
                         break;
 
                     default: // Portfolio Insights - analytics patterns
