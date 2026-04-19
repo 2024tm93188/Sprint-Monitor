@@ -107,18 +107,20 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display risk badge when assessment is provided', () => {
-      const riskBadge = fixture.debugElement.query(By.css('.summary-card'));
+      const riskBadge = fixture.debugElement.query(By.css('.status-chip.risk-medium'));
       expect(riskBadge).toBeTruthy();
     });
 
     it('should display correct risk level text', () => {
-      const riskLevel = fixture.debugElement.query(By.css('.summary-item .value.risk-medium'));
+      const riskLevel = fixture.debugElement.query(By.css('.status-chip.risk-medium'));
       expect(riskLevel.nativeElement.textContent).toContain('MEDIUM');
     });
 
     it('should display total score', () => {
-      const values = fixture.debugElement.queryAll(By.css('.summary-item .value'));
-      expect(values[1].nativeElement.textContent).toContain('7 / 15');
+      const scoreValue = fixture.debugElement.query(By.css('.risk-score-card .risk-score-value'));
+      const scoreMax = fixture.debugElement.query(By.css('.risk-score-card .kpi-subvalue'));
+      expect(scoreValue.nativeElement.textContent).toContain('7');
+      expect(scoreMax.nativeElement.textContent).toContain('15');
     });
   });
 
@@ -342,18 +344,18 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display metrics card when metrics is provided', () => {
-      const metricsCard = fixture.debugElement.query(By.css('.metrics-card'));
+      const metricsCard = fixture.debugElement.query(By.css('.detail-card.metrics-focus'));
       expect(metricsCard).toBeTruthy();
     });
 
     it('should display sprint count in subtitle', () => {
-      const firstRow = fixture.debugElement.query(By.css('.metrics-card .row-item .value'));
-      expect(firstRow.nativeElement.textContent).toContain('5');
+      const summaryValues = fixture.debugElement.queryAll(By.css('.metric-summary-grid .mini-metric strong'));
+      expect(summaryValues[1].nativeElement.textContent).toContain('5');
     });
 
     it('should display all metric items', () => {
-      const metricItems = fixture.debugElement.queryAll(By.css('.metrics-card .row-item'));
-      expect(metricItems.length).toBe(6);
+      const metricItems = fixture.debugElement.queryAll(By.css('.metrics-focus .metric-row'));
+      expect(metricItems.length).toBe(4);
     });
   });
 
@@ -364,7 +366,9 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display factors card', () => {
-      const factorsCard = fixture.debugElement.query(By.css('.factors-card'));
+      const factorsCardTitle = fixture.debugElement.queryAll(By.css('.detail-card h3'))
+        .find(el => el.nativeElement.textContent.includes('Risk Factor Breakdown'));
+      const factorsCard = factorsCardTitle?.parent;
       expect(factorsCard).toBeTruthy();
     });
 
