@@ -66,7 +66,7 @@ public class RiskAssessmentServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task EvaluateRiskAsync_ReturnsModerateRisk_ForModerateMetrics()
+    public async Task EvaluateRiskAsync_ReturnsHighRisk_ForModerateMetricsWithAvailabilityPenalty()
     {
         // Arrange
         SetupMockMetrics(new SprintMetricsDto
@@ -94,8 +94,8 @@ public class RiskAssessmentServiceTests : IDisposable
         var result = await _service.EvaluateRiskAsync(request);
 
         // Assert
-        Assert.Equal("MEDIUM", result.RiskLevel);
-        Assert.True(result.TotalScore > 3 && result.TotalScore <= 6);
+        Assert.Equal("HIGH", result.RiskLevel);
+        Assert.True(result.TotalScore > 6);
     }
 
     [Fact]

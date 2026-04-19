@@ -2,17 +2,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { SprintInputComponent } from './sprint-input.component';
 import { SprintService } from '../../core/services/sprint.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { Sprint, SprintMetrics } from '../../core/models/sprint.model';
+import { ApiService } from '../../core/services/api.service';
+import { TeamService } from '../../core/services/team.service';
 
 describe('SprintInputComponent', () => {
   let component: SprintInputComponent;
   let fixture: ComponentFixture<SprintInputComponent>;
   let sprintServiceSpy: jasmine.SpyObj<SprintService>;
   let metricsServiceSpy: jasmine.SpyObj<MetricsService>;
+  let apiServiceSpy: jasmine.SpyObj<ApiService>;
+  let teamServiceSpy: jasmine.SpyObj<TeamService>;
 
   const mockSprints: Sprint[] = [
     {
@@ -57,20 +63,49 @@ describe('SprintInputComponent', () => {
       'calculateMetrics',
       'calculateRecommendedCommitment'
     ]);
+    apiServiceSpy = jasmine.createSpyObj('ApiService', ['getSprints']);
+    teamServiceSpy = jasmine.createSpyObj('TeamService', [
+      'getSelectedTeam',
+      'getSelectedTeamSnapshot',
+      'getSelectedTeamId'
+    ]);
 
     sprintServiceSpy.getHistoricalSprintsSnapshot.and.returnValue(mockSprints);
     metricsServiceSpy.calculateMetrics.and.returnValue(mockMetrics);
     metricsServiceSpy.calculateRecommendedCommitment.and.returnValue(21);
+    apiServiceSpy.getSprints.and.returnValue(of([]));
+    teamServiceSpy.getSelectedTeam.and.returnValue(of({
+      teamId: 1,
+      teamName: 'Test Team',
+      description: 'Test team for specs',
+      createdAt: new Date().toISOString(),
+      teamSize: 5,
+      sprintCount: 2,
+      isActive: true
+    }));
+    teamServiceSpy.getSelectedTeamSnapshot.and.returnValue({
+      teamId: 1,
+      teamName: 'Test Team',
+      description: 'Test team for specs',
+      createdAt: new Date().toISOString(),
+      teamSize: 5,
+      sprintCount: 2,
+      isActive: true
+    });
+    teamServiceSpy.getSelectedTeamId.and.returnValue(1);
 
     await TestBed.configureTestingModule({
       imports: [
         SprintInputComponent,
         ReactiveFormsModule,
-        NoopAnimationsModule
+        NoopAnimationsModule,
+        HttpClientTestingModule
       ],
       providers: [
         { provide: SprintService, useValue: sprintServiceSpy },
-        { provide: MetricsService, useValue: metricsServiceSpy }
+        { provide: MetricsService, useValue: metricsServiceSpy },
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: TeamService, useValue: teamServiceSpy }
       ]
     }).compileComponents();
 
@@ -215,8 +250,13 @@ describe('SprintInputComponent', () => {
 
     it('should display recommended commitment hint', () => {
       fixture.detectChanges();
-      const hintElement = fixture.debugElement.query(By.css('mat-hint'));
-      expect(hintElement.nativeElement.textContent).toContain('21');
+      const hintElements = fixture.debugElement.queryAll(By.css('mat-hint'));
+      const recommendedHint = hintElements
+        .map(h => h.nativeElement.textContent as string)
+        .find(text => text.includes('Recommended:'));
+
+      expect(recommendedHint).toBeTruthy();
+      expect(recommendedHint).toContain('21');
     });
 
     it('should disable submit button when form is invalid', () => {

@@ -107,18 +107,18 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display risk badge when assessment is provided', () => {
-      const riskBadge = fixture.debugElement.query(By.css('.risk-badge-card'));
+      const riskBadge = fixture.debugElement.query(By.css('.summary-card'));
       expect(riskBadge).toBeTruthy();
     });
 
     it('should display correct risk level text', () => {
-      const riskLevel = fixture.debugElement.query(By.css('.risk-level'));
+      const riskLevel = fixture.debugElement.query(By.css('.summary-item .value.risk-medium'));
       expect(riskLevel.nativeElement.textContent).toContain('MEDIUM');
     });
 
     it('should display total score', () => {
-      const score = fixture.debugElement.query(By.css('.score'));
-      expect(score.nativeElement.textContent).toContain('7');
+      const values = fixture.debugElement.queryAll(By.css('.summary-item .value'));
+      expect(values[1].nativeElement.textContent).toContain('7 / 15');
     });
   });
 
@@ -347,12 +347,12 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display sprint count in subtitle', () => {
-      const subtitle = fixture.debugElement.query(By.css('.metrics-card mat-card-subtitle'));
-      expect(subtitle.nativeElement.textContent).toContain('5');
+      const firstRow = fixture.debugElement.query(By.css('.metrics-card .row-item .value'));
+      expect(firstRow.nativeElement.textContent).toContain('5');
     });
 
     it('should display all metric items', () => {
-      const metricItems = fixture.debugElement.queryAll(By.css('.metric-item'));
+      const metricItems = fixture.debugElement.queryAll(By.css('.metrics-card .row-item'));
       expect(metricItems.length).toBe(6);
     });
   });
@@ -369,7 +369,7 @@ describe('RiskDashboardComponent', () => {
     });
 
     it('should display all risk factors', () => {
-      const factorItems = fixture.debugElement.queryAll(By.css('.factor-item'));
+      const factorItems = fixture.debugElement.queryAll(By.css('.factor-row'));
       expect(factorItems.length).toBe(5);
     });
 
