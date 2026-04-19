@@ -83,6 +83,7 @@ export class SprintInputComponent implements OnInit {
     // Reload sprints dropdown when team changes
     this.teamService.getSelectedTeam().subscribe(team => {
       if (team) {
+        this.planningForm.patchValue({ teamSize: team.teamSize });
         this.loadAvailableSprints();
       }
     });
@@ -156,10 +157,11 @@ export class SprintInputComponent implements OnInit {
    * Load sample data for demonstration purposes
    */
   loadSampleData(): void {
+    const selectedTeam = this.teamService.getSelectedTeamSnapshot();
     this.planningForm.patchValue({
       plannedPoints: 35,
       teamAvailability: 90,
-      teamSize: 5,
+      teamSize: selectedTeam?.teamSize ?? 5,
       externalDependencies: 2,
       sprintId: null
     });

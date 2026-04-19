@@ -1,0 +1,283 @@
+<div class="feasibility-container">
+  <header class="page-header">
+    <h1>📋 Feasibility Study</h1>
+    <p class="subtitle">Industry Validation & Implementation Viability Assessment</p>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards" *ngIf="summary">
+    <div class="summary-card">
+      <div class="card-icon">📊</div>
+      <div class="card-content">
+        <span class="card-value">{{ summary.totalStudies }}</span>
+        <span class="card-label">Total Studies</span>
+      </div>
+    </div>
+    <div class="summary-card approved">
+      <div class="card-icon">✅</div>
+      <div class="card-content">
+        <span class="card-value">{{ summary.approvedCount }}</span>
+        <span class="card-label">Approved</span>
+      </div>
+    </div>
+    <div class="summary-card pending">
+      <div class="card-icon">⏳</div>
+      <div class="card-content">
+        <span class="card-value">{{ summary.pendingCount }}</span>
+        <span class="card-label">Pending</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">📈</div>
+      <div class="card-content">
+        <span class="card-value">{{ summary.averageScore | number:'1.0-0' }}%</span>
+        <span class="card-label">Avg Score</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn btn-primary" (click)="openNewForm()">
+      ➕ New Feasibility Study
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading feasibility studies...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-banner">
+    ⚠️ {{ error }}
+    <button (click)="error = null">×</button>
+  </div>
+
+  <!-- Feasibility Form -->
+  <div *ngIf="showForm" class="feasibility-form-container">
+    <div class="form-header">
+      <h2>{{ isEditing ? 'Edit' : 'New' }} Feasibility Study</h2>
+      <button class="btn-close" (click)="cancelForm()">×</button>
+    </div>
+    
+    <form [formGroup]="feasibilityForm" (ngSubmit)="saveStudy()">
+      <!-- Feasibility Checklist -->
+      <div class="form-section">
+        <h3>Feasibility Assessment</h3>
+        <div class="score-preview">
+          Current Score: <strong [class]="'score-' + getScoreColor(calculateScore())">
+            {{ calculateScore() }}%
+          </strong>
+        </div>
+        
+        <div class="feasibility-grid">
+          <!-- Technical Feasibility -->
+          <div class="feasibility-item">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="technicalFeasibility">
+              <span class="checkmark"></span>
+              <span class="label-text">🔧 Technical Feasibility</span>
+            </label>
+            <textarea formControlName="technicalNotes" 
+                      placeholder="Technical implementation notes..."></textarea>
+          </div>
+
+          <!-- Operational Feasibility -->
+          <div class="feasibility-item">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="operationalFeasibility">
+              <span class="checkmark"></span>
+              <span class="label-text">⚙️ Operational Feasibility</span>
+            </label>
+            <textarea formControlName="operationalNotes" 
+                      placeholder="Operational workflow notes..."></textarea>
+          </div>
+
+          <!-- Organizational Feasibility -->
+          <div class="feasibility-item">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="organizationalFeasibility">
+              <span class="checkmark"></span>
+              <span class="label-text">🏢 Organizational Feasibility</span>
+            </label>
+            <textarea formControlName="organizationalNotes" 
+                      placeholder="Organizational alignment notes..."></textarea>
+          </div>
+
+          <!-- Integration Feasibility -->
+          <div class="feasibility-item">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="integrationFeasibility">
+              <span class="checkmark"></span>
+              <span class="label-text">🔗 Integration Feasibility</span>
+            </label>
+            <textarea formControlName="integrationNotes" 
+                      placeholder="Integration with existing tools..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Industry Mentor Validation -->
+      <div class="form-section">
+        <h3>🎓 Industry Mentor Validation</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Approved By</label>
+            <input type="text" formControlName="approvedBy" 
+                   placeholder="Industry mentor name">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select formControlName="status">
+              <option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mentor Comments</label>
+          <textarea formControlName="mentorComments" rows="3"
+                    placeholder="Industry mentor's feedback and validation..."></textarea>
+        </div>
+      </div>
+
+      <!-- Analysis Section -->
+      <div class="form-section">
+        <h3>📊 Implementation Analysis</h3>
+        <div class="form-group">
+          <label>Expected Benefits</label>
+          <textarea formControlName="expectedBenefits" rows="2"
+                    placeholder="Describe expected benefits from implementation..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Adoption Challenges</label>
+          <textarea formControlName="adoptionChallenges" rows="2"
+                    placeholder="Identify potential adoption challenges..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Scalability Considerations</label>
+          <textarea formControlName="scalabilityConsiderations" rows="2"
+                    placeholder="Describe scalability considerations..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancelForm()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+          {{ isEditing ? 'Update' : 'Create' }} Study
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Studies List -->
+  <div *ngIf="!showForm && feasibilityStudies.length > 0" class="studies-list">
+    <div *ngFor="let study of feasibilityStudies" class="study-card">
+      <div class="study-header">
+        <h3>{{ study.teamName || 'Team ' + study.teamId }}</h3>
+        <span class="status-badge" [class]="'status-' + getStatusColor(study.status)">
+          {{ study.status }}
+        </span>
+      </div>
+      
+      <div class="study-score">
+        <div class="score-bar">
+          <div class="score-fill" [style.width.%]="study.overallScore"
+               [class]="'fill-' + getScoreColor(study.overallScore)"></div>
+        </div>
+        <span class="score-value">{{ study.overallScore }}%</span>
+      </div>
+
+      <div class="feasibility-checks">
+        <span [class.checked]="study.technicalFeasibility">🔧 Technical</span>
+        <span [class.checked]="study.operationalFeasibility">⚙️ Operational</span>
+        <span [class.checked]="study.organizationalFeasibility">🏢 Organizational</span>
+        <span [class.checked]="study.integrationFeasibility">🔗 Integration</span>
+      </div>
+
+      <div *ngIf="study.mentorComments" class="mentor-section">
+        <strong>🎓 Mentor Validation:</strong>
+        <p>{{ study.mentorComments }}</p>
+        <small *ngIf="study.approvedBy">— {{ study.approvedBy }}</small>
+      </div>
+
+      <div class="study-actions">
+        <button class="btn btn-sm" (click)="viewStudy(study)">View</button>
+        <button class="btn btn-sm" (click)="editStudy(study)">Edit</button>
+        <button class="btn btn-sm btn-danger" (click)="deleteStudy(study)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Study Detail -->
+  <div *ngIf="selectedStudy && !showForm" class="study-detail">
+    <div class="detail-header">
+      <h2>Feasibility Study Details</h2>
+      <button class="btn-close" (click)="selectedStudy = null">×</button>
+    </div>
+    
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h4>Technical Feasibility</h4>
+        <p class="status" [class.passed]="selectedStudy.technicalFeasibility">
+          {{ selectedStudy.technicalFeasibility ? '✅ Feasible' : '❌ Not Feasible' }}
+        </p>
+        <p *ngIf="selectedStudy.technicalNotes">{{ selectedStudy.technicalNotes }}</p>
+      </div>
+      
+      <div class="detail-section">
+        <h4>Operational Feasibility</h4>
+        <p class="status" [class.passed]="selectedStudy.operationalFeasibility">
+          {{ selectedStudy.operationalFeasibility ? '✅ Feasible' : '❌ Not Feasible' }}
+        </p>
+        <p *ngIf="selectedStudy.operationalNotes">{{ selectedStudy.operationalNotes }}</p>
+      </div>
+      
+      <div class="detail-section">
+        <h4>Organizational Feasibility</h4>
+        <p class="status" [class.passed]="selectedStudy.organizationalFeasibility">
+          {{ selectedStudy.organizationalFeasibility ? '✅ Feasible' : '❌ Not Feasible' }}
+        </p>
+        <p *ngIf="selectedStudy.organizationalNotes">{{ selectedStudy.organizationalNotes }}</p>
+      </div>
+      
+      <div class="detail-section">
+        <h4>Integration Feasibility</h4>
+        <p class="status" [class.passed]="selectedStudy.integrationFeasibility">
+          {{ selectedStudy.integrationFeasibility ? '✅ Feasible' : '❌ Not Feasible' }}
+        </p>
+        <p *ngIf="selectedStudy.integrationNotes">{{ selectedStudy.integrationNotes }}</p>
+      </div>
+    </div>
+
+    <div class="detail-section full-width" *ngIf="selectedStudy.expectedBenefits">
+      <h4>Expected Benefits</h4>
+      <p>{{ selectedStudy.expectedBenefits }}</p>
+    </div>
+
+    <div class="detail-section full-width" *ngIf="selectedStudy.adoptionChallenges">
+      <h4>Adoption Challenges</h4>
+      <p>{{ selectedStudy.adoptionChallenges }}</p>
+    </div>
+
+    <div class="detail-section full-width" *ngIf="selectedStudy.scalabilityConsiderations">
+      <h4>Scalability Considerations</h4>
+      <p>{{ selectedStudy.scalabilityConsiderations }}</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !showForm && feasibilityStudies.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No Feasibility Studies Yet</h3>
+    <p>Create your first feasibility study to document implementation viability.</p>
+    <button class="btn btn-primary" (click)="openNewForm()">
+      Create Feasibility Study
+    </button>
+  </div>
+</div>

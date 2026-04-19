@@ -23,6 +23,7 @@ public class TeamService : ITeamService
             {
                 TeamId = t.TeamId,
                 TeamName = t.TeamName,
+                TeamSize = t.TeamSize,
                 Description = t.Description,
                 CreatedAt = t.CreatedAt,
                 IsActive = t.IsActive,
@@ -43,6 +44,7 @@ public class TeamService : ITeamService
         {
             TeamId = team.TeamId,
             TeamName = team.TeamName,
+            TeamSize = team.TeamSize,
             Description = team.Description,
             CreatedAt = team.CreatedAt,
             IsActive = team.IsActive,
@@ -55,6 +57,7 @@ public class TeamService : ITeamService
         var team = new Team
         {
             TeamName = dto.TeamName,
+            TeamSize = dto.TeamSize,
             Description = dto.Description,
             CreatedAt = DateTime.UtcNow,
             IsActive = true
@@ -67,6 +70,7 @@ public class TeamService : ITeamService
         {
             TeamId = team.TeamId,
             TeamName = team.TeamName,
+            TeamSize = team.TeamSize,
             Description = team.Description,
             CreatedAt = team.CreatedAt,
             IsActive = team.IsActive,
@@ -83,6 +87,7 @@ public class TeamService : ITeamService
         if (team == null) return null;
 
         if (dto.TeamName != null) team.TeamName = dto.TeamName;
+        if (dto.TeamSize.HasValue) team.TeamSize = dto.TeamSize.Value;
         if (dto.Description != null) team.Description = dto.Description;
         if (dto.IsActive.HasValue) team.IsActive = dto.IsActive.Value;
 

@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 export interface TeamDto {
   teamId: number;
   teamName: string;
+  teamSize: number;
   description: string | null;
   createdAt: string;
   isActive: boolean;
@@ -124,7 +125,7 @@ export class ApiService {
     return this.http.get<TeamDto>(`${this.baseUrl}/teams/${id}`);
   }
 
-  createTeam(team: { teamName: string; description?: string }): Observable<TeamDto> {
+  createTeam(team: { teamName: string; teamSize: number; description?: string }): Observable<TeamDto> {
     return this.http.post<TeamDto>(`${this.baseUrl}/teams`, team);
   }
 

@@ -169,16 +169,25 @@ public class RiskAssessmentService : IRiskAssessmentService
     private List<RiskFactorDto> ScoreAllFactors(SprintMetricsDto metrics, int plannedPoints, int teamAvailability, int externalDependencies = 0)
     {
         var factors = new List<RiskFactorDto>();
+        var availabilityMultiplier = teamAvailability <= 0
+            ? 0m
+            : (teamAvailability >= 100 ? 1m : teamAvailability / 100m);
+
+        var adjustedVelocity = metrics.AverageVelocity * availabilityMultiplier;
+        var adjustedEffectiveCapacity = metrics.EffectiveCapacity * availabilityMultiplier;
+        var adjustedCvr = adjustedVelocity > 0
+            ? plannedPoints / adjustedVelocity
+            : 0;
 
         // 1. CVR (Commitment-to-Velocity Ratio)
-        var cvrScore = ScoreCVR(metrics.CVR);
+        var cvrScore = ScoreCVR(adjustedCvr);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Commitment-to-Velocity Ratio (CVR)",
             Score = cvrScore,
             MaxScore = 3,
-            Description = GetCVRDescription(metrics.CVR, cvrScore),
-            MetricValue = metrics.CVR,
+            Description = GetCVRDescription(adjustedCvr, cvrScore),
+            MetricValue = adjustedCvr,
             Threshold = CVR_LOW_MAX
         });
 
@@ -207,14 +216,14 @@ public class RiskAssessmentService : IRiskAssessmentService
         });
 
         // 4. Capacity Utilization
-        var capacityScore = ScoreCapacityUtilization(plannedPoints, metrics.EffectiveCapacity);
+        var capacityScore = ScoreCapacityUtilization(plannedPoints, adjustedEffectiveCapacity);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Capacity Buffer Utilization",
             Score = capacityScore,
             MaxScore = 3,
-            Description = GetCapacityDescription(plannedPoints, metrics.EffectiveCapacity, capacityScore),
-            MetricValue = metrics.EffectiveCapacity > 0 ? (plannedPoints / metrics.EffectiveCapacity) * 100 : 0,
+            Description = GetCapacityDescription(plannedPoints, adjustedEffectiveCapacity, capacityScore),
+            MetricValue = adjustedEffectiveCapacity > 0 ? (plannedPoints / adjustedEffectiveCapacity) * 100 : 0,
             Threshold = 100
         });
 

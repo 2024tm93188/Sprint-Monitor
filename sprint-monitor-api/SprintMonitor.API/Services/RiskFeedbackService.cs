@@ -202,10 +202,13 @@ public class RiskFeedbackService : IRiskFeedbackService
             var assessment = assessments.FirstOrDefault(a => a.SprintId == sprint.SprintId)
                 ?? assessments.FirstOrDefault();
 
-            var feedback = feedbacks.FirstOrDefault(f => f.SprintId == sprint.SprintId);
+            var feedback = assessment != null
+                ? feedbacks.FirstOrDefault(f => f.AssessmentId == assessment.AssessmentId)
+                : feedbacks.FirstOrDefault(f => f.SprintId == sprint.SprintId);
 
             comparisons.Add(new SprintComparisonDto
             {
+                AssessmentId = assessment?.AssessmentId ?? 0,
                 SprintId = sprint.SprintId,
                 SprintName = sprint.SprintName ?? $"Sprint {sprint.SprintId}",
                 StartDate = sprint.StartDate,

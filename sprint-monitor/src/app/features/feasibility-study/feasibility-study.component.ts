@@ -63,6 +63,11 @@ export class FeasibilityStudyComponent implements OnInit {
     });
   }
 
+  get displayedStudies(): Feasibility[] {
+    const selectedTeamId = this.teamService.getSelectedTeamId();
+    return this.feasibilityStudies.filter(study => study.teamId === selectedTeamId);
+  }
+
   loadData(): void {
     this.loading = true;
     this.error = null;
@@ -113,7 +118,10 @@ export class FeasibilityStudyComponent implements OnInit {
   saveStudy(): void {
     if (this.feasibilityForm.invalid) return;
 
-    const data = this.feasibilityForm.value as CreateFeasibility;
+    const data = {
+      ...this.feasibilityForm.value,
+      teamId: this.teamService.getSelectedTeamId()
+    } as CreateFeasibility;
     
     if (this.isEditing && this.selectedStudy) {
       this.feasibilityService.updateFeasibilityStudy(this.selectedStudy.feasibilityId, data)

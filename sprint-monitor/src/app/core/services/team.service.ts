@@ -86,7 +86,15 @@ export class TeamService {
 
   /** Get selected team ID (defaults to 1 if nothing selected) */
   getSelectedTeamId(): number {
-    return this.selectedTeamSnapshot?.teamId ?? 1;
+    if (this.selectedTeamSnapshot?.teamId) {
+      return this.selectedTeamSnapshot.teamId;
+    }
+
+    if (this.teamsSnapshot.length > 0) {
+      return this.teamsSnapshot[0].teamId;
+    }
+
+    return 0;
   }
 
   /** Get selected team snapshot */

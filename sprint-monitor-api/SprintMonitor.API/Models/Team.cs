@@ -15,6 +15,9 @@ public class Team
     [MaxLength(100)]
     public string TeamName { get; set; } = string.Empty;
 
+    [Range(1, 100)]
+    public int TeamSize { get; set; } = 5;
+
     [MaxLength(500)]
     public string? Description { get; set; }
 

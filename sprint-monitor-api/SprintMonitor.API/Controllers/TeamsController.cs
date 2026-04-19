@@ -57,6 +57,8 @@ public class TeamsController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(dto.TeamName))
             return BadRequest(new { message = "Team name is required" });
+        if (dto.TeamSize <= 0)
+            return BadRequest(new { message = "Team size must be greater than 0" });
 
         var team = await _teamService.CreateTeamAsync(dto);
         return CreatedAtAction(nameof(GetTeam), new { teamId = team.TeamId }, team);
@@ -70,6 +72,9 @@ public class TeamsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TeamDto>> UpdateTeam(int teamId, [FromBody] UpdateTeamDto dto)
     {
+        if (dto.TeamSize.HasValue && dto.TeamSize.Value <= 0)
+            return BadRequest(new { message = "Team size must be greater than 0" });
+
         var team = await _teamService.UpdateTeamAsync(teamId, dto);
         if (team == null)
             return NotFound(new { message = $"Team with ID {teamId} not found" });

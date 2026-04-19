@@ -59,14 +59,14 @@
 </mat-toolbar>
 
 <main class="app-content">
-  <mat-tab-group animationDuration="200ms" class="main-tabs">
+  <mat-tab-group #tabGroup [preserveContent]="true" animationDuration="200ms" class="main-tabs">
     <mat-tab>
       <ng-template mat-tab-label>
         <mat-icon>edit_note</mat-icon>
         <span>Planning Input</span>
       </ng-template>
       <div class="tab-content">
-        <app-planning-evaluation></app-planning-evaluation>
+        <app-planning-evaluation (navigateToRiskDashboard)="onNavigateToRiskDashboard()"></app-planning-evaluation>
       </div>
     </mat-tab>
 

@@ -6,6 +6,7 @@ namespace SprintMonitor.API.DTOs;
 public class CreateTeamDto
 {
     public string TeamName { get; set; } = string.Empty;
+    public int TeamSize { get; set; } = 5;
     public string? Description { get; set; }
 }
 
@@ -16,6 +17,7 @@ public class TeamDto
 {
     public int TeamId { get; set; }
     public string TeamName { get; set; } = string.Empty;
+    public int TeamSize { get; set; }
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; }
@@ -28,6 +30,7 @@ public class TeamDto
 public class UpdateTeamDto
 {
     public string? TeamName { get; set; }
+    public int? TeamSize { get; set; }
     public string? Description { get; set; }
     public bool? IsActive { get; set; }
 }

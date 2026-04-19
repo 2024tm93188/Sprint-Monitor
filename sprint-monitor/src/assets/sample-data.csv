@@ -1,11 +1,159 @@
-Sprint,Committed,Completed,Spillover
-Sprint 1,30,28,false
-Sprint 2,32,25,true
-Sprint 3,28,28,false
-Sprint 4,35,30,true
-Sprint 5,26,27,false
-Sprint 6,30,29,false
-Sprint 7,33,31,false
-Sprint 8,29,26,true
-Sprint 9,27,27,false
-Sprint 10,31,30,false
+Team,Sprint,Committed,Completed,Added,Removed,TeamAvailability,Duration,Spillover,Dependencies
+RDA (Rapid Damage Assessment),RDA-001,48,32,18,5,86,14,true,6
+RDA (Rapid Damage Assessment),RDA-002,35,28,12,3,82,7,true,5
+RDA (Rapid Damage Assessment),RDA-003,58,45,15,4,88,14,true,7
+RDA (Rapid Damage Assessment),RDA-004,22,18,8,2,91,14,true,3
+RDA (Rapid Damage Assessment),RDA-005,45,39,20,6,84,7,true,5
+RDA (Rapid Damage Assessment),RDA-006,51,38,14,3,89,14,true,6
+RDA (Rapid Damage Assessment),RDA-007,28,20,10,1,85,14,true,4
+RDA (Rapid Damage Assessment),RDA-008,42,35,16,5,87,14,true,5
+RDA (Rapid Damage Assessment),RDA-009,55,47,19,7,83,7,true,7
+RDA (Rapid Damage Assessment),RDA-010,38,31,11,4,90,14,true,4
+RDA (Rapid Damage Assessment),RDA-011,46,38,17,5,86,14,true,6
+RDA (Rapid Damage Assessment),RDA-012,32,26,9,2,88,14,true,3
+RDA (Rapid Damage Assessment),RDA-013,50,42,21,6,82,7,true,7
+RDA (Rapid Damage Assessment),RDA-014,41,34,13,4,85,14,true,5
+RDA (Rapid Damage Assessment),RDA-015,58,48,16,5,89,14,true,6
+RDA (Rapid Damage Assessment),RDA-016,26,21,7,1,91,14,true,2
+RDA (Rapid Damage Assessment),RDA-017,44,36,19,5,84,7,true,5
+RDA (Rapid Damage Assessment),RDA-018,52,44,15,4,87,14,true,6
+RDA (Rapid Damage Assessment),RDA-019,39,32,12,3,86,14,true,4
+RDA (Rapid Damage Assessment),RDA-020,47,39,18,6,83,14,true,6
+RDA (Rapid Damage Assessment),RDA-021,53,45,14,5,88,7,true,7
+RDA (Rapid Damage Assessment),RDA-022,30,24,10,2,90,14,true,3
+RDA (Rapid Damage Assessment),RDA-023,43,35,17,4,85,14,true,5
+RDA (Rapid Damage Assessment),RDA-024,56,47,20,6,81,14,true,7
+RDA (Rapid Damage Assessment),RDA-025,36,30,11,3,89,14,true,4
+RDA (Rapid Damage Assessment),RDA-026,49,40,19,5,87,7,true,6
+RDA (Rapid Damage Assessment),RDA-027,45,37,16,4,84,14,true,5
+RDA (Rapid Damage Assessment),RDA-028,51,43,13,4,88,14,true,6
+RDA (Rapid Damage Assessment),RDA-029,28,22,9,2,92,14,true,2
+RDA (Rapid Damage Assessment),RDA-030,42,35,18,5,86,14,true,5
+RDA (Rapid Damage Assessment),RDA-031,54,46,17,6,83,14,true,7
+RDA (Rapid Damage Assessment),RDA-032,38,31,12,3,89,7,true,4
+RDA (Rapid Damage Assessment),RDA-033,46,38,20,5,85,14,true,6
+RDA (Rapid Damage Assessment),RDA-034,52,44,15,4,87,14,true,5
+RDA (Rapid Damage Assessment),RDA-035,35,28,11,2,91,14,true,4
+catnet,catnet-001,35,32,2,1,94,14,false,2
+catnet,catnet-002,42,40,1,0,95,7,false,1
+catnet,catnet-003,28,27,3,1,92,14,false,2
+catnet,catnet-004,45,44,2,1,96,14,false,1
+catnet,catnet-005,32,31,2,0,94,14,false,2
+catnet,catnet-006,38,37,1,1,95,7,false,1
+catnet,catnet-007,41,40,2,1,94,14,false,2
+catnet,catnet-008,26,25,2,0,96,14,false,1
+catnet,catnet-009,44,43,3,1,93,14,false,2
+catnet,catnet-010,36,35,1,0,95,7,false,1
+catnet,catnet-011,39,38,2,1,94,14,false,2
+catnet,catnet-012,43,42,1,0,96,14,false,1
+catnet,catnet-013,30,29,3,1,93,14,false,2
+catnet,catnet-014,46,45,2,1,95,7,false,2
+catnet,catnet-015,33,32,2,0,94,14,false,1
+catnet,catnet-016,40,39,1,1,96,14,false,1
+catnet,catnet-017,37,36,3,1,94,14,false,2
+catnet,catnet-018,44,43,2,0,95,7,false,1
+catnet,catnet-019,27,26,2,1,96,14,false,1
+catnet,catnet-020,42,41,1,0,94,14,false,2
+catnet,catnet-021,35,34,3,1,95,14,false,1
+catnet,catnet-022,38,37,2,1,94,7,false,2
+catnet,catnet-023,41,40,1,0,96,14,false,1
+catnet,catnet-024,29,28,2,1,93,14,false,2
+catnet,catnet-025,43,42,3,1,94,14,false,1
+catnet,catnet-026,31,30,2,0,95,7,false,2
+catnet,catnet-027,39,38,1,1,96,14,false,1
+catnet,catnet-028,44,43,2,0,94,14,false,2
+catnet,catnet-029,34,33,3,1,95,14,false,1
+catnet,catnet-030,40,39,2,1,94,14,false,1
+catnet,catnet-031,37,36,1,0,96,7,false,2
+catnet,catnet-032,42,41,2,1,94,14,false,1
+catnet,catnet-033,28,27,3,1,95,14,false,2
+catnet,catnet-034,45,44,1,0,96,14,false,1
+oneplatform,oneplatform-001,48,38,16,4,90,14,true,4
+oneplatform,oneplatform-002,35,26,18,3,86,7,true,3
+oneplatform,oneplatform-003,52,42,19,5,88,14,true,5
+oneplatform,oneplatform-004,27,20,14,2,91,14,true,2
+oneplatform,oneplatform-005,42,32,20,4,85,14,true,4
+oneplatform,oneplatform-006,45,36,17,5,89,7,true,4
+oneplatform,oneplatform-007,38,29,15,3,87,14,true,3
+oneplatform,oneplatform-008,50,40,18,4,91,14,true,5
+oneplatform,oneplatform-009,32,24,12,2,88,14,true,2
+oneplatform,oneplatform-010,44,35,19,5,86,7,true,4
+oneplatform,oneplatform-011,46,37,16,4,90,14,true,4
+oneplatform,oneplatform-012,28,21,13,2,87,14,true,3
+oneplatform,oneplatform-013,53,43,20,5,85,14,true,5
+oneplatform,oneplatform-014,36,28,17,3,89,14,true,3
+oneplatform,oneplatform-015,40,31,15,4,88,7,true,4
+oneplatform,oneplatform-016,49,39,18,5,91,14,true,4
+oneplatform,oneplatform-017,29,22,11,2,86,14,true,2
+oneplatform,oneplatform-018,43,34,19,4,87,14,true,4
+oneplatform,oneplatform-019,44,35,17,3,90,14,true,3
+oneplatform,oneplatform-020,51,41,20,5,88,7,true,5
+oneplatform,oneplatform-021,37,29,14,3,85,14,true,3
+oneplatform,oneplatform-022,41,32,16,4,89,14,true,4
+oneplatform,oneplatform-023,47,38,18,5,91,14,true,4
+oneplatform,oneplatform-024,30,23,12,2,87,14,true,2
+oneplatform,oneplatform-025,42,33,17,4,86,7,true,4
+oneplatform,oneplatform-026,55,45,19,5,89,14,true,5
+oneplatform,oneplatform-027,33,25,13,2,88,14,true,3
+oneplatform,oneplatform-028,45,36,20,4,90,14,true,4
+oneplatform,oneplatform-029,38,29,15,3,86,14,true,3
+Property Insights,PI-001,32,30,3,1,92,14,false,2
+Property Insights,PI-002,38,36,2,1,93,7,false,1
+Property Insights,PI-003,26,25,3,0,91,14,false,1
+Property Insights,PI-004,40,38,2,1,94,14,false,2
+Property Insights,PI-005,35,33,3,1,92,14,false,1
+Property Insights,PI-006,38,36,2,0,95,7,false,2
+Property Insights,PI-007,29,28,2,1,93,14,false,1
+Property Insights,PI-008,42,40,3,1,91,14,false,2
+Property Insights,PI-009,33,31,2,0,94,14,false,1
+Property Insights,PI-010,39,37,3,1,92,7,false,2
+Property Insights,PI-011,36,34,2,1,93,14,false,1
+Property Insights,PI-012,40,38,2,0,95,14,false,2
+Property Insights,PI-013,27,26,3,1,91,14,false,1
+Property Insights,PI-014,41,39,2,1,93,7,false,2
+Property Insights,PI-015,34,32,3,1,92,14,false,1
+Property Insights,PI-016,38,36,2,0,94,14,false,2
+Property Insights,PI-017,31,29,3,1,93,14,false,1
+Property Insights,PI-018,42,40,2,1,91,14,false,2
+Property Insights,PI-019,37,35,3,1,94,7,false,2
+Property Insights,PI-020,39,37,2,0,92,14,false,1
+Property Insights,PI-021,28,26,3,1,95,14,false,1
+Property Insights,PI-022,41,39,2,1,93,14,false,2
+Property Insights,PI-023,35,33,3,0,91,14,false,1
+Property Insights,PI-024,40,38,2,1,94,7,false,2
+Property Insights,PI-025,32,30,3,1,92,14,false,1
+Property Insights,PI-026,38,36,2,0,95,14,false,2
+Property Insights,PI-027,27,25,3,1,93,14,false,1
+Property Insights,PI-028,42,40,2,1,91,14,false,2
+Property Insights,PI-029,36,34,3,1,94,14,false,1
+Property Insights,PI-030,39,37,2,0,92,7,false,2
+Portfolio Insights,PortfolioI-001,38,32,8,2,88,14,true,3
+Portfolio Insights,PortfolioI-002,42,36,6,1,90,7,false,2
+Portfolio Insights,PortfolioI-003,28,24,7,1,86,14,true,2
+Portfolio Insights,PortfolioI-004,45,38,9,2,91,14,false,3
+Portfolio Insights,PortfolioI-005,33,28,8,2,87,14,true,2
+Portfolio Insights,PortfolioI-006,40,34,7,1,89,7,false,2
+Portfolio Insights,PortfolioI-007,35,30,9,2,88,14,true,3
+Portfolio Insights,PortfolioI-008,44,37,6,1,92,14,false,2
+Portfolio Insights,PortfolioI-009,29,24,8,2,86,14,true,2
+Portfolio Insights,PortfolioI-010,41,35,7,1,90,7,false,2
+Portfolio Insights,PortfolioI-011,37,31,9,2,89,14,true,3
+Portfolio Insights,PortfolioI-012,43,36,6,1,91,14,false,2
+Portfolio Insights,PortfolioI-013,31,26,8,2,87,14,true,2
+Portfolio Insights,PortfolioI-014,46,39,7,1,92,14,false,3
+Portfolio Insights,PortfolioI-015,34,29,9,2,88,7,true,2
+Portfolio Insights,PortfolioI-016,39,33,6,1,90,14,false,2
+Portfolio Insights,PortfolioI-017,36,30,8,2,89,14,true,3
+Portfolio Insights,PortfolioI-018,42,35,7,1,91,14,false,2
+Portfolio Insights,PortfolioI-019,30,25,9,2,87,14,true,2
+Portfolio Insights,PortfolioI-020,44,37,6,1,92,7,false,3
+Portfolio Insights,PortfolioI-021,38,32,8,2,88,14,true,2
+Portfolio Insights,PortfolioI-022,41,34,7,1,90,14,false,2
+Portfolio Insights,PortfolioI-023,35,29,9,2,89,14,true,3
+Portfolio Insights,PortfolioI-024,43,36,6,1,91,14,false,2
+Portfolio Insights,PortfolioI-025,28,23,8,2,86,14,true,2
+Portfolio Insights,PortfolioI-026,47,40,7,1,92,7,false,3
+Portfolio Insights,PortfolioI-027,36,30,9,2,88,14,true,2
+Portfolio Insights,PortfolioI-028,40,33,6,1,90,14,false,2
+Portfolio Insights,PortfolioI-029,33,28,8,2,87,14,true,2
+Portfolio Insights,PortfolioI-030,45,38,7,1,91,14,false,3

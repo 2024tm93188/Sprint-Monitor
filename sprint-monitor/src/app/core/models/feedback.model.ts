@@ -98,6 +98,7 @@ export interface RecommendationOutcome {
 
 /** Matches backend SprintComparisonDto exactly */
 export interface SprintComparison {
+  assessmentId: number;
   sprintId: number;
   sprintName: string;
   startDate?: Date;

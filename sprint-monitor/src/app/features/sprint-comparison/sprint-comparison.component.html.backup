@@ -1,0 +1,189 @@
+<div class="comparison-container">
+  <header class="page-header">
+    <h1>📊 Sprint Comparison Dashboard</h1>
+    <p class="subtitle">Last 3 Sprints Analysis — Predictions vs Actual Outcomes</p>
+  </header>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading sprint comparison data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-banner">
+    ⚠️ {{ error }}
+    <button (click)="error = null">×</button>
+  </div>
+
+  <div *ngIf="comparison && !loading">
+    <!-- Overview Cards -->
+    <div class="overview-cards">
+      <div class="overview-card main">
+        <div class="card-header">
+          <span class="card-icon">📈</span>
+          <h3>Overall Accuracy</h3>
+        </div>
+        <div class="card-value" [class]="'value-' + getAccuracyColor(comparison.overallAccuracy)">
+          {{ comparison.overallAccuracy | number:'1.0-0' }}%
+        </div>
+        <div class="card-trend" [class]="'trend-' + (comparison.improvementTrend || 'STABLE').toLowerCase()">
+          {{ getTrendIcon(comparison.improvementTrend || 'STABLE') }} {{ comparison.improvementTrend || 'STABLE' }}
+        </div>
+      </div>
+
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-icon">🏃</span>
+          <h3>Team</h3>
+        </div>
+        <p class="card-text">{{ comparison.teamName }}</p>
+      </div>
+
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-icon">🔁</span>
+          <h3>Recurring Risks</h3>
+        </div>
+        <div *ngIf="comparison.recurringRiskFactors?.length; else noRecurring">
+          <span *ngFor="let factor of comparison.recurringRiskFactors" class="factor-chip">{{ factor }}</span>
+        </div>
+        <ng-template #noRecurring><p class="card-text muted">None detected</p></ng-template>
+      </div>
+
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-icon">🏃</span>
+          <h3>Sprints Analyzed</h3>
+        </div>
+        <div class="card-value small">{{ comparison.sprints.length }}</div>
+      </div>
+    </div>
+
+    <!-- Sprint Comparison Table -->
+    <div class="comparison-table-section">
+      <h2>Sprint-by-Sprint Comparison</h2>
+
+      <div class="comparison-table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Sprint</th>
+              <th>Dates</th>
+              <th>Predicted Risk</th>
+              <th>Points (C/D)</th>
+              <th>Spillover</th>
+              <th>Accuracy</th>
+              <th>Outcome</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let sprint of comparison.sprints; let i = index">
+              <tr [class.selected]="selectedSprint?.sprintId === sprint.sprintId"
+                  (click)="selectSprint(sprint)">
+                <td class="sprint-name">
+                  <strong>{{ sprint.sprintName }}</strong>
+                </td>
+                <td class="dates">
+                  <span *ngIf="sprint.startDate">{{ sprint.startDate | date:'MMM d' }}</span>
+                  <span *ngIf="sprint.endDate"> – {{ sprint.endDate | date:'MMM d' }}</span>
+                  <span *ngIf="!sprint.startDate" class="muted">N/A</span>
+                </td>
+                <td class="risk-level">
+                  <span class="risk-badge" [class]="'risk-' + getRiskColor(sprint.predictedRisk)">
+                    {{ sprint.predictedRisk }}
+                  </span>
+                  <span class="score-chip">(Score: {{ sprint.predictedScore }})</span>
+                </td>
+                <td class="points">
+                  <span class="committed">{{ sprint.committedPoints }}</span>
+                  <span class="slash">/</span>
+                  <span class="completed" [class]="getCompletionRateClass(sprint)">
+                    {{ sprint.completedPoints }}
+                  </span>
+                  <span class="rate muted">({{ getCompletionRate(sprint) }}%)</span>
+                </td>
+                <td class="spillover">
+                  <span *ngIf="sprint.hadSpillover" class="spillover-yes">
+                    ⚠️ Yes ({{ sprint.spilloverPoints }} pts)
+                  </span>
+                  <span *ngIf="!sprint.hadSpillover" class="spillover-no">✅ No</span>
+                </td>
+                <td class="accuracy-col">
+                  <span class="accuracy-badge" [class]="'badge-' + getAccuracyLevelColor(sprint.accuracyLevel)">
+                    {{ getAccuracyLevelIcon(sprint.accuracyLevel) }} {{ sprint.accuracyLevel }}
+                  </span>
+                </td>
+                <td class="outcome-col">
+                  <span class="outcome-text">{{ sprint.actualOutcome || 'Pending' }}</span>
+                </td>
+                <td class="expand">
+                  <span class="expand-icon">{{ selectedSprint?.sprintId === sprint.sprintId ? '▼' : '▶' }}</span>
+                </td>
+              </tr>
+
+              <!-- Expanded Sprint Details inline -->
+              <tr *ngIf="selectedSprint?.sprintId === sprint.sprintId" class="detail-row">
+                <td colspan="8">
+                  <div class="sprint-detail-panel">
+                    <div class="detail-grid">
+                      <!-- Recommendations -->
+                      <div class="detail-section" *ngIf="sprint.recommendations?.length">
+                        <h4>💡 Recommendations Given</h4>
+                        <ul class="rec-list">
+                          <li *ngFor="let rec of sprint.recommendations">{{ rec }}</li>
+                        </ul>
+                      </div>
+
+                      <!-- Feedback -->
+                      <div class="detail-section">
+                        <h4>🎯 Feedback</h4>
+                        <div *ngIf="sprint.hasFeedback && sprint.feedback; else noFeedback">
+                          <p><strong>Agreement:</strong> {{ sprint.feedback.agreementLevel }}</p>
+                          <p *ngIf="sprint.feedback.feedbackComments"><strong>Comments:</strong> {{ sprint.feedback.feedbackComments }}</p>
+                        </div>
+                        <ng-template #noFeedback>
+                          <p class="muted">No feedback submitted for this sprint yet.</p>
+                        </ng-template>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Key Insights -->
+    <div class="insights-section" *ngIf="comparison.keyInsights?.length">
+      <h2>📋 Key Insights</h2>
+      <div class="insights-grid">
+        <div *ngFor="let insight of comparison.keyInsights" class="insight-card">
+          {{ insight }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <h4>Legend</h4>
+      <div class="legend-items">
+        <span><span class="legend-color risk-low"></span> Low Risk</span>
+        <span><span class="legend-color risk-medium"></span> Medium Risk</span>
+        <span><span class="legend-color risk-high"></span> High Risk</span>
+        <span>C = Committed Points | D = Delivered Points</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !comparison && !error" class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No Sprint Data Available</h3>
+    <p>Complete at least 3 sprints with risk assessments to view comparison.</p>
+    <button class="btn btn-secondary" (click)="loadComparison()">🔄 Retry</button>
+  </div>
+</div>

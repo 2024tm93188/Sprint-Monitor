@@ -9,7 +9,8 @@ import {
   CreateRiskFeedback,
   PredictionAccuracy,
   CalibrationStatus,
-  AgreementLevel
+  AgreementLevel,
+  SprintComparison
 } from '../../core/models/feedback.model';
 
 @Component({
@@ -29,6 +30,7 @@ export class RiskFeedbackComponent implements OnInit {
   accuracy: PredictionAccuracy | null = null;
   calibration: CalibrationStatus | null = null;
   assessments: RiskAssessmentResponseDto[] = [];
+  comparisonSprints: SprintComparison[] = [];
   showForm = false;
   showOutcomeForm = false;
   loading = false;
@@ -40,10 +42,7 @@ export class RiskFeedbackComponent implements OnInit {
     agreementLevel: ['Accurate', Validators.required],
     userComments: [''],
     recommendationRating: [5, [Validators.min(1), Validators.max(5)]],
-    recommendationsHelpful: [true],
-    actualOutcome: [''],
-    userName: [''],
-    userRole: ['']
+    recommendationsHelpful: [true]
   });
 
   outcomeForm: FormGroup = this.fb.group({
@@ -107,6 +106,16 @@ export class RiskFeedbackComponent implements OnInit {
       next: (assessments) => this.assessments = assessments,
       error: () => { this.assessments = []; }
     });
+
+    // Keep dropdown in sync with comparison dashboard by using same source
+    this.feedbackService.getSprintComparison(this.teamId).subscribe({
+      next: (comparison) => {
+        this.comparisonSprints = comparison.sprints || [];
+      },
+      error: () => {
+        this.comparisonSprints = [];
+      }
+    });
   }
 
   openFeedbackForm(assessmentId?: number): void {
@@ -119,9 +128,7 @@ export class RiskFeedbackComponent implements OnInit {
       agreementLevel: 'Accurate',
       recommendationRating: 5,
       recommendationsHelpful: true,
-      actualOutcome: selectedAssessment ? `Predicted: ${selectedAssessment.riskLevel}` : '',
-      userName: '',
-      userRole: ''
+      userComments: ''
     });
     this.showForm = true;
   }
@@ -141,17 +148,17 @@ export class RiskFeedbackComponent implements OnInit {
     if (this.feedbackForm.invalid) return;
 
     const formValues = this.feedbackForm.value;
+    const selectedSprint = this.getSelectedComparisonSprint(formValues.assessmentId);
 
     const data: CreateRiskFeedback = {
       assessmentId: formValues.assessmentId,
+      sprintId: selectedSprint?.sprintId,
       predictedRisk: this.getAssessmentRiskLevel(formValues.assessmentId),
-      actualOutcome: formValues.actualOutcome || 'Pending',
+      actualOutcome: 'Pending',
       agreementLevel: formValues.agreementLevel,
       recommendationsHelpful: formValues.recommendationsHelpful,
       recommendationRating: formValues.recommendationRating,
-      feedbackComments: formValues.userComments,
-      userName: formValues.userName,
-      userRole: formValues.userRole
+      feedbackComments: formValues.userComments
     };
 
     this.feedbackService.submitFeedback(data).subscribe({
@@ -217,7 +224,22 @@ export class RiskFeedbackComponent implements OnInit {
 
   getAssessmentLabel(assessment: RiskAssessmentResponseDto): string {
     const date = new Date(assessment.assessedAt).toLocaleDateString();
-    return `#${assessment.assessmentId} — ${assessment.riskLevel} Risk — ${assessment.plannedCommitment} pts (${date})`;
+    const match = this.getSelectedComparisonSprint(assessment.assessmentId);
+    const sprintRef = match?.sprintName || (assessment.sprintId ? `Sprint ${assessment.sprintId}` : 'Ad-hoc Assessment');
+    return `Assessment #${assessment.assessmentId} | ${sprintRef} | ${assessment.riskLevel} risk | Planned ${assessment.plannedCommitment} pts | ${date}`;
+  }
+
+  get selectableAssessments(): RiskAssessmentResponseDto[] {
+    if (!this.comparisonSprints.length) {
+      return this.assessments;
+    }
+
+    const comparisonAssessmentIds = new Set(this.comparisonSprints.map(s => s.assessmentId));
+    return this.assessments.filter(a => comparisonAssessmentIds.has(a.assessmentId));
+  }
+
+  private getSelectedComparisonSprint(assessmentId: number): SprintComparison | undefined {
+    return this.comparisonSprints.find(s => s.assessmentId === assessmentId);
   }
 
   getAgreementColor(level: string): string {

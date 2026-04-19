@@ -92,6 +92,7 @@ public class PredictionAccuracyDto
 /// </summary>
 public class SprintComparisonDto
 {
+    public int AssessmentId { get; set; }
     public int SprintId { get; set; }
     public string SprintName { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; }
