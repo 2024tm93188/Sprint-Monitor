@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-  --bg-base: #f4f8f7;
-  --bg-muted: #e8f1ef;
-  --surface: rgba(255, 255, 255, 0.82);
+  --bg-base: #f5f7f9;
+  --bg-muted: #edf1f4;
+  --surface: #ffffff;
   --surface-strong: #ffffff;
   --text-primary: #11202b;
   --text-secondary: #4e6272;
@@ -12,10 +12,12 @@
   --accent: #f59e0b;
   --danger: #dc2626;
   --success: #0f9f6f;
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --shadow-soft: 0 16px 40px rgba(9, 35, 40, 0.09);
-  --shadow-glass: 0 8px 24px rgba(15, 35, 42, 0.08);
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --shadow-soft: 0 8px 20px rgba(9, 35, 40, 0.06);
+  --shadow-glass: 0 2px 8px rgba(15, 35, 42, 0.06);
+  --mdc-theme-primary: var(--brand);
+  --mat-sys-primary: var(--brand);
 }
 
 *, *::before, *::after {
@@ -32,10 +34,7 @@ body {
 body {
   font-family: 'Manrope', 'Segoe UI', sans-serif;
   color: var(--text-primary);
-  background:
-    radial-gradient(1200px 600px at -10% -10%, rgba(15, 118, 110, 0.12), transparent 70%),
-    radial-gradient(900px 500px at 110% 10%, rgba(245, 158, 11, 0.14), transparent 72%),
-    linear-gradient(180deg, #f5f8f9 0%, #eaf1f0 100%);
+  background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -54,14 +53,54 @@ h6,
 
 .mat-mdc-card {
   border-radius: var(--radius-lg) !important;
-  border: 1px solid rgba(16, 50, 60, 0.08);
-  box-shadow: var(--shadow-glass) !important;
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  box-shadow: none !important;
   background: var(--surface) !important;
-  backdrop-filter: blur(8px);
 }
 
 .mat-mdc-form-field {
   width: 100%;
+  --mdc-outlined-text-field-focus-outline-color: var(--brand);
+  --mdc-outlined-text-field-focus-label-text-color: var(--brand);
+  --mdc-outlined-text-field-caret-color: var(--brand);
+  --mdc-filled-text-field-focus-active-indicator-color: var(--brand);
+  --mdc-filled-text-field-focus-label-text-color: var(--brand);
+  --mdc-filled-text-field-caret-color: var(--brand);
+  --mat-form-field-focus-select-arrow-color: var(--brand);
+}
+
+.mat-mdc-slider {
+  --mdc-slider-handle-color: var(--brand);
+  --mdc-slider-focus-handle-color: var(--brand);
+  --mdc-slider-hover-handle-color: var(--brand);
+  --mdc-slider-active-track-color: var(--brand);
+  --mdc-slider-inactive-track-color: rgba(15, 118, 110, 0.35);
+}
+
+.mat-mdc-slide-toggle {
+  --mdc-switch-selected-focus-state-layer-color: var(--brand);
+  --mdc-switch-selected-hover-state-layer-color: var(--brand);
+  --mdc-switch-selected-pressed-state-layer-color: var(--brand);
+  --mdc-switch-selected-focus-track-color: rgba(15, 118, 110, 0.35);
+  --mdc-switch-selected-hover-track-color: rgba(15, 118, 110, 0.35);
+  --mdc-switch-selected-pressed-track-color: rgba(15, 118, 110, 0.35);
+  --mdc-switch-selected-track-color: rgba(15, 118, 110, 0.35);
+  --mdc-switch-selected-handle-color: var(--brand);
+}
+
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-checkmark-color: #ffffff;
+  --mdc-checkbox-selected-focus-icon-color: var(--brand);
+  --mdc-checkbox-selected-hover-icon-color: var(--brand);
+  --mdc-checkbox-selected-icon-color: var(--brand);
+  --mdc-checkbox-selected-pressed-icon-color: var(--brand);
+}
+
+.mat-mdc-radio-button {
+  --mdc-radio-selected-focus-icon-color: var(--brand);
+  --mdc-radio-selected-hover-icon-color: var(--brand);
+  --mdc-radio-selected-icon-color: var(--brand);
+  --mdc-radio-selected-pressed-icon-color: var(--brand);
 }
 
 .mat-mdc-unelevated-button,
@@ -88,6 +127,51 @@ h6,
   --mdc-tab-indicator-active-indicator-color: var(--brand);
   --mat-tab-header-active-label-text-color: var(--brand);
   --mat-tab-header-active-ripple-color: rgba(15, 118, 110, 0.12);
+}
+
+.mat-mdc-tab-group .mdc-tab-indicator__content--underline {
+  border-color: var(--brand) !important;
+}
+
+.mat-mdc-tab-group .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label,
+.mat-mdc-tab-group .mat-mdc-tab.mdc-tab--active .mat-icon {
+  color: var(--brand) !important;
+}
+
+.mat-mdc-tab-group .mat-ripple-element {
+  background-color: rgba(15, 118, 110, 0.16) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text {
+  color: var(--brand) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled):not(.mat-mdc-option-multiple) {
+  background-color: #e9f7f5 !important;
+}
+
+.mat-mdc-slider .mdc-slider__track--active_fill {
+  border-color: var(--brand) !important;
+}
+
+.mat-mdc-slider .mdc-slider__track--inactive {
+  background-color: rgba(15, 118, 110, 0.32) !important;
+}
+
+.mat-mdc-slider .mdc-slider__thumb-knob {
+  border-color: var(--brand) !important;
+  background-color: var(--brand) !important;
+}
+
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  border-color: var(--brand) !important;
+  background-color: var(--brand) !important;
+}
+
+.mat-mdc-radio-button .mdc-radio__native-control:enabled:checked + .mdc-radio__background .mdc-radio__outer-circle,
+.mat-mdc-radio-button .mdc-radio__native-control:enabled:checked + .mdc-radio__background .mdc-radio__inner-circle {
+  border-color: var(--brand) !important;
 }
 
 .mat-mdc-snack-bar-container {

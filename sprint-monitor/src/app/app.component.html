@@ -11,21 +11,19 @@
         [(ngModel)]="selectedTeamId"
         (selectionChange)="onTeamChange()"
         panelClass="team-select-panel"
+        panelWidth="520px"
         aria-label="Select team">
         <mat-select-trigger>
           <span class="selected-team-chip">
-            <span class="team-avatar">{{ getTeamInitials(selectedTeamId) }}</span>
             <span class="selected-team-name">{{ getTeamName(selectedTeamId) }}</span>
           </span>
         </mat-select-trigger>
         <mat-option *ngFor="let team of teams" [value]="team.teamId">
           <div class="team-option-row">
-            <span class="team-avatar">{{ getTeamInitials(team.teamId) }}</span>
             <div class="team-option-text">
               <span class="team-option-name">{{ team.teamName }}</span>
-              <span class="team-option-meta">{{ team.sprintCount }} sprints</span>
-            </div>
-            <mat-icon class="team-option-icon">{{ getTeamIcon(team.teamName) }}</mat-icon>
+              <span class="team-option-meta"> ({{ team.sprintCount }} sprints)</span>
+            </div>  
           </div>
         </mat-option>
       </mat-select>

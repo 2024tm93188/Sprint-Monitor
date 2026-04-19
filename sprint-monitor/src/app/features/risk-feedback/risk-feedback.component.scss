@@ -153,6 +153,12 @@
   }
 }
 
+.feedback-container input[type="checkbox"],
+.feedback-container input[type="radio"],
+.feedback-container input[type="range"] {
+  accent-color: var(--brand);
+}
+
 .btn {
   padding: 8px 16px;
   border: none;

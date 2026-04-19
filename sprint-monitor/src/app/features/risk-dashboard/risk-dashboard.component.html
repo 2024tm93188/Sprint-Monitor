@@ -1,145 +1,63 @@
 <div class="dashboard-container" *ngIf="assessment">
-
-  <!-- Main Risk Badge -->
-  <mat-card class="risk-badge-card" [ngClass]="getRiskClass()">
-    <div class="risk-badge">
-      <mat-icon class="risk-icon">{{getRiskIcon()}}</mat-icon>
-      <div class="risk-info">
-        <h2 class="risk-level">{{assessment.overallRisk}} RISK</h2>
-        <p class="risk-label">{{getRiskLabel()}}</p>
+  <mat-card class="summary-card">
+    <h2>Risk Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="label">Risk Level</span>
+        <span class="value" [ngClass]="'risk-' + getRiskClass()">{{assessment.overallRisk}}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Risk Score</span>
+        <span class="value">{{assessment.totalScore}} / {{assessment.maxPossibleScore}}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Confidence</span>
+        <span class="value">{{assessment.confidence}}</span>
       </div>
     </div>
+  </mat-card>
 
-    <div class="score-display">
-      <span class="score">{{assessment.totalScore}}</span>
-      <span class="max-score">/ {{assessment.maxPossibleScore}}</span>
-      <span class="score-label">Risk Score</span>
+  <mat-card class="simple-card metrics-card" *ngIf="metrics">
+    <h3>Sprint Metrics</h3>
+    <div class="simple-grid">
+      <div class="row-item">
+        <span class="label">Historical Sprints</span>
+        <span class="value">{{metrics.sprintCount}}</span>
+      </div>
+      <div class="row-item">
+        <span class="label">CVR</span>
+        <span class="value">{{metrics.cvr.toFixed(2)}}</span>
+      </div>
+      <div class="row-item">
+        <span class="label">Average Velocity</span>
+        <span class="value">{{metrics.averageVelocity}} pts/sprint</span>
+      </div>
+      <div class="row-item">
+        <span class="label">Velocity Stability (CV)</span>
+        <span class="value">{{(metrics.velocityCoefficient * 100).toFixed(1)}}%</span>
+      </div>
+      <div class="row-item">
+        <span class="label">Safe Capacity</span>
+        <span class="value">{{metrics.effectiveCapacity}} pts</span>
+      </div>
+      <div class="row-item">
+        <span class="label">Spillover Rate</span>
+        <span class="value">{{metrics.spilloverRate.toFixed(0)}}%</span>
+      </div>
     </div>
-
-    <mat-chip [ngClass]="getConfidenceClass()">
-      <mat-icon>{{getConfidenceIcon()}}</mat-icon>
-      {{assessment.confidence}} Confidence
-    </mat-chip>
   </mat-card>
 
-  <!-- Metrics Overview -->
-  <mat-card class="metrics-card" *ngIf="metrics">
-    <mat-card-header>
-      <mat-icon mat-card-avatar>analytics</mat-icon>
-      <mat-card-title>Sprint Metrics</mat-card-title>
-      <mat-card-subtitle>Computed from {{metrics.sprintCount}} historical sprints</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
-      <div class="metrics-grid">
-        <!-- CVR Metric -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">CVR</span>
-            <mat-icon matTooltip="Commitment-to-Velocity Ratio: planned ÷ avg velocity">info</mat-icon>
-          </div>
-          <span class="metric-value" [ngClass]="getCVRClass()">{{metrics.cvr.toFixed(2)}}</span>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="getCVRProgress()"
-            [color]="getCVRProgressColor()">
-          </mat-progress-bar>
-          <span class="metric-hint">Target: ≤ 1.0</span>
+  <mat-card class="simple-card factors-card">
+    <h3>Risk Factors</h3>
+    <div class="factor-list">
+      <div class="factor-row" *ngFor="let factor of assessment.factors">
+        <div class="factor-main">
+          <span class="factor-name">{{factor.name}}</span>
+          <span class="factor-score" [ngClass]="getFactorScoreClass(factor.score)">{{factor.score}}/3</span>
         </div>
-
-        <!-- Average Velocity -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">Avg Velocity</span>
-            <mat-icon matTooltip="Average story points completed per sprint">info</mat-icon>
-          </div>
-          <span class="metric-value">{{metrics.averageVelocity}}</span>
-          <span class="metric-unit">points/sprint</span>
-        </div>
-
-        <!-- Velocity Stability -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">Stability (CV)</span>
-            <mat-icon matTooltip="Coefficient of Variation: lower = more predictable">info</mat-icon>
-          </div>
-          <span class="metric-value" [ngClass]="getStabilityClass()">
-            {{(metrics.velocityCoefficient * 100).toFixed(1)}}%
-          </span>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="100 - (metrics.velocityCoefficient * 200)"
-            color="primary">
-          </mat-progress-bar>
-          <span class="metric-hint">Lower is better</span>
-        </div>
-
-        <!-- Effective Capacity -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">Safe Capacity</span>
-            <mat-icon matTooltip="80% of velocity, reserving buffer for unplanned work">info</mat-icon>
-          </div>
-          <span class="metric-value">{{metrics.effectiveCapacity}}</span>
-          <span class="metric-unit">points (with buffer)</span>
-        </div>
-
-        <!-- Spillover Rate -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">Spillover Rate</span>
-            <mat-icon matTooltip="Percentage of sprints with incomplete work">info</mat-icon>
-          </div>
-          <span class="metric-value" [ngClass]="getSpilloverClass()">
-            {{metrics.spilloverRate.toFixed(0)}}%
-          </span>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="metrics.spilloverRate"
-            [color]="getSpilloverProgressColor()">
-          </mat-progress-bar>
-          <span class="metric-hint">Target: < 20%</span>
-        </div>
-
-        <!-- Std Deviation -->
-        <div class="metric-item">
-          <div class="metric-header">
-            <span class="metric-label">Std Deviation</span>
-            <mat-icon matTooltip="Velocity fluctuation in points">info</mat-icon>
-          </div>
-          <span class="metric-value">±{{metrics.velocityStandardDeviation}}</span>
-          <span class="metric-unit">points</span>
-        </div>
+        <p class="factor-description">{{factor.description}}</p>
       </div>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Risk Factors Breakdown -->
-  <mat-card class="factors-card">
-    <mat-card-header>
-      <mat-icon mat-card-avatar>fact_check</mat-icon>
-      <mat-card-title>Risk Factor Breakdown</mat-card-title>
-      <mat-card-subtitle>Individual scoring components</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
-      <div class="factors-list">
-        <div class="factor-item" *ngFor="let factor of assessment.factors">
-          <div class="factor-header">
-            <span class="factor-name">{{factor.name}}</span>
-            <span class="factor-score" [ngClass]="getFactorScoreClass(factor.score)">
-              {{factor.score}}/3
-            </span>
-          </div>
-          <p class="factor-description">{{factor.description}}</p>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="(factor.score / 3) * 100"
-            [color]="getFactorColor(factor.score)">
-          </mat-progress-bar>
-        </div>
-      </div>
-    </mat-card-content>
+    </div>
   </mat-card>
 
 </div>

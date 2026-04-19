@@ -172,6 +172,12 @@
   }
 }
 
+.feasibility-container input[type="checkbox"],
+.feasibility-container input[type="radio"],
+.feasibility-container input[type="range"] {
+  accent-color: var(--brand);
+}
+
 .btn {
   padding: 8px 16px;
   border: none;
