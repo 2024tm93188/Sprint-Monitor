@@ -11,4 +11,6 @@ public interface ISprintService
     Task<SprintDto?> UpdateSprintAsync(int sprintId, UpdateSprintDto dto);
     Task<bool> DeleteSprintAsync(int sprintId);
     Task<IEnumerable<SprintDto>> GetRecentSprintsAsync(int teamId, int count = 10);
+    Task<SprintDto?> GetActiveSprintAsync(int teamId);
+    Task<SprintDto> GetOrCreateActiveSprintAsync(int teamId);
 }

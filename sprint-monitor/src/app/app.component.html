@@ -79,7 +79,8 @@
       <div class="tab-content">
         <app-risk-dashboard
           [assessment]="currentAssessment"
-          [metrics]="currentMetrics">
+          [metrics]="currentMetrics"
+          (finalizeRequested)="onFinalizeRequestedFromDashboard()">
         </app-risk-dashboard>
       </div>
     </mat-tab>

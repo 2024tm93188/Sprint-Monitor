@@ -44,6 +44,11 @@ public class RiskFeedbackService : IRiskFeedbackService
             throw new InvalidOperationException($"Assessment with ID {dto.AssessmentId} not found.");
         }
 
+        if (!assessment.IsFinal)
+        {
+            throw new InvalidOperationException("Feedback is allowed only for the final assessment of a sprint.");
+        }
+
         if (assessment.TeamId != dto.TeamId)
         {
             throw new InvalidOperationException("Assessment does not belong to the selected team.");
@@ -55,20 +60,22 @@ public class RiskFeedbackService : IRiskFeedbackService
         var feedback = await _context.RiskFeedbacks
             .Include(f => f.Assessment)
             .Include(f => f.Sprint)
-            .FirstOrDefaultAsync(f => f.AssessmentId == dto.AssessmentId);
+            .FirstOrDefaultAsync(f => f.SprintId == assessment.SprintId);
 
         if (feedback == null)
         {
             feedback = new RiskFeedback
             {
                 AssessmentId = dto.AssessmentId,
+                SprintId = assessment.SprintId,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.RiskFeedbacks.Add(feedback);
         }
 
-        feedback.SprintId = dto.SprintId;
+        feedback.AssessmentId = dto.AssessmentId;
+        feedback.SprintId = assessment.SprintId;
         feedback.UserId = dto.UserId;
         feedback.UserName = dto.UserName;
         feedback.UserRole = dto.UserRole;
@@ -199,11 +206,13 @@ public class RiskFeedbackService : IRiskFeedbackService
     {
         var team = await _context.Teams.FindAsync(teamId);
 
-        // Get last 3 assessments for the team
+        // Include all final assessments (even legacy rows without SprintId) so comparison stays complete.
         var assessments = await _context.RiskAssessments
+            .Include(a => a.Sprint)
             .Include(a => a.Recommendations)
-            .Where(a => a.TeamId == teamId)
-            .OrderByDescending(a => a.AssessedAt)
+            .Where(a => a.TeamId == teamId && a.IsFinal)
+            .OrderByDescending(a => a.Sprint != null ? a.Sprint.SprintNumber : 0)
+            .ThenByDescending(a => a.AssessedAt)
             .Take(3)
             .ToListAsync();
 
@@ -217,7 +226,7 @@ public class RiskFeedbackService : IRiskFeedbackService
             .Where(s => sprintIds.Contains(s.SprintId))
             .ToListAsync();
 
-        // Get feedbacks for these assessments
+        // Get feedbacks for these final assessments
         var assessmentIds = assessments.Select(a => a.AssessmentId).ToList();
         var feedbacks = await _context.RiskFeedbacks
             .Where(f => assessmentIds.Contains(f.AssessmentId))
@@ -237,6 +246,7 @@ public class RiskFeedbackService : IRiskFeedbackService
             {
                 AssessmentId = assessment.AssessmentId,
                 SprintId = sprint?.SprintId ?? 0,
+                SprintNumber = sprint?.SprintNumber ?? 0,
                 SprintName = sprint?.SprintName ?? (assessment.SprintId.HasValue ? $"Sprint {assessment.SprintId.Value}" : $"Assessment {assessment.AssessmentId}"),
                 StartDate = sprint?.StartDate,
                 EndDate = sprint?.EndDate,
@@ -249,6 +259,11 @@ public class RiskFeedbackService : IRiskFeedbackService
                     AssessmentConfidence.LOW => 33,
                     _ => 0
                 },
+                IterationCount = assessment.SprintId.HasValue
+                    ? _context.RiskAssessments.Count(a => a.SprintId == assessment.SprintId)
+                    : 1,
+                FinalIteration = assessment.Iteration,
+                IsFinal = assessment.IsFinal,
                 ActualOutcome = feedback?.ActualOutcome ?? "Pending",
                 CommittedPoints = sprint?.CommittedPoints ?? assessment.PlannedCommitment,
                 CompletedPoints = feedback?.ActualPointsCompleted,

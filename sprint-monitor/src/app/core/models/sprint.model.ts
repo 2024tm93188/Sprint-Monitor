@@ -8,6 +8,12 @@ export interface Sprint {
   /** Unique identifier for the sprint */
   id: string;
 
+  /** Sprint number within the team */
+  sprintNumber?: number;
+
+  /** Current sprint status */
+  status?: 'Planned' | 'InProgress' | 'Completed';
+
   /** Sprint name (e.g., "Sprint 23") */
   name: string;
 

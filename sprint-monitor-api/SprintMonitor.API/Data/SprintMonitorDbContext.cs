@@ -39,6 +39,7 @@ public class SprintMonitorDbContext : DbContext
         modelBuilder.Entity<Sprint>(entity =>
         {
             entity.HasKey(e => e.SprintId);
+            entity.HasIndex(e => new { e.TeamId, e.SprintNumber }).IsUnique();
             entity.HasIndex(e => new { e.TeamId, e.SprintName }).IsUnique();
             entity.HasOne(e => e.Team)
                   .WithMany(t => t.Sprints)
@@ -50,10 +51,16 @@ public class SprintMonitorDbContext : DbContext
         modelBuilder.Entity<RiskAssessment>(entity =>
         {
             entity.HasKey(e => e.AssessmentId);
+            entity.HasIndex(e => new { e.SprintId, e.Iteration }).IsUnique();
+            entity.HasIndex(e => new { e.SprintId, e.IsFinal }).IsUnique().HasFilter("[IsFinal] = 1");
             entity.HasOne(e => e.Team)
                   .WithMany(t => t.RiskAssessments)
                   .HasForeignKey(e => e.TeamId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Sprint)
+                .WithMany()
+                .HasForeignKey(e => e.SprintId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // RiskFactor configuration
@@ -101,6 +108,7 @@ public class SprintMonitorDbContext : DbContext
         modelBuilder.Entity<RiskFeedback>(entity =>
         {
             entity.HasKey(e => e.FeedbackId);
+            entity.HasIndex(e => e.SprintId).IsUnique().HasFilter("[SprintId] IS NOT NULL");
             entity.HasOne(e => e.Assessment)
                   .WithMany()
                   .HasForeignKey(e => e.AssessmentId)

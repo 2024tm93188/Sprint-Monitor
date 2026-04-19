@@ -97,6 +97,7 @@ public class SprintComparisonDto
 {
     public int AssessmentId { get; set; }
     public int SprintId { get; set; }
+    public int SprintNumber { get; set; }
     public string SprintName { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
@@ -105,6 +106,11 @@ public class SprintComparisonDto
     public string PredictedRisk { get; set; } = string.Empty;
     public int PredictedScore { get; set; }
     public double ConfidenceLevel { get; set; }
+
+    // Iteration data
+    public int IterationCount { get; set; }
+    public int FinalIteration { get; set; }
+    public bool IsFinal { get; set; }
     
     // Actual Outcome
     public string ActualOutcome { get; set; } = string.Empty;

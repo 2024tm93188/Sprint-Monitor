@@ -88,7 +88,7 @@ export class RiskFeedbackComponent implements OnInit {
     });
 
     // Load assessments for dropdown selection
-    this.apiService.getAssessmentHistory(this.teamId).subscribe({
+    this.apiService.getFinalAssessments(this.teamId).subscribe({
       next: (assessments) => {
         this.assessments = assessments;
         this.syncOpenFormsWithLatestAssessment();
@@ -113,6 +113,11 @@ export class RiskFeedbackComponent implements OnInit {
   openFeedbackForm(assessmentId?: number): void {
     // Refresh latest data so newly evaluated runs appear immediately in dropdown.
     this.loadData();
+
+    if (!this.assessments.length) {
+      this.error = 'No final assessments are available yet. Mark a sprint assessment as final first.';
+      return;
+    }
 
     const resolvedAssessmentId = assessmentId ?? this.getLatestAssessmentId();
 
@@ -174,23 +179,12 @@ export class RiskFeedbackComponent implements OnInit {
   getAssessmentLabel(assessment: RiskAssessmentResponseDto): string {
     const date = new Date(assessment.assessedAt).toLocaleDateString();
     const match = this.getSelectedComparisonSprint(assessment.assessmentId);
-    const sprintRef = match?.sprintName || (assessment.sprintId ? `Sprint ${assessment.sprintId}` : 'Ad-hoc Assessment');
-    return `Assessment #${assessment.assessmentId} | ${sprintRef} | ${assessment.riskLevel} risk | Planned ${assessment.plannedCommitment} pts | ${date}`;
+    const sprintRef = match?.sprintName || (assessment.sprintNumber ? `Sprint #${assessment.sprintNumber}` : 'Committed Sprint');
+    return `Final Assessment #${assessment.assessmentId} | ${sprintRef} | Iteration ${assessment.iteration} | ${assessment.riskLevel} risk | Planned ${assessment.plannedCommitment} pts | ${date}`;
   }
 
   get selectableAssessments(): RiskAssessmentResponseDto[] {
-    if (!this.comparisonSprints.length) {
-      return this.assessments;
-    }
-
-    const comparisonAssessmentIds = new Set(this.comparisonSprints.map(s => s.assessmentId));
-    const comparisonMatchedAssessments = this.assessments.filter(a => comparisonAssessmentIds.has(a.assessmentId));
-
-    // Fallback to all assessments so forms never become unusable when comparison data lags
-    // or does not include the newest assessment yet.
-    return comparisonMatchedAssessments.length > 0
-      ? comparisonMatchedAssessments
-      : this.assessments;
+    return this.assessments;
   }
 
   private getSelectedComparisonSprint(assessmentId: number): SprintComparison | undefined {

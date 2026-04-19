@@ -89,7 +89,7 @@
                     (selectionChange)="onSprintSelected($event.value)">
           <mat-option [value]="null">— None (standalone assessment) —</mat-option>
           <mat-option *ngFor="let s of availableSprints" [value]="s.sprintId">
-            {{ s.sprintName }}
+            Sprint #{{ s.sprintNumber || s.sprintId }} - {{ s.sprintName }}
             ({{ s.committedPoints }} pts committed, {{ s.completedPoints }} pts done)
           </mat-option>
         </mat-select>
@@ -98,7 +98,7 @@
           help_outline
         </mat-icon>
         <mat-hint>
-          Linking builds the Assessment → Sprint → Feedback traceability chain
+          Leave this blank to auto-create the next sprint for the team.
         </mat-hint>
       </mat-form-field>
 
@@ -109,6 +109,18 @@
         <mat-icon>edit_note</mat-icon>
         Sprint Commitment Details
       </div>
+
+      <!-- Sprint Number -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Sprint Number</mat-label>
+        <input matInput type="number" [value]="nextSprintNumber" readonly>
+        <mat-icon matSuffix matTooltip="Auto-generated sequential sprint number for this team">
+          tag
+        </mat-icon>
+        <mat-hint>
+          This number is assigned automatically and will be used when the sprint is created.
+        </mat-hint>
+      </mat-form-field>
 
       <!-- Planned Story Points -->
       <mat-form-field appearance="outline" class="full-width">

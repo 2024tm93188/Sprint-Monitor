@@ -2,6 +2,7 @@ import { createReducer, on } from '@ngrx/store';
 import {
   completeRiskEvaluation,
   resetPlanningEvaluationState,
+  setCurrentAssessment,
   setPlanningInput,
   startRiskEvaluation,
   updateAssessmentRecommendations
@@ -30,6 +31,10 @@ export const planningEvaluationReducer = createReducer<PlanningEvaluationStoreSt
     assessment,
     metrics,
     loading: false
+  })),
+  on(setCurrentAssessment, (state, { assessment }) => ({
+    ...state,
+    assessment
   })),
   on(updateAssessmentRecommendations, (state, { recommendations }) => ({
     ...state,

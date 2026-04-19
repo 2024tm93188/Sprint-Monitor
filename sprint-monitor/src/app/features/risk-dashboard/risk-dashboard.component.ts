@@ -1,20 +1,16 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
 
 import {
   RiskAssessment,
   RiskLevel,
-  RiskFactor,
   AssessmentConfidence
 } from '../../core/models/risk.model';
 import { SprintMetrics } from '../../core/models/sprint.model';
-import { getRiskLevelColor, getRiskLevelLabel } from '../../core/utils/rules.util';
+import { getRiskLevelLabel } from '../../core/utils/rules.util';
 
 /**
  * Risk Dashboard Component
@@ -27,11 +23,7 @@ import { getRiskLevelColor, getRiskLevelLabel } from '../../core/utils/rules.uti
   imports: [
     CommonModule,
     MatCardModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatChipsModule,
-    MatTooltipModule,
-    MatDividerModule
+    MatIconModule
   ],
   templateUrl: './risk-dashboard.component.html',
   styleUrls: ['./risk-dashboard.component.scss']
@@ -39,9 +31,12 @@ import { getRiskLevelColor, getRiskLevelLabel } from '../../core/utils/rules.uti
 export class RiskDashboardComponent implements OnChanges {
   @Input() assessment: RiskAssessment | null = null;
   @Input() metrics: SprintMetrics | null = null;
+  @Output() finalizeRequested = new EventEmitter<void>();
 
-  ngOnChanges(changes: SimpleChanges): void {
-    // React to input changes if needed
+  detailsExpanded = false;
+
+  ngOnChanges(_: SimpleChanges): void {
+    this.detailsExpanded = false;
   }
 
   getRiskClass(): string {
@@ -61,6 +56,14 @@ export class RiskDashboardComponent implements OnChanges {
   getRiskLabel(): string {
     if (!this.assessment) return '';
     return getRiskLevelLabel(this.assessment.overallRisk);
+  }
+
+  canMarkFinal(): boolean {
+    return !!this.assessment?.assessmentId && !this.assessment?.isFinal;
+  }
+
+  onMarkFinal(): void {
+    this.finalizeRequested.emit();
   }
 
   getConfidenceClass(): string {
@@ -117,6 +120,11 @@ export class RiskDashboardComponent implements OnChanges {
     if (this.metrics.spilloverRate < 20) return 'primary';
     if (this.metrics.spilloverRate <= 40) return 'accent';
     return 'warn';
+  }
+
+  getSpilloverProgress(): number {
+    if (!this.metrics) return 0;
+    return Math.min(100, this.metrics.spilloverRate);
   }
 
   // Factor styling helpers

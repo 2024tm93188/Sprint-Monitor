@@ -101,7 +101,9 @@ export class PlanningEvaluationComponent implements OnInit {
 
         const metrics = this.metricsService.calculateMetrics(
           input.historicalSprints,
-          input.plannedStoryPoints
+          input.plannedStoryPoints,
+          input.teamAvailability,
+          input.externalDependencies
         );
 
         this.store.dispatch(completeRiskEvaluation({
@@ -127,7 +129,9 @@ export class PlanningEvaluationComponent implements OnInit {
 
         const metrics = this.metricsService.calculateMetrics(
           input.historicalSprints,
-          input.plannedStoryPoints
+          input.plannedStoryPoints,
+          input.teamAvailability,
+          input.externalDependencies
         );
         const assessment = this.riskEngine.evaluateRisk(
           metrics,

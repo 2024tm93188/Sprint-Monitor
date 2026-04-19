@@ -27,6 +27,9 @@ public class RiskAssessmentDto
     public int AssessmentId { get; set; }
     public int TeamId { get; set; }
     public int? SprintId { get; set; }
+    public int SprintNumber { get; set; }
+    public int Iteration { get; set; }
+    public bool IsFinal { get; set; }
     public int PlannedCommitment { get; set; }
     public string RiskLevel { get; set; } = string.Empty;
     public decimal TotalScore { get; set; }

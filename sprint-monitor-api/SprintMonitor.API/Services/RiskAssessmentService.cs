@@ -14,6 +14,7 @@ public class RiskAssessmentService : IRiskAssessmentService
 {
     private readonly SprintMonitorDbContext _context;
     private readonly IMetricsService _metricsService;
+    private readonly ISprintService _sprintService;
 
     // Thresholds (could be moved to configuration)
     private const decimal CVR_LOW_MAX = 1.0m;
@@ -25,10 +26,11 @@ public class RiskAssessmentService : IRiskAssessmentService
     private const int TOTAL_SCORE_LOW_MAX = 3;
     private const int TOTAL_SCORE_MEDIUM_MAX = 6;
 
-    public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService)
+    public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService, ISprintService sprintService)
     {
         _context = context;
         _metricsService = metricsService;
+        _sprintService = sprintService;
     }
 
     /// <summary>
@@ -36,10 +38,36 @@ public class RiskAssessmentService : IRiskAssessmentService
     /// </summary>
     public async Task<RiskAssessmentDto> EvaluateRiskAsync(RiskAssessmentRequestDto request)
     {
+        Sprint sprint;
+
+        if (request.SprintId.HasValue)
+        {
+            sprint = await _context.Sprints.FirstOrDefaultAsync(s => s.SprintId == request.SprintId.Value && s.TeamId == request.TeamId)
+                ?? throw new InvalidOperationException($"Sprint with ID {request.SprintId.Value} not found for team {request.TeamId}.");
+        }
+        else
+        {
+            var activeSprint = await _sprintService.GetActiveSprintAsync(request.TeamId);
+            if (activeSprint != null)
+            {
+                sprint = await _context.Sprints.FirstAsync(s => s.SprintId == activeSprint.SprintId);
+            }
+            else
+            {
+                var createdSprint = await _sprintService.GetOrCreateActiveSprintAsync(request.TeamId);
+                sprint = await _context.Sprints.FirstAsync(s => s.SprintId == createdSprint.SprintId);
+            }
+        }
+
+        if (sprint.TeamId != request.TeamId)
+        {
+            throw new InvalidOperationException("Selected sprint does not belong to the selected team.");
+        }
+
         // Get historical sprints for this team
         var sprints = await _context.Sprints
-            .Where(s => s.TeamId == request.TeamId)
-            .OrderBy(s => s.EndDate ?? s.CreatedAt)
+            .Where(s => s.TeamId == request.TeamId && s.SprintId != sprint.SprintId)
+            .OrderBy(s => s.SprintNumber)
             .ToListAsync();
 
         // Calculate metrics
@@ -60,11 +88,18 @@ public class RiskAssessmentService : IRiskAssessmentService
         // Generate recommendations
         var recommendations = GenerateRecommendations(factors, metrics, request.PlannedCommitment, riskLevel);
 
+        var iteration = await _context.RiskAssessments
+            .Where(a => a.SprintId == sprint.SprintId)
+            .Select(a => (int?)a.Iteration)
+            .MaxAsync() ?? 0;
+
         // Create and save the assessment
         var assessment = new RiskAssessment
         {
             TeamId = request.TeamId,
-            SprintId = request.SprintId,
+            SprintId = sprint.SprintId,
+            Iteration = iteration + 1,
+            IsFinal = false,
             PlannedCommitment = request.PlannedCommitment,
             TeamAvailability = request.TeamAvailability,
             ExternalDependencies = request.ExternalDependencies,
@@ -118,6 +153,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             AssessmentId = assessment.AssessmentId,
             TeamId = assessment.TeamId,
             SprintId = assessment.SprintId,
+            SprintNumber = sprint.SprintNumber,
+            Iteration = assessment.Iteration,
+            IsFinal = assessment.IsFinal,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = riskLevel.ToString(),
             TotalScore = totalScore,
@@ -133,10 +171,24 @@ public class RiskAssessmentService : IRiskAssessmentService
     public async Task<IEnumerable<RiskAssessmentDto>> GetAssessmentHistoryAsync(int teamId)
     {
         return await _context.RiskAssessments
+            .Include(a => a.Sprint)
             .Include(a => a.Factors)
             .Include(a => a.Recommendations)
             .Where(a => a.TeamId == teamId)
-            .OrderByDescending(a => a.AssessedAt)
+            .OrderByDescending(a => a.Sprint!.SprintNumber)
+            .ThenByDescending(a => a.Iteration)
+            .Select(a => MapToDto(a))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<RiskAssessmentDto>> GetFinalAssessmentsAsync(int teamId)
+    {
+        return await _context.RiskAssessments
+            .Include(a => a.Sprint)
+            .Include(a => a.Factors)
+            .Include(a => a.Recommendations)
+            .Where(a => a.TeamId == teamId && a.IsFinal)
+            .OrderByDescending(a => a.Sprint!.SprintNumber)
             .Select(a => MapToDto(a))
             .ToListAsync();
     }
@@ -144,11 +196,42 @@ public class RiskAssessmentService : IRiskAssessmentService
     public async Task<RiskAssessmentDto?> GetAssessmentByIdAsync(int assessmentId)
     {
         var assessment = await _context.RiskAssessments
+            .Include(a => a.Sprint)
             .Include(a => a.Factors)
             .Include(a => a.Recommendations)
             .FirstOrDefaultAsync(a => a.AssessmentId == assessmentId);
 
         return assessment == null ? null : MapToDto(assessment);
+    }
+
+    public async Task<RiskAssessmentDto?> MarkAssessmentAsFinalAsync(int assessmentId)
+    {
+        var assessment = await _context.RiskAssessments
+            .FirstOrDefaultAsync(a => a.AssessmentId == assessmentId);
+
+        if (assessment == null)
+        {
+            return null;
+        }
+
+        if (!assessment.SprintId.HasValue)
+        {
+            throw new InvalidOperationException("Assessment must be linked to a sprint before it can be finalized.");
+        }
+
+        var sprintId = assessment.SprintId.Value;
+        var siblingAssessments = await _context.RiskAssessments
+            .Where(a => a.SprintId == sprintId)
+            .ToListAsync();
+
+        foreach (var sibling in siblingAssessments)
+        {
+            sibling.IsFinal = sibling.AssessmentId == assessmentId;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return await GetAssessmentByIdAsync(assessmentId);
     }
 
     #region Risk Scoring Logic
@@ -524,6 +607,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             AssessmentId = assessment.AssessmentId,
             TeamId = assessment.TeamId,
             SprintId = assessment.SprintId,
+            SprintNumber = assessment.Sprint?.SprintNumber ?? 0,
+            Iteration = assessment.Iteration,
+            IsFinal = assessment.IsFinal,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = assessment.RiskLevel.ToString(),
             TotalScore = assessment.TotalScore,

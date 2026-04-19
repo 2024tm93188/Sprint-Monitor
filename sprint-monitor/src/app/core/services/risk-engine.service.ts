@@ -58,7 +58,7 @@ export class RiskEngineService {
     if (!this.useApiEvaluation) {
       // Use local calculation
       const sprints = this.sprintService.getHistoricalSprintsSnapshot();
-      const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints);
+      const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints, teamAvailability, externalDependencies);
       return of(this.evaluateRisk(metrics, plannedPoints, teamAvailability));
     }
 
@@ -75,7 +75,7 @@ export class RiskEngineService {
       catchError(err => {
         console.warn('API evaluation failed, falling back to local calculation:', err);
         const sprints = this.sprintService.getHistoricalSprintsSnapshot();
-        const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints);
+        const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints, teamAvailability, externalDependencies);
         return of(this.evaluateRisk(metrics, plannedPoints, teamAvailability));
       })
     );
@@ -86,6 +86,12 @@ export class RiskEngineService {
    */
   private mapApiResponseToAssessment(response: any): RiskAssessment {
     return {
+      assessmentId: response.assessmentId,
+      teamId: response.teamId,
+      sprintId: response.sprintId,
+      sprintNumber: response.sprintNumber,
+      iteration: response.iteration,
+      isFinal: response.isFinal,
       overallRisk: response.riskLevel as RiskLevel,
       totalScore: response.totalScore,
       maxPossibleScore: response.maxPossibleScore,
@@ -152,6 +158,7 @@ export class RiskEngineService {
     const confidence = this.assessConfidence(metrics.sprintCount);
 
     return {
+      isFinal: false,
       overallRisk,
       totalScore,
       maxPossibleScore,

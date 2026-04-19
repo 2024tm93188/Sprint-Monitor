@@ -38,6 +38,24 @@ export interface RiskFactor {
  * Final output from the risk evaluation engine.
  */
 export interface RiskAssessment {
+  /** Unique assessment identifier */
+  assessmentId?: number;
+
+  /** Team identifier */
+  teamId?: number;
+
+  /** Linked sprint identifier */
+  sprintId?: number | null;
+
+  /** Sprint number shown in the UI */
+  sprintNumber?: number;
+
+  /** Assessment iteration within the sprint */
+  iteration?: number;
+
+  /** Marks the committed final assessment */
+  isFinal?: boolean;
+
   /** Overall risk level */
   overallRisk: RiskLevel;
 

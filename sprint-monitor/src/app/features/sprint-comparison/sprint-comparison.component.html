@@ -16,7 +16,7 @@
       </div>
       <div class="stat">
         <strong>{{ comparison.sprints.length }}</strong>
-        <span>Sprints</span>
+        <span>Final sprints</span>
       </div>
       <div class="stat">
         <strong>{{ getTrendIcon(comparison.improvementTrend || 'STABLE') }} {{ comparison.improvementTrend || 'STABLE' }}</strong>
@@ -26,18 +26,23 @@
 
     <!-- Sprints List -->
     <div class="sprints-section">
-      <h2>Sprint Analysis</h2>
+      <h2>Final Sprint Analysis</h2>
       
       <div class="sprints-list">
         <div *ngFor="let sprint of comparison.sprints" class="sprint-card">
           <div class="card-header">
-            <h3>{{ sprint.sprintName }}</h3>
+            <h3>Sprint #{{ sprint.sprintNumber }} · {{ sprint.sprintName }}</h3>
             <span class="accuracy-badge" [class]="'badge-' + getAccuracyLevelColor(sprint.accuracyLevel)">
               {{ getAccuracyLevelIcon(sprint.accuracyLevel) }} {{ sprint.accuracyLevel }}
             </span>
           </div>
 
           <div class="card-body">
+            <div class="row">
+              <span class="label">Iterations:</span>
+              <span class="value">{{ sprint.iterationCount }} evaluations</span>
+            </div>
+
             <div class="row">
               <span class="label">Predicted:</span>
               <span class="value risk-badge" [class]="'risk-' + getRiskColor(sprint.predictedRisk)">
@@ -83,7 +88,7 @@
   <!-- Empty -->
   <div *ngIf="!loading && !comparison && !error" class="empty-state">
     <h3>No Sprint Data</h3>
-    <p>Complete at least 3 sprints with risk assessments</p>
+    <p>Complete at least one sprint and mark a final assessment</p>
     <button class="btn btn-secondary" (click)="loadComparison()">Retry</button>
   </div>
 </div>

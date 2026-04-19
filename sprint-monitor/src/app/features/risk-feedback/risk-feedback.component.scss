@@ -8,6 +8,16 @@
     h1 { margin: 0; font-size: 24px; font-weight: 600; }
   }
 
+  .final-only-banner {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.2);
+    color: #0f766e;
+    font-weight: 600;
+  }
+
   .quick-stats {
     display: flex;
     gap: 16px;

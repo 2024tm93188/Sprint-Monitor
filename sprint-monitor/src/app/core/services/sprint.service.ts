@@ -70,6 +70,8 @@ export class SprintService {
   private mapSprintDtosToSprints(dtos: SprintDto[]): Sprint[] {
     return dtos.map(dto => ({
       id: `sprint-${dto.sprintId}`,
+      sprintNumber: dto.sprintNumber,
+      status: dto.status as 'Planned' | 'InProgress' | 'Completed',
       name: dto.sprintName,
       committedPoints: dto.committedPoints,
       completedPoints: dto.completedPoints,

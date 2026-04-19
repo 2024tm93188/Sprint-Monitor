@@ -63,6 +63,17 @@ public class RiskAssessmentController : ControllerBase
     }
 
     /// <summary>
+    /// Get only final assessments for a team
+    /// </summary>
+    [HttpGet("final/{teamId}")]
+    [ProducesResponseType(typeof(IEnumerable<RiskAssessmentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<RiskAssessmentDto>>> GetFinalAssessments(int teamId)
+    {
+        var assessments = await _riskAssessmentService.GetFinalAssessmentsAsync(teamId);
+        return Ok(assessments);
+    }
+
+    /// <summary>
     /// Get a specific assessment by ID
     /// </summary>
     [HttpGet("{assessmentId}")]
@@ -73,6 +84,23 @@ public class RiskAssessmentController : ControllerBase
         var assessment = await _riskAssessmentService.GetAssessmentByIdAsync(assessmentId);
         if (assessment == null)
             return NotFound(new { message = $"Assessment with ID {assessmentId} not found" });
+
+        return Ok(assessment);
+    }
+
+    /// <summary>
+    /// Mark a single assessment as the final committed assessment for its sprint
+    /// </summary>
+    [HttpPost("{assessmentId}/final")]
+    [ProducesResponseType(typeof(RiskAssessmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RiskAssessmentDto>> MarkAssessmentAsFinal(int assessmentId)
+    {
+        var assessment = await _riskAssessmentService.MarkAssessmentAsFinalAsync(assessmentId);
+        if (assessment == null)
+        {
+            return NotFound(new { message = $"Assessment with ID {assessmentId} not found" });
+        }
 
         return Ok(assessment);
     }

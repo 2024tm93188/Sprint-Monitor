@@ -21,6 +21,11 @@ export const completeRiskEvaluation = createAction(
   }>()
 );
 
+export const setCurrentAssessment = createAction(
+  '[Planning Evaluation] Set Current Assessment',
+  props<{ assessment: RiskAssessment }>()
+);
+
 export const updateAssessmentRecommendations = createAction(
   '[Planning Evaluation] Update Assessment Recommendations',
   props<{ recommendations: Recommendation[] }>()

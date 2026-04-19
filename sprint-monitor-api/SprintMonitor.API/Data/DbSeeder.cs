@@ -175,8 +175,6 @@ public static class DbSeeder
         var sprints = new List<Sprint>();
         var baseDate = DateTime.UtcNow.AddMonths(-10);
 
-        int sprintIndex = 1;
-        
         foreach (var team in teams)
         {
             if (!TeamPatterns.TryGetValue(team.TeamName, out var patternDef))
@@ -191,6 +189,7 @@ public static class DbSeeder
             {
                 var startDate = baseDate.AddDays(i * 14);
                 var endDate = startDate.AddDays(14);
+                var sprintNumber = i + 1;
 
                 // Team-specific variations
                 int committedPoints;
@@ -273,7 +272,9 @@ public static class DbSeeder
                 var sprint = new Sprint
                 {
                     TeamId = team.TeamId,
+                    SprintNumber = sprintNumber,
                     SprintName = $"{team.TeamName.Split('(')[0].Trim()}-{i + 1:D3}",
+                    Status = SprintStatus.Completed,
                     CommittedPoints = Math.Max(10, committedPoints),
                     CompletedPoints = Math.Max(0, completedPoints),
                     AddedPoints = addedPoints,
@@ -289,7 +290,6 @@ public static class DbSeeder
                 };
 
                 sprints.Add(sprint);
-                sprintIndex++;
             }
         }
 

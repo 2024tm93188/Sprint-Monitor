@@ -3,6 +3,10 @@
     <h1>Feedback</h1>
   </header>
 
+  <div class="final-only-banner">
+    Feedback is available only for the final assessment of each sprint.
+  </div>
+
   <!-- Quick Stats -->
   <div class="quick-stats" *ngIf="accuracy">
     <div class="stat-item">
@@ -44,7 +48,7 @@
     <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()">
       <div class="form-group">
         <label>Assessment *</label>
-        <small class="help-text">Select the risk evaluation run you are giving feedback on.</small>
+        <small class="help-text">Select the final risk assessment you are giving feedback on.</small>
         <select formControlName="assessmentId">
           <option [ngValue]="null" disabled>-- Select --</option>
           <option *ngFor="let a of selectableAssessments" [ngValue]="a.assessmentId">
@@ -128,6 +132,7 @@
   <!-- Empty State -->
   <div *ngIf="!loading && !showForm && feedbacks.length === 0 && !error" class="empty-state">
     <h3>No Feedback Yet</h3>
+    <p>Final assessments will appear here once a sprint has been committed.</p>
     <button class="btn btn-primary" (click)="openFeedbackForm()">Provide Feedback</button>
   </div>
 </div>

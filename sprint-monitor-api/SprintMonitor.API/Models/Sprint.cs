@@ -3,6 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SprintMonitor.API.Models;
 
+public enum SprintStatus
+{
+    Planned,
+    InProgress,
+    Completed
+}
+
 /// <summary>
 /// Represents a sprint with planning and completion data.
 /// Core entity for historical analysis.
@@ -16,8 +23,14 @@ public class Sprint
     public int TeamId { get; set; }
 
     [Required]
+    public int SprintNumber { get; set; }
+
+    [Required]
     [MaxLength(100)]
     public string SprintName { get; set; } = string.Empty;
+
+    [Required]
+    public SprintStatus Status { get; set; } = SprintStatus.Planned;
 
     /// <summary>
     /// Story points committed at sprint start

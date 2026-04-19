@@ -18,7 +18,9 @@ export interface SprintDto {
   sprintId: number;
   teamId: number;
   teamName: string;
+  sprintNumber: number;
   sprintName: string;
+  status: string;
   startDate: string | null;
   endDate: string | null;
   committedPoints: number;
@@ -78,6 +80,9 @@ export interface RiskAssessmentResponseDto {
   assessmentId: number;
   teamId: number;
   sprintId?: number | null;
+  sprintNumber: number;
+  iteration: number;
+  isFinal: boolean;
   plannedCommitment: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   totalScore: number;
@@ -175,7 +180,15 @@ export class ApiService {
     return this.http.get<RiskAssessmentResponseDto[]>(`${this.baseUrl}/riskassessment/history/${teamId}`);
   }
 
+  getFinalAssessments(teamId: number): Observable<RiskAssessmentResponseDto[]> {
+    return this.http.get<RiskAssessmentResponseDto[]>(`${this.baseUrl}/riskassessment/final/${teamId}`);
+  }
+
   getAssessment(id: number): Observable<RiskAssessmentResponseDto> {
     return this.http.get<RiskAssessmentResponseDto>(`${this.baseUrl}/riskassessment/${id}`);
+  }
+
+  markAssessmentAsFinal(assessmentId: number): Observable<RiskAssessmentResponseDto> {
+    return this.http.post<RiskAssessmentResponseDto>(`${this.baseUrl}/riskassessment/${assessmentId}/final`, {});
   }
 }

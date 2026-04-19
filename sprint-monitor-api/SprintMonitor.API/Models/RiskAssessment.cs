@@ -52,6 +52,16 @@ public class RiskAssessment
     public int? SprintId { get; set; }
 
     /// <summary>
+    /// Iteration number within the sprint
+    /// </summary>
+    public int Iteration { get; set; }
+
+    /// <summary>
+    /// Marks the final committed assessment for the sprint
+    /// </summary>
+    public bool IsFinal { get; set; }
+
+    /// <summary>
     /// Story points planned for the assessed sprint
     /// </summary>
     [Required]
@@ -114,6 +124,9 @@ public class RiskAssessment
     // Navigation properties
     [ForeignKey("TeamId")]
     public Team? Team { get; set; }
+
+    [ForeignKey("SprintId")]
+    public Sprint? Sprint { get; set; }
 
     public ICollection<RiskFactor> Factors { get; set; } = new List<RiskFactor>();
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();

@@ -69,6 +69,7 @@ export class SprintInputComponent implements OnInit {
   // Sprint selector
   availableSprints: SprintDto[] = [];
   selectedSprintId: number | null = null;
+  nextSprintNumber = 1;
 
   // CSV import state
   csvImporting = false;
@@ -110,7 +111,9 @@ export class SprintInputComponent implements OnInit {
     if (sprints.length > 0) {
       this.historicalMetrics = this.metricsService.calculateMetrics(
         sprints,
-        this.planningForm.get('plannedPoints')?.value || 0
+        this.planningForm.get('plannedPoints')?.value || 0,
+        this.planningForm.get('teamAvailability')?.value || 100,
+        this.planningForm.get('externalDependencies')?.value || 0
       );
       this.recommendedCommitment = this.metricsService.calculateRecommendedCommitment(
         sprints,
@@ -127,9 +130,12 @@ export class SprintInputComponent implements OnInit {
     this.apiService.getSprints(teamId).subscribe({
       next: (sprints) => {
         this.availableSprints = sprints;
+        const highestSprintNumber = sprints.reduce((max, sprint) => Math.max(max, sprint.sprintNumber || 0), 0);
+        this.nextSprintNumber = highestSprintNumber + 1;
       },
       error: () => {
         this.availableSprints = [];
+        this.nextSprintNumber = 1;
       }
     });
   }

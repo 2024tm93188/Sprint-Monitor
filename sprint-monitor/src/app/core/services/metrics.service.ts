@@ -23,9 +23,16 @@ export class MetricsService {
    *
    * @param sprints - Array of historical sprints
    * @param plannedPoints - Story points planned for upcoming sprint
+   * @param teamAvailability - Team availability for the upcoming sprint
+   * @param externalDependencies - Number of external dependencies for the upcoming sprint
    * @returns Computed metrics for risk evaluation
    */
-  calculateMetrics(sprints: Sprint[], plannedPoints: number): SprintMetrics {
+  calculateMetrics(
+    sprints: Sprint[],
+    plannedPoints: number,
+    teamAvailability: number = 100,
+    externalDependencies: number = 0
+  ): SprintMetrics {
     // Extract completed points for velocity calculation
     // Using completed points (not committed) for realistic velocity
     const velocities = sprints.map(s => s.completedPoints);
@@ -43,12 +50,21 @@ export class MetricsService {
     const spilloverCount = sprints.filter(s => s.hadSpillover).length;
     const spilloverRate = roundTo(calculateRate(spilloverCount, sprints.length));
 
-    // Calculate effective capacity using 80% buffer rule
-    const effectiveCapacity = roundTo(averageVelocity * RISK_THRESHOLDS.CAPACITY_BUFFER);
+    // Adjust capacity for current delivery context
+    const availabilityMultiplier = teamAvailability <= 0
+      ? 0
+      : (teamAvailability >= 100 ? 1 : teamAvailability / 100);
+    const dependencyMultiplier = Math.max(0.75, 1 - (externalDependencies * 0.04));
+
+    // Calculate effective capacity using 80% buffer rule and current constraints
+    const effectiveCapacity = roundTo(
+      averageVelocity * RISK_THRESHOLDS.CAPACITY_BUFFER * availabilityMultiplier * dependencyMultiplier
+    );
 
     // Calculate Commitment-to-Velocity Ratio (CVR)
-    const cvr = averageVelocity > 0
-      ? roundTo(plannedPoints / averageVelocity, 3)
+    const adjustedVelocity = averageVelocity * availabilityMultiplier * dependencyMultiplier;
+    const cvr = adjustedVelocity > 0
+      ? roundTo(plannedPoints / adjustedVelocity, 3)
       : 0;
 
     return {

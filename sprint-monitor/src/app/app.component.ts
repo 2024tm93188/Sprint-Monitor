@@ -25,10 +25,11 @@ import { SprintComparisonComponent } from './features/sprint-comparison/sprint-c
 
 import { AuthService } from './core/services/auth.service';
 import { TeamService } from './core/services/team.service';
+import { ApiService } from './core/services/api.service';
 import { TeamDto } from './core/services/api.service';
 import { SprintMetrics } from './core/models/sprint.model';
 import { RiskAssessment, Recommendation } from './core/models/risk.model';
-import { resetPlanningEvaluationState } from './core/store/planning-evaluation.actions';
+import { resetPlanningEvaluationState, setCurrentAssessment } from './core/store/planning-evaluation.actions';
 import { selectCurrentAssessment, selectCurrentMetrics } from './core/store/planning-evaluation.selectors';
 
 @Component({
@@ -66,6 +67,7 @@ export class AppComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private snackBar = inject(MatSnackBar);
   private store = inject(Store);
+  private apiService = inject(ApiService);
   authService = inject(AuthService);
   teamService = inject(TeamService);
 
@@ -135,6 +137,34 @@ export class AppComponent implements OnInit {
     }
 
     this.planningEvaluation.applyRecommendation(recommendation);
+  }
+
+  onFinalizeRequestedFromDashboard(): void {
+    const assessment = this.currentAssessment;
+    if (!assessment?.assessmentId || assessment.isFinal) {
+      this.showSnackBar('No draft assessment available to finalize.', 'OK', 2500);
+      return;
+    }
+
+    this.apiService.markAssessmentAsFinal(assessment.assessmentId).subscribe({
+      next: finalized => {
+        const updatedAssessment: RiskAssessment = {
+          ...assessment,
+          assessmentId: finalized.assessmentId,
+          sprintId: finalized.sprintId,
+          sprintNumber: finalized.sprintNumber,
+          iteration: finalized.iteration,
+          isFinal: true
+        };
+
+        this.store.dispatch(setCurrentAssessment({ assessment: updatedAssessment }));
+        this.showSnackBar(`Sprint #${finalized.sprintNumber} marked as final`, 'OK', 2800);
+      },
+      error: err => {
+        const message = err?.error?.message || 'Could not mark assessment as final';
+        this.showSnackBar(message, 'OK', 3000);
+      }
+    });
   }
 
   logout(): void {

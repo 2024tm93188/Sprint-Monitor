@@ -94,6 +94,7 @@ export interface RecommendationOutcome {
 export interface SprintComparison {
   assessmentId: number;
   sprintId: number;
+  sprintNumber: number;
   sprintName: string;
   startDate?: Date;
   endDate?: Date;
@@ -102,6 +103,10 @@ export interface SprintComparison {
   predictedRisk: string;
   predictedScore: number;
   confidenceLevel: number;
+
+  iterationCount: number;
+  finalIteration: number;
+  isFinal: boolean;
 
   // Actual Outcome
   actualOutcome: string;

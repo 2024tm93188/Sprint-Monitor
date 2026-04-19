@@ -28,7 +28,9 @@ public class SprintDto
     public int SprintId { get; set; }
     public int TeamId { get; set; }
     public string TeamName { get; set; } = string.Empty;
+    public int SprintNumber { get; set; }
     public string SprintName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
     public int CommittedPoints { get; set; }
     public int CompletedPoints { get; set; }
     public int AddedPoints { get; set; }

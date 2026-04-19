@@ -19,7 +19,7 @@ public class SprintService : ISprintService
         return await _context.Sprints
             .Include(s => s.Team)
             .Where(s => s.TeamId == teamId)
-            .OrderByDescending(s => s.EndDate ?? s.CreatedAt)
+            .OrderByDescending(s => s.SprintNumber)
             .Select(s => MapToDto(s))
             .ToListAsync();
     }
@@ -35,10 +35,13 @@ public class SprintService : ISprintService
 
     public async Task<SprintDto> CreateSprintAsync(CreateSprintDto dto)
     {
+        var sprintNumber = await GetNextSprintNumberAsync(dto.TeamId);
         var sprint = new Sprint
         {
             TeamId = dto.TeamId,
-            SprintName = dto.SprintName,
+            SprintNumber = sprintNumber,
+            SprintName = string.IsNullOrWhiteSpace(dto.SprintName) ? $"Sprint {sprintNumber}" : dto.SprintName,
+            Status = SprintStatus.Planned,
             CommittedPoints = dto.CommittedPoints,
             CompletedPoints = dto.CompletedPoints,
             AddedPoints = dto.AddedPoints,
@@ -97,10 +100,69 @@ public class SprintService : ISprintService
         return await _context.Sprints
             .Include(s => s.Team)
             .Where(s => s.TeamId == teamId)
-            .OrderByDescending(s => s.EndDate ?? s.CreatedAt)
+            .OrderByDescending(s => s.SprintNumber)
             .Take(count)
             .Select(s => MapToDto(s))
             .ToListAsync();
+    }
+
+    public async Task<SprintDto?> GetActiveSprintAsync(int teamId)
+    {
+        var sprint = await _context.Sprints
+            .Include(s => s.Team)
+            .Where(s => s.TeamId == teamId && s.Status != SprintStatus.Completed)
+            .OrderByDescending(s => s.SprintNumber)
+            .FirstOrDefaultAsync();
+
+        return sprint == null ? null : MapToDto(sprint);
+    }
+
+    public async Task<SprintDto> GetOrCreateActiveSprintAsync(int teamId)
+    {
+        var activeSprint = await _context.Sprints
+            .Include(s => s.Team)
+            .Where(s => s.TeamId == teamId && s.Status != SprintStatus.Completed)
+            .OrderByDescending(s => s.SprintNumber)
+            .FirstOrDefaultAsync();
+
+        if (activeSprint != null)
+        {
+            return MapToDto(activeSprint);
+        }
+
+        var team = await _context.Teams.FindAsync(teamId);
+        if (team == null)
+        {
+            throw new InvalidOperationException($"Team with ID {teamId} not found.");
+        }
+
+        var sprintNumber = await GetNextSprintNumberAsync(teamId);
+        var sprint = new Sprint
+        {
+            TeamId = teamId,
+            SprintNumber = sprintNumber,
+            SprintName = $"Sprint {sprintNumber}",
+            Status = SprintStatus.Planned,
+            CommittedPoints = 0,
+            CompletedPoints = 0,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Sprints.Add(sprint);
+        await _context.SaveChangesAsync();
+
+        await _context.Entry(sprint).Reference(s => s.Team).LoadAsync();
+        return MapToDto(sprint);
+    }
+
+    private async Task<int> GetNextSprintNumberAsync(int teamId)
+    {
+        var currentMax = await _context.Sprints
+            .Where(s => s.TeamId == teamId)
+            .Select(s => (int?)s.SprintNumber)
+            .MaxAsync();
+
+        return (currentMax ?? 0) + 1;
     }
 
     private static SprintDto MapToDto(Sprint sprint)
@@ -110,7 +172,9 @@ public class SprintService : ISprintService
             SprintId = sprint.SprintId,
             TeamId = sprint.TeamId,
             TeamName = sprint.Team?.TeamName ?? "",
+            SprintNumber = sprint.SprintNumber,
             SprintName = sprint.SprintName,
+            Status = sprint.Status.ToString(),
             CommittedPoints = sprint.CommittedPoints,
             CompletedPoints = sprint.CompletedPoints,
             AddedPoints = sprint.AddedPoints,

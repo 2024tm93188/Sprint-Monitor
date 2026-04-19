@@ -1,64 +1,114 @@
 <div class="dashboard-container" *ngIf="assessment">
-  <mat-card class="summary-card">
-    <h2>Risk Summary</h2>
-    <div class="summary-grid">
-      <div class="summary-item">
-        <span class="label">Risk Level</span>
-        <span class="value" [ngClass]="'risk-' + getRiskClass()">{{assessment.overallRisk}}</span>
+  <mat-card class="hero-card">
+    <div class="hero-head">
+      <div>
+        <h2>Risk Dashboard</h2>
+        <p class="subline">Sprint #{{assessment.sprintNumber || assessment.sprintId || 'N/A'}} · Assessment #{{assessment.assessmentId || 'N/A'}}</p>
       </div>
-      <div class="summary-item">
-        <span class="label">Risk Score</span>
-        <span class="value">{{assessment.totalScore}} / {{assessment.maxPossibleScore}}</span>
+      <div class="hero-actions">
+        <button type="button" class="finalize-btn" *ngIf="canMarkFinal()" (click)="onMarkFinal()">Mark as Final</button>
+        <span class="final-pill" *ngIf="assessment.isFinal">Final Assessment</span>
       </div>
-      <div class="summary-item">
-        <span class="label">Confidence</span>
-        <span class="value">{{assessment.confidence}}</span>
-      </div>
+    </div>
+
+    <div class="status-strip">
+      <span class="status-chip" [ngClass]="'risk-' + getRiskClass()">{{ assessment.overallRisk }} Risk</span>
+      <span class="status-chip neutral">Confidence: {{ assessment.confidence }}</span>
+      <span class="status-chip neutral">Iteration: {{ assessment.iteration || 1 }}</span>
+      <span class="status-chip" [ngClass]="assessment.isFinal ? 'risk-low' : 'risk-medium'">{{ assessment.isFinal ? 'Final' : 'Draft' }}</span>
     </div>
   </mat-card>
 
-  <mat-card class="simple-card metrics-card" *ngIf="metrics">
-    <h3>Sprint Metrics</h3>
-    <div class="simple-grid">
-      <div class="row-item">
-        <span class="label">Historical Sprints</span>
-        <span class="value">{{metrics.sprintCount}}</span>
-      </div>
-      <div class="row-item">
-        <span class="label">CVR</span>
-        <span class="value">{{metrics.cvr.toFixed(2)}}</span>
-      </div>
-      <div class="row-item">
-        <span class="label">Average Velocity</span>
-        <span class="value">{{metrics.averageVelocity}} pts/sprint</span>
-      </div>
-      <div class="row-item">
-        <span class="label">Velocity Stability (CV)</span>
-        <span class="value">{{(metrics.velocityCoefficient * 100).toFixed(1)}}%</span>
-      </div>
-      <div class="row-item">
-        <span class="label">Safe Capacity</span>
-        <span class="value">{{metrics.effectiveCapacity}} pts</span>
-      </div>
-      <div class="row-item">
-        <span class="label">Spillover Rate</span>
-        <span class="value">{{metrics.spilloverRate.toFixed(0)}}%</span>
-      </div>
-    </div>
-  </mat-card>
+  <section class="kpi-grid">
+    <article class="kpi-card risk-score-card" [ngClass]="'risk-' + getRiskClass()">
+      <span class="kpi-label">Risk Score</span>
+      <span class="kpi-value risk-score-value">{{assessment.totalScore}}</span>
+      <span class="kpi-subvalue">out of {{assessment.maxPossibleScore}}</span>
+    </article>
+    <article class="kpi-card" *ngIf="metrics">
+      <span class="kpi-label">CVR</span>
+      <span class="kpi-value">{{metrics.cvr.toFixed(2)}}</span>
+    </article>
+    <article class="kpi-card" *ngIf="metrics">
+      <span class="kpi-label">Safe Capacity</span>
+      <span class="kpi-value">{{metrics.effectiveCapacity}} pts</span>
+    </article>
+    <article class="kpi-card" *ngIf="metrics">
+      <span class="kpi-label">Spillover Rate</span>
+      <span class="kpi-value">{{metrics.spilloverRate.toFixed(0)}}%</span>
+    </article>
+    <article class="kpi-card" *ngIf="metrics">
+      <span class="kpi-label">Historical Sprints</span>
+      <span class="kpi-value">{{metrics.sprintCount}}</span>
+    </article>
+  </section>
 
-  <mat-card class="simple-card factors-card">
-    <h3>Risk Factors</h3>
-    <div class="factor-list">
-      <div class="factor-row" *ngFor="let factor of assessment.factors">
-        <div class="factor-main">
-          <span class="factor-name">{{factor.name}}</span>
-          <span class="factor-score" [ngClass]="getFactorScoreClass(factor.score)">{{factor.score}}/3</span>
+  <section class="details-grid">
+    <mat-card class="detail-card metrics-focus" *ngIf="metrics">
+      <div class="card-head">
+        <div>
+          <h3>Live Delivery Metrics</h3>
+          <p class="card-note">These values refresh after every recommendation applied in Planning.</p>
         </div>
-        <p class="factor-description">{{factor.description}}</p>
+        <span class="live-pill">Live</span>
       </div>
-    </div>
-  </mat-card>
+
+      <div class="metric-row">
+        <div class="metric-top">
+          <span>Average Velocity</span>
+          <strong>{{metrics.averageVelocity}} pts/sprint</strong>
+        </div>
+      </div>
+
+      <div class="metric-row">
+        <div class="metric-top">
+          <span>Velocity Stability</span>
+          <strong>{{(metrics.velocityCoefficient * 100).toFixed(1)}}%</strong>
+        </div>
+      </div>
+
+      <div class="metric-row">
+        <div class="metric-top">
+          <span>Spillover Risk</span>
+          <strong [ngClass]="getSpilloverClass()">{{metrics.spilloverRate.toFixed(0)}}%</strong>
+        </div>
+        <div class="meter"><span [style.width.%]="getSpilloverProgress()"></span></div>
+      </div>
+
+      <div class="metric-row">
+        <div class="metric-top">
+          <span>Commitment Ratio (CVR)</span>
+          <strong [ngClass]="getCVRClass()">{{metrics.cvr.toFixed(2)}}</strong>
+        </div>
+        <div class="meter"><span [style.width.%]="getCVRProgress()"></span></div>
+      </div>
+
+      <div class="metric-summary-grid">
+        <div class="mini-metric">
+          <span>Average Velocity</span>
+          <strong>{{metrics.averageVelocity}} pts/sprint</strong>
+        </div>
+        <div class="mini-metric">
+          <span>Historical Sprints</span>
+          <strong>{{metrics.sprintCount}}</strong>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="detail-card">
+      <h3>Risk Factor Breakdown</h3>
+      <div class="factor-list">
+        <div class="factor-row" *ngFor="let factor of assessment.factors">
+          <div class="factor-main">
+            <span class="factor-name">{{factor.name}}</span>
+            <span class="factor-score" [ngClass]="getFactorScoreClass(factor.score)">{{factor.score}}/3</span>
+          </div>
+          <div class="meter compact"><span [style.width.%]="(factor.score / 3) * 100"></span></div>
+          <p class="factor-description">{{factor.description}}</p>
+        </div>
+      </div>
+    </mat-card>
+  </section>
 
 </div>
 
