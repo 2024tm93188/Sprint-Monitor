@@ -87,6 +87,9 @@ export interface SprintMetrics {
   /** Percentage of sprints with spillover (0-100) */
   spilloverRate: number;
 
+  /** Historical baseline spillover rate from past sprints (0-100) */
+  historicalSpilloverRate?: number;
+
   /** Effective capacity after buffer (velocity * 0.8) */
   effectiveCapacity: number;
 

@@ -26,10 +26,10 @@ import { SprintComparisonComponent } from './features/sprint-comparison/sprint-c
 import { AuthService } from './core/services/auth.service';
 import { TeamService } from './core/services/team.service';
 import { ApiService } from './core/services/api.service';
-import { TeamDto } from './core/services/api.service';
+import { TeamDto, RiskAssessmentResponseDto } from './core/services/api.service';
 import { SprintMetrics } from './core/models/sprint.model';
-import { RiskAssessment, Recommendation } from './core/models/risk.model';
-import { resetPlanningEvaluationState, setCurrentAssessment } from './core/store/planning-evaluation.actions';
+import { ActionType, RecommendationPriority, RiskAssessment, Recommendation, RiskLevel, AssessmentConfidence } from './core/models/risk.model';
+import { resetPlanningEvaluationState, setCurrentAssessment, setCurrentMetrics } from './core/store/planning-evaluation.actions';
 import { selectCurrentAssessment, selectCurrentMetrics } from './core/store/planning-evaluation.selectors';
 
 @Component({
@@ -167,6 +167,19 @@ export class AppComponent implements OnInit {
     });
   }
 
+  onFeedbackSubmitted(assessmentId: number): void {
+    this.apiService.getAssessment(assessmentId).subscribe({
+      next: (response) => {
+        const refreshedAssessment = this.mapAssessmentResponseToModel(response);
+        this.store.dispatch(setCurrentAssessment({ assessment: refreshedAssessment }));
+        this.store.dispatch(setCurrentMetrics({ metrics: response.metrics }));
+      },
+      error: () => {
+        this.showSnackBar('Feedback saved, but dashboard refresh failed.', 'OK', 2500);
+      }
+    });
+  }
+
   logout(): void {
     this.authService.logout();
   }
@@ -213,5 +226,37 @@ export class AppComponent implements OnInit {
       panelClass: panelClass || []
     });
     return this.activeSnackBarRef;
+  }
+
+  private mapAssessmentResponseToModel(response: RiskAssessmentResponseDto): RiskAssessment {
+    return {
+      assessmentId: response.assessmentId,
+      teamId: response.teamId,
+      sprintId: response.sprintId,
+      sprintNumber: response.sprintNumber,
+      iteration: response.iteration,
+      isFinal: response.isFinal,
+      overallRisk: response.riskLevel as RiskLevel,
+      totalScore: response.totalScore,
+      maxPossibleScore: response.maxPossibleScore,
+      confidence: response.confidence as AssessmentConfidence,
+      assessedAt: new Date(response.assessedAt),
+      factors: response.factors.map(f => ({
+        name: f.factorName,
+        score: f.score,
+        description: f.description,
+        metricValue: f.metricValue,
+        threshold: f.threshold ?? undefined
+      })),
+      recommendations: response.recommendations.map(r => ({
+        id: r.recommendationId.toString(),
+        title: r.title,
+        description: r.description,
+        priority: r.priority as RecommendationPriority,
+        actionType: r.actionType as ActionType,
+        suggestedChange: r.suggestedChange ?? undefined,
+        addressesRiskFactor: r.addressesRiskFactor
+      }))
+    };
   }
 }

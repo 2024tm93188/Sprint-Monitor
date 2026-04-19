@@ -3,6 +3,7 @@ import {
   completeRiskEvaluation,
   resetPlanningEvaluationState,
   setCurrentAssessment,
+  setCurrentMetrics,
   setPlanningInput,
   startRiskEvaluation,
   updateAssessmentRecommendations
@@ -35,6 +36,10 @@ export const planningEvaluationReducer = createReducer<PlanningEvaluationStoreSt
   on(setCurrentAssessment, (state, { assessment }) => ({
     ...state,
     assessment
+  })),
+  on(setCurrentMetrics, (state, { metrics }) => ({
+    ...state,
+    metrics
   })),
   on(updateAssessmentRecommendations, (state, { recommendations }) => ({
     ...state,

@@ -46,9 +46,9 @@ export class MetricsService {
     // Calculate coefficient of variation (relative stability measure)
     const velocityCoefficient = roundTo(calculateCoefficientOfVariation(velocities), 3);
 
-    // Calculate spillover rate
+    // Historical spillover baseline from past sprint outcomes
     const spilloverCount = sprints.filter(s => s.hadSpillover).length;
-    const spilloverRate = roundTo(calculateRate(spilloverCount, sprints.length));
+    const historicalSpilloverRate = roundTo(calculateRate(spilloverCount, sprints.length));
 
     // Adjust capacity for current delivery context
     const availabilityMultiplier = teamAvailability <= 0
@@ -67,11 +67,19 @@ export class MetricsService {
       ? roundTo(plannedPoints / adjustedVelocity, 3)
       : 0;
 
+    // Project near-term spillover risk from current plan pressure, then blend with history.
+    const pressureComponent = Math.max(0, (cvr - 1) * 100 * 0.6);
+    const availabilityPenalty = Math.max(0, 90 - teamAvailability) * 0.8;
+    const dependencyPenalty = Math.max(0, externalDependencies) * 4;
+    const projectedSpilloverRate = Math.min(100, pressureComponent + availabilityPenalty + dependencyPenalty);
+    const spilloverRate = roundTo(Math.min(100, (historicalSpilloverRate * 0.6) + (projectedSpilloverRate * 0.4)));
+
     return {
       averageVelocity,
       velocityStandardDeviation,
       velocityCoefficient,
       spilloverRate,
+      historicalSpilloverRate,
       effectiveCapacity,
       cvr,
       sprintCount: sprints.length

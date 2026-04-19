@@ -1,18 +1,1 @@
-<div class="assessment-context" *ngIf="currentAssessment">
-	<div class="context-item">
-		<span class="label">Sprint</span>
-		<span class="value">#{{ currentAssessment.sprintNumber }}</span>
-	</div>
-	<div class="context-item">
-		<span class="label">Iteration</span>
-		<span class="value">{{ currentAssessment.iteration }}</span>
-	</div>
-	<div class="context-item">
-		<span class="label">Status</span>
-		<span class="value" [class.final]="currentAssessment.isFinal">
-			{{ currentAssessment.isFinal ? 'Final' : 'Draft' }}
-		</span>
-	</div>
-</div>
-
 <app-sprint-input (evaluate)="onEvaluateRisk($event)"></app-sprint-input>

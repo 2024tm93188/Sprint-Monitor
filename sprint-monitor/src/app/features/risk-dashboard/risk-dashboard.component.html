@@ -73,6 +73,9 @@
           <strong [ngClass]="getSpilloverClass()">{{metrics.spilloverRate.toFixed(0)}}%</strong>
         </div>
         <div class="meter"><span [style.width.%]="getSpilloverProgress()"></span></div>
+        <small class="metric-note" *ngIf="metrics.historicalSpilloverRate !== undefined">
+          Historical baseline: {{metrics.historicalSpilloverRate.toFixed(0)}}%
+        </small>
       </div>
 
       <div class="metric-row">

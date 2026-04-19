@@ -187,8 +187,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             .Include(a => a.Sprint)
             .Include(a => a.Factors)
             .Include(a => a.Recommendations)
-            .Where(a => a.TeamId == teamId && a.IsFinal)
+            .Where(a => a.TeamId == teamId && a.IsFinal && a.SprintId.HasValue)
             .OrderByDescending(a => a.Sprint!.SprintNumber)
+            .ThenByDescending(a => a.AssessedAt)
             .Select(a => MapToDto(a))
             .ToListAsync();
     }

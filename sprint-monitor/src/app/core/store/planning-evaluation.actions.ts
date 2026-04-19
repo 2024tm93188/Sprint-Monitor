@@ -26,6 +26,11 @@ export const setCurrentAssessment = createAction(
   props<{ assessment: RiskAssessment }>()
 );
 
+export const setCurrentMetrics = createAction(
+  '[Planning Evaluation] Set Current Metrics',
+  props<{ metrics: SprintMetrics }>()
+);
+
 export const updateAssessmentRecommendations = createAction(
   '[Planning Evaluation] Update Assessment Recommendations',
   props<{ recommendations: Recommendation[] }>()

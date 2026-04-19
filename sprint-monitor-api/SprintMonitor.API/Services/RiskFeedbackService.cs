@@ -206,13 +206,13 @@ public class RiskFeedbackService : IRiskFeedbackService
     {
         var team = await _context.Teams.FindAsync(teamId);
 
-        // Include all final assessments (even legacy rows without SprintId) so comparison stays complete.
+        // Compare only sprint-linked final assessments for this team.
         var assessments = await _context.RiskAssessments
             .Include(a => a.Sprint)
             .Include(a => a.Recommendations)
-            .Where(a => a.TeamId == teamId && a.IsFinal)
-            .OrderByDescending(a => a.Sprint != null ? a.Sprint.SprintNumber : 0)
-            .ThenByDescending(a => a.AssessedAt)
+            .Where(a => a.TeamId == teamId && a.IsFinal && a.SprintId.HasValue)
+            .OrderByDescending(a => a.AssessedAt)
+            .ThenByDescending(a => a.Sprint!.SprintNumber)
             .Take(3)
             .ToListAsync();
 

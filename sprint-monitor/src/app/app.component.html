@@ -117,7 +117,7 @@
         <span>Feedback</span>
       </ng-template>
       <div class="tab-content">
-        <app-risk-feedback #riskFeedbackCmp></app-risk-feedback>
+        <app-risk-feedback #riskFeedbackCmp (feedbackSubmitted)="onFeedbackSubmitted($event)"></app-risk-feedback>
       </div>
     </mat-tab>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RiskFeedbackService } from '../../core/services/feedback.service';
@@ -20,6 +20,8 @@ import {
   styleUrl: './risk-feedback.component.scss'
 })
 export class RiskFeedbackComponent implements OnInit {
+    @Output() feedbackSubmitted = new EventEmitter<number>();
+
   private fb = inject(FormBuilder);
   private feedbackService = inject(RiskFeedbackService);
   private apiService = inject(ApiService);
@@ -87,22 +89,43 @@ export class RiskFeedbackComponent implements OnInit {
       error: () => { this.accuracy = null; }
     });
 
-    // Load assessments for dropdown selection
-    this.apiService.getFinalAssessments(this.teamId).subscribe({
-      next: (assessments) => {
-        this.assessments = assessments;
-        this.syncOpenFormsWithLatestAssessment();
-      },
-      error: () => { this.assessments = []; }
-    });
-
-    // Keep dropdown in sync with comparison dashboard by using same source
+    // Keep feedback assessments aligned with the same latest 3 final sprint evaluations
+    // used by the comparison dashboard for the selected team.
     this.feedbackService.getSprintComparison(this.teamId).subscribe({
       next: (comparison) => {
         this.comparisonSprints = comparison.sprints || [];
+
+        const comparisonAssessmentIds = this.comparisonSprints
+          .map(s => s.assessmentId)
+          .filter(id => Number.isFinite(id) && id > 0);
+
+        this.apiService.getFinalAssessments(this.teamId).subscribe({
+          next: (assessments) => {
+            const sprintLinkedAssessments = assessments.filter(a => !!a.sprintId);
+
+            if (!comparisonAssessmentIds.length) {
+              this.assessments = sprintLinkedAssessments
+                .sort((left, right) => new Date(right.assessedAt).getTime() - new Date(left.assessedAt).getTime())
+                .slice(0, 3);
+              this.syncOpenFormsWithLatestAssessment();
+              return;
+            }
+
+            const assessmentById = new Map(sprintLinkedAssessments.map(a => [a.assessmentId, a]));
+            this.assessments = comparisonAssessmentIds
+              .map(id => assessmentById.get(id))
+              .filter((a): a is RiskAssessmentResponseDto => !!a);
+
+            this.syncOpenFormsWithLatestAssessment();
+          },
+          error: () => {
+            this.assessments = [];
+          }
+        });
       },
       error: () => {
         this.comparisonSprints = [];
+        this.assessments = [];
       }
     });
 
@@ -159,6 +182,7 @@ export class RiskFeedbackComponent implements OnInit {
       next: () => {
         this.loadData();
         this.showForm = false;
+        this.feedbackSubmitted.emit(formValues.assessmentId);
       },
       error: () => {
         this.error = 'Failed to submit feedback. Please try again.';
