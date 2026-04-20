@@ -7,6 +7,9 @@ export interface Feasibility {
   feasibilityId: number;
   teamId?: number;
   teamName?: string;
+  sprintId?: number;
+  sprintName?: string;
+  userRole?: string;
   evaluationDate: Date;
   
   // Feasibility Flags
@@ -34,10 +37,12 @@ export interface Feasibility {
   updatedAt?: Date;
 }
 
-export type FeasibilityStatus = 'Proposed' | 'Under Review' | 'Approved' | 'Deferred' | 'Rejected';
+export type FeasibilityStatus = 'Approved' | 'Rejected' | 'Proposed' | 'Under Review' | 'Deferred';
 
 export interface CreateFeasibility {
   teamId?: number;
+  sprintId?: number;
+  userRole?: string;
   
   technicalFeasibility: boolean;
   technicalNotes?: string;
@@ -61,6 +66,9 @@ export interface CreateFeasibility {
 }
 
 export interface UpdateFeasibility {
+  sprintId?: number;
+  userRole?: string;
+
   technicalFeasibility?: boolean;
   technicalNotes?: string;
   

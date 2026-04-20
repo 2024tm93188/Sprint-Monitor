@@ -8,6 +8,9 @@ public class FeasibilityDto
     public int FeasibilityId { get; set; }
     public int? TeamId { get; set; }
     public string? TeamName { get; set; }
+    public int? SprintId { get; set; }
+    public string? SprintName { get; set; }
+    public string? UserRole { get; set; }
     public DateTime EvaluationDate { get; set; }
     
     // Feasibility Flags
@@ -41,6 +44,8 @@ public class FeasibilityDto
 public class CreateFeasibilityDto
 {
     public int? TeamId { get; set; }
+    public int? SprintId { get; set; }
+    public string? UserRole { get; set; }
     
     public bool TechnicalFeasibility { get; set; }
     public string? TechnicalNotes { get; set; }
@@ -68,6 +73,9 @@ public class CreateFeasibilityDto
 /// </summary>
 public class UpdateFeasibilityDto
 {
+    public int? SprintId { get; set; }
+    public string? UserRole { get; set; }
+
     public bool? TechnicalFeasibility { get; set; }
     public string? TechnicalNotes { get; set; }
     

@@ -18,8 +18,16 @@ public class ImplementationFeasibility
     /// </summary>
     public int? TeamId { get; set; }
 
+    /// <summary>
+    /// Sprint this feasibility study applies to
+    /// </summary>
+    public int? SprintId { get; set; }
+
     [ForeignKey("TeamId")]
     public Team? Team { get; set; }
+
+    [ForeignKey("SprintId")]
+    public Sprint? Sprint { get; set; }
 
     /// <summary>
     /// Date when feasibility was evaluated
@@ -81,6 +89,12 @@ public class ImplementationFeasibility
     /// </summary>
     [MaxLength(200)]
     public string? ApprovedBy { get; set; }
+
+    /// <summary>
+    /// Role of the user who created the feasibility study
+    /// </summary>
+    [MaxLength(100)]
+    public string? UserRole { get; set; }
 
     /// <summary>
     /// Approval status: Proposed, Under Review, Approved, Deferred, Rejected

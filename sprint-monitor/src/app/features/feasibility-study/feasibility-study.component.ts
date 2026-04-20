@@ -1,8 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
 import { FeasibilityService } from '../../core/services/feasibility.service';
 import { TeamService } from '../../core/services/team.service';
+import { ApiService, SprintDto } from '../../core/services/api.service';
 import { 
   Feasibility, 
   CreateFeasibility, 
@@ -19,19 +21,24 @@ import {
 })
 export class FeasibilityStudyComponent implements OnInit {
   private fb = inject(FormBuilder);
+  private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private feasibilityService = inject(FeasibilityService);
   private teamService = inject(TeamService);
 
   feasibilityStudies: Feasibility[] = [];
-  summary: FeasibilitySummary | null = null;
   selectedStudy: Feasibility | null = null;
   showForm = false;
   isEditing = false;
   loading = false;
   error: string | null = null;
+  selectedTeamName = '';
+  selectedUserRole = '';
+  activeSprint: SprintDto | null = null;
 
   feasibilityForm: FormGroup = this.fb.group({
     teamId: [1],
+    sprintId: [null],
     technicalFeasibility: [false],
     technicalNotes: [''],
     operationalFeasibility: [false],
@@ -42,30 +49,51 @@ export class FeasibilityStudyComponent implements OnInit {
     integrationNotes: [''],
     mentorComments: [''],
     approvedBy: [''],
-    status: ['Proposed'],
+    status: ['Approved'],
     expectedBenefits: [''],
     adoptionChallenges: [''],
     scalabilityConsiderations: ['']
   });
 
   statusOptions: FeasibilityStatus[] = [
-    'Proposed', 
-    'Under Review', 
     'Approved', 
-    'Deferred', 
     'Rejected'
   ];
 
   ngOnInit(): void {
     // Reload when team changes
     this.teamService.getSelectedTeam().subscribe(team => {
-      if (team) this.loadData();
+      if (!team) return;
+
+      this.selectedTeamName = team.teamName;
+      this.selectedUserRole = this.authService.userRole() ?? 'User';
+      this.loadCurrentSprint(team.teamId);
+      this.loadData();
     });
   }
 
   get displayedStudies(): Feasibility[] {
     const selectedTeamId = this.teamService.getSelectedTeamId();
     return this.feasibilityStudies.filter(study => study.teamId === selectedTeamId);
+  }
+
+  get summary(): FeasibilitySummary {
+    const studies = this.displayedStudies;
+    const approvedCount = studies.filter(study => study.status === 'Approved').length;
+    const rejectedCount = studies.filter(study => study.status === 'Rejected').length;
+    const pendingCount = studies.length - approvedCount - rejectedCount;
+    const averageScore = studies.length
+      ? studies.reduce((sum, study) => sum + study.overallScore, 0) / studies.length
+      : 0;
+
+    return {
+      totalStudies: studies.length,
+      approvedCount,
+      pendingCount,
+      rejectedCount,
+      averageScore,
+      latestStudy: studies[0]
+    };
   }
 
   loadData(): void {
@@ -82,11 +110,6 @@ export class FeasibilityStudyComponent implements OnInit {
         this.loading = false;
       }
     });
-
-    this.feasibilityService.getFeasibilitySummary().subscribe({
-      next: (summary) => this.summary = summary,
-      error: () => { this.summary = null; }
-    });
   }
 
   openNewForm(): void {
@@ -94,11 +117,12 @@ export class FeasibilityStudyComponent implements OnInit {
     this.selectedStudy = null;
     this.feasibilityForm.reset({
       teamId: this.teamService.getSelectedTeamId(),
+      sprintId: this.activeSprint?.sprintId ?? null,
       technicalFeasibility: false,
       operationalFeasibility: false,
       organizationalFeasibility: false,
       integrationFeasibility: false,
-      status: 'Proposed'
+      status: 'Approved'
     });
     this.showForm = true;
   }
@@ -120,7 +144,9 @@ export class FeasibilityStudyComponent implements OnInit {
 
     const data = {
       ...this.feasibilityForm.value,
-      teamId: this.teamService.getSelectedTeamId()
+      teamId: this.teamService.getSelectedTeamId(),
+      sprintId: this.activeSprint?.sprintId ?? this.feasibilityForm.get('sprintId')?.value ?? undefined,
+      userRole: this.selectedUserRole
     } as CreateFeasibility;
     
     if (this.isEditing && this.selectedStudy) {
@@ -166,6 +192,10 @@ export class FeasibilityStudyComponent implements OnInit {
     return this.feasibilityService.calculateScore(this.feasibilityForm.value);
   }
 
+  get selectedSprintLabel(): string {
+    return this.activeSprint?.sprintName || 'Current sprint';
+  }
+
   getStatusColor(status: string): string {
     return this.feasibilityService.getStatusColor(status);
   }
@@ -179,5 +209,23 @@ export class FeasibilityStudyComponent implements OnInit {
   cancelForm(): void {
     this.showForm = false;
     this.selectedStudy = null;
+  }
+
+  private loadCurrentSprint(teamId: number): void {
+    this.apiService.getSprints(teamId).subscribe({
+      next: (sprints) => {
+        const active = [...sprints]
+          .filter(sprint => sprint.status !== 'Completed')
+          .sort((left, right) => right.sprintNumber - left.sprintNumber)[0] || sprints[0] || null;
+
+        this.activeSprint = active;
+        if (!this.isEditing) {
+          this.feasibilityForm.patchValue({ sprintId: active?.sprintId ?? null });
+        }
+      },
+      error: () => {
+        this.activeSprint = null;
+      }
+    });
   }
 }

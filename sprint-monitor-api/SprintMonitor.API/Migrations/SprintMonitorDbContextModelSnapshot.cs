@@ -38,6 +38,9 @@ namespace SprintMonitor.API.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("SprintId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -85,6 +88,10 @@ namespace SprintMonitor.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("UserRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
@@ -101,6 +108,8 @@ namespace SprintMonitor.API.Migrations
                     b.HasKey("FeasibilityId");
 
                     b.HasIndex("TeamId");
+
+                    b.HasIndex("SprintId");
 
                     b.ToTable("ImplementationFeasibilities");
                 });
@@ -531,7 +540,14 @@ namespace SprintMonitor.API.Migrations
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("SprintMonitor.API.Models.Sprint", "Sprint")
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Team");
+
+                    b.Navigation("Sprint");
                 });
 
             modelBuilder.Entity("SprintMonitor.API.Models.Recommendation", b =>

@@ -4,7 +4,7 @@
   </header>
 
   <!-- Summary -->
-  <div class="summary" *ngIf="summary">
+  <div class="summary" *ngIf="summary.totalStudies >= 0">
     <div class="stat"><strong>{{ summary.totalStudies }}</strong> Total</div>
     <div class="stat"><strong>{{ summary.approvedCount }}</strong> Approved</div>
     <div class="stat"><strong>{{ summary.pendingCount }}</strong> Pending</div>
@@ -27,7 +27,11 @@
     </div>
     
     <form [formGroup]="feasibilityForm" (ngSubmit)="saveStudy()">
-      <p class="form-note">This study is automatically saved for the currently selected team.</p>
+      <p class="form-note">
+        Creating for {{ selectedTeamName || ('Team #' + feasibilityForm.get('teamId')?.value) }}
+        | Role: {{ selectedUserRole }}
+        | Sprint: {{ selectedSprintLabel }}
+      </p>
 
       <div class="feasibility-checks">
         <label class="checkbox"><input type="checkbox" formControlName="technicalFeasibility"><span>🔧 Technical</span></label>
@@ -59,9 +63,11 @@
   <div *ngIf="!showForm && displayedStudies.length > 0" class="studies-list">
     <div *ngFor="let study of displayedStudies" class="study-card">
       <div class="card-header">
-        <h3>Team {{ study.teamId }}</h3>
+        <h3>{{ study.teamName || selectedTeamName || ('Team #' + study.teamId) }}</h3>
+        <span class="team-role">{{ study.userRole || selectedUserRole }}</span>
         <span class="status-badge" [class]="'status-' + getStatusColor(study.status)">{{ study.status }}</span>
       </div>
+      <p class="study-sprint" *ngIf="study.sprintName">Sprint: {{ study.sprintName }}</p>
       
       <div class="score-bar">
         <div class="fill" [style.width.%]="study.overallScore"></div>

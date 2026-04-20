@@ -102,6 +102,10 @@ public class SprintMonitorDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.TeamId)
                   .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Sprint)
+                .WithMany()
+                .HasForeignKey(e => e.SprintId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         // RiskFeedback configuration

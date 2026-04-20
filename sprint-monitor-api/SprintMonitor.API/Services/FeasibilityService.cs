@@ -28,10 +28,12 @@ public interface IFeasibilityService
 public class FeasibilityService : IFeasibilityService
 {
     private readonly SprintMonitorDbContext _context;
+    private readonly ISprintService _sprintService;
 
-    public FeasibilityService(SprintMonitorDbContext context)
+    public FeasibilityService(SprintMonitorDbContext context, ISprintService sprintService)
     {
         _context = context;
+        _sprintService = sprintService;
     }
 
     /// <summary>
@@ -41,6 +43,7 @@ public class FeasibilityService : IFeasibilityService
     {
         return await _context.ImplementationFeasibilities
             .Include(f => f.Team)
+            .Include(f => f.Sprint)
             .OrderByDescending(f => f.EvaluationDate)
             .Select(f => MapToDto(f))
             .ToListAsync();
@@ -53,6 +56,7 @@ public class FeasibilityService : IFeasibilityService
     {
         var feasibility = await _context.ImplementationFeasibilities
             .Include(f => f.Team)
+            .Include(f => f.Sprint)
             .FirstOrDefaultAsync(f => f.FeasibilityId == feasibilityId);
 
         return feasibility != null ? MapToDto(feasibility) : null;
@@ -65,6 +69,7 @@ public class FeasibilityService : IFeasibilityService
     {
         var feasibility = await _context.ImplementationFeasibilities
             .Include(f => f.Team)
+            .Include(f => f.Sprint)
             .Where(f => f.TeamId == teamId)
             .OrderByDescending(f => f.EvaluationDate)
             .FirstOrDefaultAsync();
@@ -77,9 +82,26 @@ public class FeasibilityService : IFeasibilityService
     /// </summary>
     public async Task<FeasibilityDto> CreateFeasibilityStudyAsync(CreateFeasibilityDto dto)
     {
+        Sprint? sprint = null;
+
+        if (dto.SprintId.HasValue)
+        {
+            sprint = await _context.Sprints
+                .FirstOrDefaultAsync(s => s.SprintId == dto.SprintId.Value && s.TeamId == dto.TeamId);
+        }
+        else if (dto.TeamId.HasValue)
+        {
+            var activeSprint = await _sprintService.GetActiveSprintAsync(dto.TeamId.Value);
+            if (activeSprint != null)
+            {
+                sprint = await _context.Sprints.FirstOrDefaultAsync(s => s.SprintId == activeSprint.SprintId);
+            }
+        }
+
         var feasibility = new ImplementationFeasibility
         {
             TeamId = dto.TeamId,
+            SprintId = sprint?.SprintId,
             EvaluationDate = DateTime.UtcNow,
             TechnicalFeasibility = dto.TechnicalFeasibility,
             TechnicalNotes = dto.TechnicalNotes,
@@ -91,6 +113,7 @@ public class FeasibilityService : IFeasibilityService
             IntegrationNotes = dto.IntegrationNotes,
             MentorComments = dto.MentorComments,
             ApprovedBy = dto.ApprovedBy,
+            UserRole = dto.UserRole,
             Status = dto.Status,
             ExpectedBenefits = dto.ExpectedBenefits,
             AdoptionChallenges = dto.AdoptionChallenges,
@@ -104,6 +127,10 @@ public class FeasibilityService : IFeasibilityService
 
         // Reload with team data
         await _context.Entry(feasibility).Reference(f => f.Team).LoadAsync();
+        if (feasibility.SprintId.HasValue)
+        {
+            await _context.Entry(feasibility).Reference(f => f.Sprint).LoadAsync();
+        }
         return MapToDto(feasibility);
     }
 
@@ -139,6 +166,8 @@ public class FeasibilityService : IFeasibilityService
             feasibility.MentorComments = dto.MentorComments;
         if (dto.ApprovedBy != null)
             feasibility.ApprovedBy = dto.ApprovedBy;
+        if (dto.UserRole != null)
+            feasibility.UserRole = dto.UserRole;
         if (dto.Status != null)
             feasibility.Status = dto.Status;
         if (dto.ExpectedBenefits != null)
@@ -180,6 +209,7 @@ public class FeasibilityService : IFeasibilityService
     {
         var studies = await _context.ImplementationFeasibilities
             .Include(f => f.Team)
+            .Include(f => f.Sprint)
             .ToListAsync();
 
         var latestStudy = studies.OrderByDescending(f => f.EvaluationDate).FirstOrDefault();
@@ -237,6 +267,9 @@ public class FeasibilityService : IFeasibilityService
             FeasibilityId = f.FeasibilityId,
             TeamId = f.TeamId,
             TeamName = f.Team?.TeamName,
+            SprintId = f.SprintId,
+            SprintName = f.Sprint?.SprintName,
+            UserRole = f.UserRole,
             EvaluationDate = f.EvaluationDate,
             TechnicalFeasibility = f.TechnicalFeasibility,
             TechnicalNotes = f.TechnicalNotes,
