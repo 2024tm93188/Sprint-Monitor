@@ -15,13 +15,52 @@ public class RiskAssessmentServiceTests : IDisposable
 {
     private readonly SprintMonitorDbContext _context;
     private readonly Mock<IMetricsService> _mockMetricsService;
+    private readonly Mock<ISprintService> _mockSprintService;
     private readonly RiskAssessmentService _service;
 
     public RiskAssessmentServiceTests()
     {
         _context = TestDbContextFactory.CreateWithTestData();
         _mockMetricsService = new Mock<IMetricsService>();
-        _service = new RiskAssessmentService(_context, _mockMetricsService.Object);
+        _mockSprintService = new Mock<ISprintService>();
+        _mockSprintService
+            .Setup(service => service.GetActiveSprintAsync(It.IsAny<int>()))
+            .ReturnsAsync((int teamId) => BuildActiveSprintDto(teamId));
+        _mockSprintService
+            .Setup(service => service.GetOrCreateActiveSprintAsync(It.IsAny<int>()))
+            .ReturnsAsync((int teamId) => BuildActiveSprintDto(teamId));
+        _service = new RiskAssessmentService(_context, _mockMetricsService.Object, _mockSprintService.Object);
+    }
+
+    private SprintDto BuildActiveSprintDto(int teamId)
+    {
+        var sprint = _context.Sprints
+            .Where(s => s.TeamId == teamId)
+            .OrderByDescending(s => s.SprintNumber)
+            .First();
+
+        return new SprintDto
+        {
+            SprintId = sprint.SprintId,
+            TeamId = sprint.TeamId,
+            TeamName = sprint.Team?.TeamName ?? string.Empty,
+            SprintNumber = sprint.SprintNumber,
+            SprintName = sprint.SprintName,
+            Status = sprint.Status.ToString(),
+            CommittedPoints = sprint.CommittedPoints,
+            CompletedPoints = sprint.CompletedPoints,
+            AddedPoints = sprint.AddedPoints,
+            RemovedPoints = sprint.RemovedPoints,
+            TeamAvailability = sprint.TeamAvailability,
+            TeamSize = sprint.TeamSize,
+            SprintDuration = sprint.SprintDuration,
+            HadSpillover = sprint.HadSpillover,
+            ExternalDependencies = sprint.ExternalDependencies,
+            SpilloverPoints = sprint.SpilloverPoints,
+            StartDate = sprint.StartDate,
+            EndDate = sprint.EndDate,
+            CreatedAt = sprint.CreatedAt
+        };
     }
 
     public void Dispose()

@@ -85,6 +85,7 @@ export class RiskEngineService {
    * Map API response to internal RiskAssessment model
    */
   private mapApiResponseToAssessment(response: any): RiskAssessment {
+    const baseScore = Number(response.totalScore ?? 0);
     return {
       assessmentId: response.assessmentId,
       teamId: response.teamId,
@@ -103,15 +104,39 @@ export class RiskEngineService {
         metricValue: f.metricValue,
         threshold: f.threshold
       })),
-      recommendations: response.recommendations.map((r: any) => ({
-        id: r.recommendationId.toString(),
-        title: r.title,
-        description: r.description,
-        priority: r.priority as RecommendationPriority,
-        actionType: r.actionType as ActionType,
-        suggestedChange: r.suggestedChange,
-        addressesRiskFactor: r.addressesRiskFactor
-      })),
+      recommendations: response.recommendations.map((r: any) => {
+        const recommendation: Recommendation = {
+          id: r.recommendationId.toString(),
+          title: r.title,
+          description: r.description,
+          priority: r.priority as RecommendationPriority,
+          actionType: r.actionType as ActionType,
+          suggestedChange: r.suggestedChange,
+          addressesRiskFactor: r.addressesRiskFactor,
+          beforeScore: r.beforeScore ?? undefined,
+          afterScore: r.afterScore ?? undefined,
+          beforeRiskLevel: r.beforeRiskLevel as RiskLevel | undefined,
+          afterRiskLevel: r.afterRiskLevel as RiskLevel | undefined,
+          estimatedScoreChange: r.estimatedScoreChange ?? undefined,
+          wasApplied: r.wasApplied ?? undefined,
+          appliedAt: r.appliedAt ? new Date(r.appliedAt) : undefined,
+          appliedBy: r.appliedBy ?? undefined
+        };
+
+        if (recommendation.beforeScore === undefined || recommendation.afterScore === undefined) {
+          const delta = recommendation.estimatedScoreChange ?? this.estimateScoreChange(recommendation);
+          const before = Math.round(baseScore * 100) / 100;
+          const after = Math.max(0, Math.round((before - delta) * 100) / 100);
+
+          recommendation.beforeScore = before;
+          recommendation.afterScore = after;
+          recommendation.beforeRiskLevel = recommendation.beforeRiskLevel ?? determineRiskLevel(before);
+          recommendation.afterRiskLevel = recommendation.afterRiskLevel ?? determineRiskLevel(after);
+          recommendation.estimatedScoreChange = recommendation.estimatedScoreChange ?? Math.round(delta * 100) / 100;
+        }
+
+        return recommendation;
+      }),
       assessedAt: new Date(response.assessedAt)
     };
   }
@@ -151,7 +176,8 @@ export class RiskEngineService {
       factors,
       metrics,
       plannedPoints,
-      overallRisk
+      overallRisk,
+      totalScore
     );
 
     // Step 5: Assess confidence based on data quality
@@ -241,7 +267,8 @@ export class RiskEngineService {
     factors: RiskFactor[],
     metrics: SprintMetrics,
     plannedPoints: number,
-    overallRisk: RiskLevel
+    overallRisk: RiskLevel,
+    currentScore: number
   ): Recommendation[] {
     const recommendations: Recommendation[] = [];
 
@@ -277,8 +304,11 @@ export class RiskEngineService {
     }
 
     // Sort by priority
-    return recommendations.sort((a, b) =>
-      this.getPriorityWeight(a.priority) - this.getPriorityWeight(b.priority)
+    return this.decorateRecommendationImpact(
+      recommendations.sort((a, b) =>
+        this.getPriorityWeight(a.priority) - this.getPriorityWeight(b.priority)
+      ),
+      currentScore
     );
   }
 
@@ -393,6 +423,48 @@ export class RiskEngineService {
       [RecommendationPriority.LOW]: 3
     };
     return weights[priority];
+  }
+
+  private decorateRecommendationImpact(recommendations: Recommendation[], currentScore: number): Recommendation[] {
+    return recommendations.map(recommendation => {
+      const estimatedScoreChange = this.estimateScoreChange(recommendation);
+      const afterScore = Math.max(0, Math.round((currentScore - estimatedScoreChange) * 100) / 100);
+
+      return {
+        ...recommendation,
+        beforeScore: Math.round(currentScore * 100) / 100,
+        afterScore,
+        beforeRiskLevel: determineRiskLevel(currentScore),
+        afterRiskLevel: determineRiskLevel(afterScore),
+        estimatedScoreChange: Math.round(estimatedScoreChange * 100) / 100
+      };
+    });
+  }
+
+  private estimateScoreChange(recommendation: Recommendation): number {
+    if (recommendation.suggestedChange) {
+      const match = recommendation.suggestedChange.match(/(\d+(?:\.\d+)?)/);
+      if (match) {
+        return Math.max(0.5, Math.min(3, parseFloat(match[1]) / 5));
+      }
+    }
+
+    switch (recommendation.actionType) {
+      case ActionType.REDUCE_SCOPE:
+        return 1.5;
+      case ActionType.ADD_BUFFER:
+        return 1.0;
+      case ActionType.SPLIT_STORIES:
+        return 0.75;
+      case ActionType.RESOLVE_DEPENDENCIES:
+        return 1.25;
+      case ActionType.INCREASE_CAPACITY:
+        return 1.0;
+      case ActionType.IMPROVE_ESTIMATION:
+        return 0.75;
+      default:
+        return 0.5;
+    }
   }
 
   // Description generators for risk factors

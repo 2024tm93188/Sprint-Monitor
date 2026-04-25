@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import {
   Recommendation,
@@ -28,7 +29,8 @@ import {
     MatButtonModule,
     MatChipsModule,
     MatExpansionModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './recommendations.component.html',
   styleUrls: ['./recommendations.component.scss']

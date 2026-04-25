@@ -65,6 +65,31 @@ export interface RecommendationDto {
   actionType: string;
   suggestedChange: string | null;
   addressesRiskFactor: string;
+  beforeScore?: number | null;
+  afterScore?: number | null;
+  beforeRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  afterRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  estimatedScoreChange?: number | null;
+  wasApplied?: boolean;
+  appliedAt?: string | null;
+  appliedBy?: string | null;
+}
+
+export interface ApplyRecommendationRequestDto {
+  beforeScore?: number;
+  afterScore?: number;
+  beforeRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  afterRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  impactScoreChange?: number;
+  appliedBy?: string;
+}
+
+export interface ApplyRecommendationByMatchRequestDto extends ApplyRecommendationRequestDto {
+  teamId: number;
+  sprintId?: number;
+  title: string;
+  actionType?: string;
+  addressesRiskFactor?: string;
 }
 
 export interface RiskAssessmentRequestDto {
@@ -91,6 +116,8 @@ export interface RiskAssessmentResponseDto {
   factors: RiskFactorDto[];
   recommendations: RecommendationDto[];
   metrics: SprintMetricsDto;
+  feedbackCalibrationFactor?: number;
+  feedbackSampleSize?: number;
   assessedAt: string;
 }
 
@@ -190,5 +217,13 @@ export class ApiService {
 
   markAssessmentAsFinal(assessmentId: number): Observable<RiskAssessmentResponseDto> {
     return this.http.post<RiskAssessmentResponseDto>(`${this.baseUrl}/riskassessment/${assessmentId}/final`, {});
+  }
+
+  applyRecommendation(recommendationId: number, request: ApplyRecommendationRequestDto): Observable<RecommendationDto> {
+    return this.http.post<RecommendationDto>(`${this.baseUrl}/riskassessment/recommendations/${recommendationId}/apply`, request);
+  }
+
+  applyRecommendationByMatch(request: ApplyRecommendationByMatchRequestDto): Observable<RecommendationDto> {
+    return this.http.post<RecommendationDto>(`${this.baseUrl}/riskassessment/recommendations/apply-by-match`, request);
   }
 }

@@ -25,6 +25,16 @@
       <span class="kpi-value risk-score-value">{{assessment.totalScore}}</span>
       <span class="kpi-subvalue">out of {{assessment.maxPossibleScore}}</span>
     </article>
+    <article class="kpi-card" *ngIf="assessment.feedbackCalibrationFactor !== undefined">
+      <span class="kpi-label">Calibration Factor</span>
+      <span class="kpi-value">{{assessment.feedbackCalibrationFactor.toFixed(2)}}x</span>
+      <span class="kpi-subvalue">From feedback history</span>
+    </article>
+    <article class="kpi-card" *ngIf="assessment.feedbackSampleSize !== undefined">
+      <span class="kpi-label">Feedback Samples</span>
+      <span class="kpi-value">{{assessment.feedbackSampleSize}}</span>
+      <span class="kpi-subvalue">Used in calibration</span>
+    </article>
     <article class="kpi-card" *ngIf="metrics">
       <span class="kpi-label">CVR</span>
       <span class="kpi-value">{{metrics.cvr.toFixed(2)}}</span>
@@ -44,6 +54,26 @@
   </section>
 
   <section class="details-grid">
+    <mat-card class="detail-card top-factor-card" *ngIf="assessment?.factors?.length">
+      <div class="card-head">
+        <div>
+          <h3>Top Contributing Factor</h3>
+          <p class="card-note">Metric contributing most to the current risk score.</p>
+        </div>
+        <span class="live-pill factor-pill">Highest impact</span>
+      </div>
+
+      <div class="top-factor-body" *ngIf="getTopContributingFactor() as topFactor">
+        <div class="top-factor-name">{{ topFactor.name }}</div>
+        <div class="top-factor-score">
+          <span class="factor-score" [ngClass]="getFactorScoreClass(topFactor.score)">{{ topFactor.score }}/3</span>
+          <span class="top-factor-metric">Metric value: <strong>{{ getTopContributingFactorMetric() }}</strong></span>
+        </div>
+        <div class="meter"><span [style.width.%]="(topFactor.score / 3) * 100"></span></div>
+        <p class="factor-description">{{ topFactor.description }}</p>
+      </div>
+    </mat-card>
+
     <mat-card class="detail-card metrics-focus" *ngIf="metrics">
       <div class="card-head">
         <div>

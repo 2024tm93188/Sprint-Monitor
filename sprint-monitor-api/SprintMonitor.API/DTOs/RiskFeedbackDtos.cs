@@ -104,7 +104,7 @@ public class SprintComparisonDto
     
     // Prediction Data
     public string PredictedRisk { get; set; } = string.Empty;
-    public int PredictedScore { get; set; }
+    public decimal PredictedScore { get; set; }
     public double ConfidenceLevel { get; set; }
 
     // Iteration data
@@ -121,6 +121,14 @@ public class SprintComparisonDto
     
     // Recommendations
     public List<string> Recommendations { get; set; } = new();
+    public string? AppliedRecommendationTitle { get; set; }
+    public string? AppliedRecommendationActionType { get; set; }
+    public decimal? AppliedBeforeScore { get; set; }
+    public decimal? AppliedAfterScore { get; set; }
+    public string? AppliedBeforeRisk { get; set; }
+    public string? AppliedAfterRisk { get; set; }
+    public decimal? AppliedImpactScoreChange { get; set; }
+    public List<AppliedRecommendationSummaryDto> AppliedRecommendations { get; set; } = new();
     
     // Accuracy
     public bool WasAccurate { get; set; }
@@ -129,6 +137,19 @@ public class SprintComparisonDto
     // Feedback
     public bool HasFeedback { get; set; }
     public RiskFeedbackDto? Feedback { get; set; }
+}
+
+public class AppliedRecommendationSummaryDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? ActionType { get; set; }
+    public decimal? BeforeScore { get; set; }
+    public decimal? AfterScore { get; set; }
+    public string? BeforeRisk { get; set; }
+    public string? AfterRisk { get; set; }
+    public decimal? ImpactScoreChange { get; set; }
+    public DateTime? AppliedAt { get; set; }
+    public string? AppliedBy { get; set; }
 }
 
 /// <summary>

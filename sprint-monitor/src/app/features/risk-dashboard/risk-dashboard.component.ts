@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   RiskAssessment,
   RiskLevel,
+  RiskFactor,
   AssessmentConfidence
 } from '../../core/models/risk.model';
 import { SprintMetrics } from '../../core/models/sprint.model';
@@ -125,6 +126,34 @@ export class RiskDashboardComponent implements OnChanges {
   getSpilloverProgress(): number {
     if (!this.metrics) return 0;
     return Math.min(100, this.metrics.spilloverRate);
+  }
+
+  getTopContributingFactor(): RiskFactor | null {
+    if (!this.assessment?.factors?.length) {
+      return null;
+    }
+
+    return [...this.assessment.factors].sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return right.metricValue - left.metricValue;
+    })[0];
+  }
+
+  getTopContributingFactorTitle(): string {
+    const factor = this.getTopContributingFactor();
+    return factor ? factor.name : 'No factor available';
+  }
+
+  getTopContributingFactorMetric(): string {
+    const factor = this.getTopContributingFactor();
+    if (!factor) {
+      return 'N/A';
+    }
+
+    return `${factor.metricValue.toFixed(1)}${factor.name.includes('Availability') || factor.name.includes('Spillover') ? '%' : ''}`;
   }
 
   // Factor styling helpers

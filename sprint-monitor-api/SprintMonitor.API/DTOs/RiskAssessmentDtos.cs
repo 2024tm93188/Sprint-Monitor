@@ -35,6 +35,8 @@ public class RiskAssessmentDto
     public decimal TotalScore { get; set; }
     public int MaxPossibleScore { get; set; }
     public string Confidence { get; set; } = string.Empty;
+    public decimal FeedbackCalibrationFactor { get; set; } = 1.0m;
+    public int FeedbackSampleSize { get; set; } = 0;
     public DateTime AssessedAt { get; set; }
     public List<RiskFactorDto> Factors { get; set; } = new();
     public List<RecommendationDto> Recommendations { get; set; } = new();
@@ -66,6 +68,39 @@ public class RecommendationDto
     public string AddressesRiskFactor { get; set; } = string.Empty;
     public string ActionType { get; set; } = string.Empty;
     public string? SuggestedChange { get; set; }
+    public decimal? BeforeScore { get; set; }
+    public decimal? AfterScore { get; set; }
+    public string? BeforeRiskLevel { get; set; }
+    public string? AfterRiskLevel { get; set; }
+    public decimal? EstimatedScoreChange { get; set; }
+    public bool WasApplied { get; set; }
+    public DateTime? AppliedAt { get; set; }
+    public string? AppliedBy { get; set; }
+}
+
+public class ApplyRecommendationDto
+{
+    public decimal? BeforeScore { get; set; }
+    public decimal? AfterScore { get; set; }
+    public string? BeforeRiskLevel { get; set; }
+    public string? AfterRiskLevel { get; set; }
+    public decimal? ImpactScoreChange { get; set; }
+    public string? AppliedBy { get; set; }
+}
+
+public class ApplyRecommendationByMatchDto
+{
+    public int TeamId { get; set; }
+    public int? SprintId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? ActionType { get; set; }
+    public string? AddressesRiskFactor { get; set; }
+    public decimal? BeforeScore { get; set; }
+    public decimal? AfterScore { get; set; }
+    public string? BeforeRiskLevel { get; set; }
+    public string? AfterRiskLevel { get; set; }
+    public decimal? ImpactScoreChange { get; set; }
+    public string? AppliedBy { get; set; }
 }
 
 /// <summary>

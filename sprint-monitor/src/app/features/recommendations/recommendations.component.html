@@ -8,6 +8,17 @@
   </mat-card-header>
 
   <mat-card-content>
+    <div class="impact-banner" *ngIf="recommendations[0].beforeScore !== undefined && recommendations[0].afterScore !== undefined">
+      <mat-icon>insights</mat-icon>
+      <div>
+        <strong>Projected impact is now shown for every recommendation.</strong>
+        <span>
+          Example: {{recommendations[0].beforeRiskLevel || 'N/A'}} ({{recommendations[0].beforeScore.toFixed(2)}})
+          → {{recommendations[0].afterRiskLevel || 'N/A'}} ({{recommendations[0].afterScore.toFixed(2)}})
+        </span>
+      </div>
+    </div>
+
     <div class="recommendations-list">
       <mat-accordion>
         <mat-expansion-panel
@@ -29,9 +40,33 @@
           </mat-expansion-panel-header>
 
           <div class="recommendation-content">
+            <div class="impact-strip" *ngIf="rec.beforeScore !== undefined && rec.afterScore !== undefined">
+              <span class="impact-label">Before</span>
+              <span class="impact-score">{{rec.beforeRiskLevel || 'N/A'}} {{rec.beforeScore.toFixed(2)}}</span>
+              <mat-icon>arrow_forward</mat-icon>
+              <span class="impact-label">After</span>
+              <span class="impact-score strong">{{rec.afterRiskLevel || 'N/A'}} {{rec.afterScore.toFixed(2)}}</span>
+              <span class="impact-delta" *ngIf="rec.estimatedScoreChange !== undefined">
+                -{{rec.estimatedScoreChange.toFixed(2)}} pts
+              </span>
+            </div>
+
             <p class="description">{{rec.description}}</p>
 
             <div class="meta-info">
+              <div class="meta-item" *ngIf="rec.wasApplied">
+                <mat-icon>task_alt</mat-icon>
+                <span class="suggested-change">
+                  Applied: {{rec.title}} ({{rec.beforeScore?.toFixed(2) || 'N/A'}} → {{rec.afterScore?.toFixed(2) || 'N/A'}},
+                  {{rec.beforeRiskLevel || 'N/A'}} → {{rec.afterRiskLevel || 'N/A'}})
+                </span>
+              </div>
+              <div class="meta-item" *ngIf="rec.wasApplied">
+                <mat-icon>lock</mat-icon>
+                <span class="suggested-change">
+                  Already applied. This action is locked to keep the recommendation audit trail consistent.
+                </span>
+              </div>
               <div class="meta-item" *ngIf="rec.suggestedChange">
                 <mat-icon>trending_down</mat-icon>
                 <span class="suggested-change">{{rec.suggestedChange}}</span>
@@ -43,9 +78,15 @@
             </div>
 
             <div class="action-buttons">
-              <button mat-stroked-button color="primary" (click)="onApplyRecommendation(rec)">
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="onApplyRecommendation(rec)"
+                [disabled]="rec.wasApplied"
+                [matTooltip]="rec.wasApplied ? 'Already applied for this sprint assessment' : 'Apply this recommendation to update the plan'"
+                [attr.aria-label]="rec.wasApplied ? 'Recommendation already applied' : 'Apply recommendation'">
                 <mat-icon>check</mat-icon>
-                Apply This
+                {{ rec.wasApplied ? 'Applied' : 'Apply This' }}
               </button>
               <button mat-button (click)="onDismissRecommendation(rec)">
                 <mat-icon>close</mat-icon>

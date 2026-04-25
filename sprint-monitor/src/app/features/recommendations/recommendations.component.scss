@@ -12,6 +12,33 @@
   margin-bottom: 20px;
 }
 
+.impact-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(21, 101, 192, 0.10), rgba(15, 118, 110, 0.10));
+  border: 1px solid rgba(21, 101, 192, 0.16);
+
+  mat-icon {
+    color: #1565c0;
+    margin-top: 2px;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+  }
+
+  span {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+}
+
 .recommendation-panel {
   margin-bottom: 8px;
   border-left: 4px solid transparent;
@@ -70,6 +97,43 @@ mat-chip {
 
 .recommendation-content {
   padding: 12px 0;
+
+  .impact-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f7fbff;
+    border: 1px solid rgba(21, 101, 192, 0.12);
+
+    .impact-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+
+    .impact-score {
+      font-weight: 800;
+      color: #1565c0;
+
+      &.strong {
+        color: #1b5e20;
+      }
+    }
+
+    .impact-delta {
+      margin-left: auto;
+      font-weight: 800;
+      color: #c62828;
+      background: #ffebee;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+  }
 
   .description {
     margin: 0 0 16px;

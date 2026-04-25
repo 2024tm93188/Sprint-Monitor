@@ -8,6 +8,23 @@
   <div *ngIf="error" class="error-banner">⚠️ {{ error }}<button (click)="error = null">×</button></div>
 
   <div *ngIf="comparison && !loading">
+    <div class="applied-summary" *ngIf="getLatestAppliedRecommendationSprint() as latestApplied">
+      <h2>Last Applied Recommendation</h2>
+      <div class="summary-card">
+        <div class="summary-title">
+          {{ latestApplied.appliedRecommendationTitle }}
+          <span class="sprint-ref">(Sprint #{{ latestApplied.sprintNumber }})</span>
+        </div>
+        <div class="summary-meta" *ngIf="latestApplied.appliedBeforeRisk || latestApplied.appliedAfterRisk">
+          Risk: <strong>{{ latestApplied.appliedBeforeRisk || 'N/A' }}</strong> → <strong>{{ latestApplied.appliedAfterRisk || 'N/A' }}</strong>
+        </div>
+        <div class="summary-meta" *ngIf="latestApplied.appliedBeforeScore !== undefined && latestApplied.appliedAfterScore !== undefined">
+          Score: <strong>{{ latestApplied.appliedBeforeScore }}</strong> → <strong>{{ latestApplied.appliedAfterScore }}</strong>
+          <span *ngIf="latestApplied.appliedImpactScoreChange !== undefined">(Improvement: -{{ latestApplied.appliedImpactScoreChange }})</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Stats -->
     <div class="stats">
       <div class="stat">
@@ -51,6 +68,11 @@
             </div>
 
             <div class="row">
+              <span class="label">Score:</span>
+              <span class="value">{{ sprint.predictedScore | number:'1.2-2' }} / 17</span>
+            </div>
+
+            <div class="row">
               <span class="label">Points:</span>
               <span class="value">
                 {{ sprint.committedPoints }} → {{ sprint.completedPoints ?? 'Pending' }}
@@ -71,6 +93,38 @@
               <span class="label">Outcome:</span>
               <span class="value">{{ sprint.actualOutcome || 'Pending' }}</span>
             </div>
+
+            <section class="recommendations-block">
+              <div class="rec-header">
+                <span>Applied Recommendations</span>
+                <span class="rec-count" *ngIf="sprint.appliedRecommendations?.length">{{ sprint.appliedRecommendations?.length }}</span>
+              </div>
+
+              <div class="rec-grid" *ngIf="sprint.appliedRecommendations?.length; else noAppliedRecommendation">
+                <article class="rec-card" *ngFor="let applied of sprint.appliedRecommendations">
+                  <div class="rec-top">
+                    <h4>{{ applied.title }}</h4>
+                    <span class="action-chip" *ngIf="applied.actionType">{{ formatActionType(applied.actionType) }}</span>
+                  </div>
+
+                  <div class="rec-metrics">
+                    <span class="metric-chip" *ngIf="applied.beforeRisk || applied.afterRisk">
+                      Risk {{ abbreviateRisk(applied.beforeRisk) }} → {{ abbreviateRisk(applied.afterRisk) }}
+                    </span>
+                    <span class="metric-chip" *ngIf="applied.beforeScore !== undefined && applied.afterScore !== undefined">
+                      Score {{ formatMetric(applied.beforeScore) }} → {{ formatMetric(applied.afterScore) }}
+                    </span>
+                    <span class="metric-chip impact" *ngIf="applied.impactScoreChange !== undefined">
+                      Δ -{{ formatMetric(applied.impactScoreChange) }}
+                    </span>
+                  </div>
+                </article>
+              </div>
+
+              <ng-template #noAppliedRecommendation>
+                <div class="no-applied">No recommendations applied in this sprint</div>
+              </ng-template>
+            </section>
           </div>
         </div>
       </div>

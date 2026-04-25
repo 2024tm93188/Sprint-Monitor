@@ -160,7 +160,7 @@ export class PlanningEvaluationComponent implements OnInit {
 
     const form = this.sprintInput.planningForm;
     this.appliedRecommendationKeys.add(this.getRecommendationKey(recommendation));
-    this.removeAppliedRecommendation(recommendation);
+    this.markRecommendationAsApplied(recommendation);
 
     const currentPlannedPoints = form.get('plannedPoints')?.value || 0;
     const currentAvailability = form.get('teamAvailability')?.value || 100;
@@ -226,22 +226,33 @@ export class PlanningEvaluationComponent implements OnInit {
     }
   }
 
-  private removeAppliedRecommendation(applied: Recommendation): void {
+  private markRecommendationAsApplied(applied: Recommendation): void {
     if (!this.currentAssessment?.recommendations?.length) {
       return;
     }
 
     const recommendations = this.currentAssessment.recommendations;
-    const removeIndex = recommendations.findIndex(r => this.getRecommendationKey(r) === this.getRecommendationKey(applied));
+    const applyIndex = recommendations.findIndex(r => this.getRecommendationKey(r) === this.getRecommendationKey(applied));
 
-    if (removeIndex < 0) {
+    if (applyIndex < 0) {
       return;
     }
 
-    const updatedRecommendations = [
-      ...recommendations.slice(0, removeIndex),
-      ...recommendations.slice(removeIndex + 1)
-    ];
+    const now = new Date();
+    const target = recommendations[applyIndex];
+
+    const updatedRecommendations = recommendations.map((r, index) => {
+      if (index !== applyIndex) {
+        return r;
+      }
+
+      return {
+        ...r,
+        wasApplied: true,
+        appliedAt: now,
+        appliedBy: 'Current User'
+      };
+    });
 
     this.store.dispatch(updateAssessmentRecommendations({ recommendations: updatedRecommendations }));
   }
@@ -252,7 +263,18 @@ export class PlanningEvaluationComponent implements OnInit {
   }
 
   private filterAppliedRecommendations(recommendations: Recommendation[]): Recommendation[] {
-    return recommendations.filter(r => !this.appliedRecommendationKeys.has(this.getRecommendationKey(r)));
+    return recommendations.map(r => {
+      if (!this.appliedRecommendationKeys.has(this.getRecommendationKey(r))) {
+        return r;
+      }
+
+      return {
+        ...r,
+        wasApplied: true,
+        appliedBy: r.appliedBy || 'Current User',
+        appliedAt: r.appliedAt || new Date()
+      };
+    });
   }
 
   private getRecommendationKey(rec: Recommendation): string {

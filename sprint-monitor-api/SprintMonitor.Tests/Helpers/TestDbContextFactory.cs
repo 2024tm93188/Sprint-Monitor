@@ -66,7 +66,9 @@ public static class TestDbContextFactory
             {
                 SprintId = 1,
                 TeamId = 1,
+                SprintNumber = 1,
                 SprintName = "Sprint 1",
+                Status = SprintStatus.Completed,
                 StartDate = DateTime.UtcNow.AddDays(-70),
                 EndDate = DateTime.UtcNow.AddDays(-56),
                 CommittedPoints = 30,
@@ -81,7 +83,9 @@ public static class TestDbContextFactory
             {
                 SprintId = 2,
                 TeamId = 1,
+                SprintNumber = 2,
                 SprintName = "Sprint 2",
+                Status = SprintStatus.Completed,
                 StartDate = DateTime.UtcNow.AddDays(-56),
                 EndDate = DateTime.UtcNow.AddDays(-42),
                 CommittedPoints = 32,
@@ -96,7 +100,9 @@ public static class TestDbContextFactory
             {
                 SprintId = 3,
                 TeamId = 1,
+                SprintNumber = 3,
                 SprintName = "Sprint 3",
+                Status = SprintStatus.Completed,
                 StartDate = DateTime.UtcNow.AddDays(-42),
                 EndDate = DateTime.UtcNow.AddDays(-28),
                 CommittedPoints = 28,
@@ -112,7 +118,9 @@ public static class TestDbContextFactory
             {
                 SprintId = 4,
                 TeamId = 1,
+                SprintNumber = 4,
                 SprintName = "Sprint 4",
+                Status = SprintStatus.Completed,
                 StartDate = DateTime.UtcNow.AddDays(-28),
                 EndDate = DateTime.UtcNow.AddDays(-14),
                 CommittedPoints = 35,
@@ -127,7 +135,9 @@ public static class TestDbContextFactory
             {
                 SprintId = 5,
                 TeamId = 1,
+                SprintNumber = 5,
                 SprintName = "Sprint 5",
+                Status = SprintStatus.Completed,
                 StartDate = DateTime.UtcNow.AddDays(-14),
                 EndDate = DateTime.UtcNow,
                 CommittedPoints = 30,

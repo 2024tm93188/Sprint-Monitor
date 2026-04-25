@@ -327,6 +327,41 @@ h3 {
   margin-top: 4px;
 }
 
+.top-factor-card {
+  border-top: 5px solid #8b5cf6;
+}
+
+.factor-pill {
+  background: #ede9fe;
+  color: #6d28d9;
+  border-color: #c4b5fd;
+}
+
+.top-factor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.top-factor-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.top-factor-score {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.top-factor-metric {
+  color: #475569;
+  font-size: 13px;
+}
+
 .mini-metric {
   border: 1px solid rgba(15, 118, 110, 0.16);
   border-radius: 10px;

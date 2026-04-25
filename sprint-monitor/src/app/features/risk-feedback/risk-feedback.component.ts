@@ -1,9 +1,12 @@
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RiskFeedbackService } from '../../core/services/feedback.service';
 import { ApiService, RiskAssessmentResponseDto } from '../../core/services/api.service';
 import { TeamService } from '../../core/services/team.service';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   RiskFeedback,
   CreateRiskFeedback,
@@ -72,88 +75,136 @@ export class RiskFeedbackComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.feedbackService.getFeedbacksForTeam(this.teamId).subscribe({
-      next: (feedbacks: RiskFeedback[]) => {
-        this.feedbacks = feedbacks;
+    this.loadFeedbackContext().subscribe({
+      next: context => {
+        this.feedbacks = context.feedbacks;
+        this.accuracy = context.accuracy;
+        this.comparisonSprints = context.comparisonSprints;
+        this.assessments = context.assessments;
         this.loading = false;
+        this.syncOpenFormsWithLatestAssessment();
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.feedbacks = [];
-        this.error = 'Could not load feedback data. Please ensure the backend API is running.';
-        this.loading = false;
-      }
-    });
-
-    this.feedbackService.getPredictionAccuracy(this.teamId).subscribe({
-      next: (accuracy: PredictionAccuracy) => this.accuracy = accuracy,
-      error: () => { this.accuracy = null; }
-    });
-
-    // Keep feedback assessments aligned with the same latest 3 final sprint evaluations
-    // used by the comparison dashboard for the selected team.
-    this.feedbackService.getSprintComparison(this.teamId).subscribe({
-      next: (comparison) => {
-        this.comparisonSprints = comparison.sprints || [];
-
-        const comparisonAssessmentIds = this.comparisonSprints
-          .map(s => s.assessmentId)
-          .filter(id => Number.isFinite(id) && id > 0);
-
-        this.apiService.getFinalAssessments(this.teamId).subscribe({
-          next: (assessments) => {
-            const sprintLinkedAssessments = assessments.filter(a => !!a.sprintId);
-
-            if (!comparisonAssessmentIds.length) {
-              this.assessments = sprintLinkedAssessments
-                .sort((left, right) => new Date(right.assessedAt).getTime() - new Date(left.assessedAt).getTime())
-                .slice(0, 3);
-              this.syncOpenFormsWithLatestAssessment();
-              return;
-            }
-
-            const assessmentById = new Map(sprintLinkedAssessments.map(a => [a.assessmentId, a]));
-            this.assessments = comparisonAssessmentIds
-              .map(id => assessmentById.get(id))
-              .filter((a): a is RiskAssessmentResponseDto => !!a);
-
-            this.syncOpenFormsWithLatestAssessment();
-          },
-          error: () => {
-            this.assessments = [];
-          }
-        });
-      },
-      error: () => {
+        this.accuracy = null;
         this.comparisonSprints = [];
         this.assessments = [];
+        this.error = this.getLoadErrorMessage(err);
+        this.loading = false;
       }
     });
-
-    // If the forms are already open, keep them populated with the newest run for this team.
-    setTimeout(() => this.syncOpenFormsWithLatestAssessment(), 0);
   }
 
   openFeedbackForm(assessmentId?: number): void {
-    // Refresh latest data so newly evaluated runs appear immediately in dropdown.
-    this.loadData();
+    // Refresh latest data so newly finalized assessments appear immediately.
+    this.loading = true;
+    this.error = null;
 
-    if (!this.assessments.length) {
-      this.error = 'No final assessments are available yet. Mark a sprint assessment as final first.';
-      return;
+    this.loadFeedbackContext().subscribe({
+      next: context => {
+        this.feedbacks = context.feedbacks;
+        this.accuracy = context.accuracy;
+        this.comparisonSprints = context.comparisonSprints;
+        this.assessments = context.assessments;
+        this.loading = false;
+
+        if (!this.assessments.length) {
+          this.error = 'No final assessments are available yet. Mark a sprint assessment as final first.';
+          return;
+        }
+
+        const resolvedAssessmentId = assessmentId ?? this.getLatestAssessmentId();
+
+        this.feedbackForm.reset({
+          assessmentId: resolvedAssessmentId,
+          actualOutcome: 'SUCCESS',
+          completedPoints: null,
+          agreementLevel: 'Accurate',
+          recommendationRating: 5,
+          recommendationsHelpful: true,
+          userComments: ''
+        });
+        this.showForm = true;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.feedbacks = [];
+        this.accuracy = null;
+        this.comparisonSprints = [];
+        this.assessments = [];
+        this.error = this.getLoadErrorMessage(err);
+        this.loading = false;
+      }
+    });
+  }
+
+  private loadFeedbackContext(): Observable<{
+    feedbacks: RiskFeedback[];
+    accuracy: PredictionAccuracy | null;
+    comparisonSprints: SprintComparison[];
+    assessments: RiskAssessmentResponseDto[];
+  }> {
+    return forkJoin({
+      feedbacks: this.feedbackService.getFeedbacksForTeam(this.teamId),
+      accuracy: this.feedbackService.getPredictionAccuracy(this.teamId).pipe(
+        catchError(() => of(null))
+      ),
+      comparison: this.feedbackService.getSprintComparison(this.teamId)
+    }).pipe(
+      map(({ feedbacks, accuracy, comparison }) => ({
+        feedbacks,
+        accuracy,
+        comparisonSprints: comparison.sprints || []
+      })),
+      map(context => {
+        const comparisonAssessmentIds = context.comparisonSprints
+          .map((s: SprintComparison) => s.assessmentId)
+          .filter((id: number) => Number.isFinite(id) && id > 0);
+
+        return { ...context, comparisonAssessmentIds };
+      }),
+      switchMap(context =>
+        this.apiService.getFinalAssessments(this.teamId).pipe(
+          map(assessments => {
+            const sprintLinkedAssessments = assessments.filter(a => !!a.sprintId);
+
+            const resolvedAssessments = !context.comparisonAssessmentIds.length
+              ? sprintLinkedAssessments
+                  .sort((left, right) => new Date(right.assessedAt).getTime() - new Date(left.assessedAt).getTime())
+                  .slice(0, 3)
+              : context.comparisonAssessmentIds
+                  .map((id: number) => sprintLinkedAssessments.find((assessment: RiskAssessmentResponseDto) => assessment.assessmentId === id))
+                  .filter((assessment): assessment is RiskAssessmentResponseDto => !!assessment);
+
+            return {
+              feedbacks: context.feedbacks,
+              accuracy: context.accuracy,
+              comparisonSprints: context.comparisonSprints,
+              assessments: resolvedAssessments
+            };
+          })
+        )
+      ),
+      catchError((err: HttpErrorResponse) => {
+        return throwError(() => err);
+      })
+    );
+  }
+
+  private getLoadErrorMessage(error: HttpErrorResponse): string {
+    if (error.status === 401) {
+      return 'Your session has expired or is invalid. Please log in again and retry.';
     }
 
-    const resolvedAssessmentId = assessmentId ?? this.getLatestAssessmentId();
+    if (error.status === 0) {
+      return 'Could not connect to the API. Please ensure backend is running and reachable.';
+    }
 
-    this.feedbackForm.reset({
-      assessmentId: resolvedAssessmentId,
-      actualOutcome: 'SUCCESS',
-      completedPoints: null,
-      agreementLevel: 'Accurate',
-      recommendationRating: 5,
-      recommendationsHelpful: true,
-      userComments: ''
-    });
-    this.showForm = true;
+    const backendMessage = error.error?.message;
+    if (typeof backendMessage === 'string' && backendMessage.trim().length > 0) {
+      return backendMessage;
+    }
+
+    return 'Failed to load feedback data. Please try again.';
   }
 
   submitFeedback(): void {

@@ -105,4 +105,44 @@ public class RiskAssessmentController : ControllerBase
         return Ok(assessment);
     }
 
+    /// <summary>
+    /// Mark a recommendation as applied and persist before/after impact details
+    /// </summary>
+    [HttpPost("recommendations/{recommendationId}/apply")]
+    [ProducesResponseType(typeof(RecommendationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecommendationDto>> ApplyRecommendation(int recommendationId, [FromBody] ApplyRecommendationDto dto)
+    {
+        var recommendation = await _riskAssessmentService.ApplyRecommendationAsync(recommendationId, dto);
+        if (recommendation == null)
+        {
+            return NotFound(new { message = $"Recommendation with ID {recommendationId} not found" });
+        }
+
+        return Ok(recommendation);
+    }
+
+    /// <summary>
+    /// Mark a recommendation as applied by matching sprint/team/title/action when a numeric ID is unavailable
+    /// </summary>
+    [HttpPost("recommendations/apply-by-match")]
+    [ProducesResponseType(typeof(RecommendationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<RecommendationDto>> ApplyRecommendationByMatch([FromBody] ApplyRecommendationByMatchDto dto)
+    {
+        if (dto.TeamId <= 0 || string.IsNullOrWhiteSpace(dto.Title))
+        {
+            return BadRequest(new { message = "TeamId and Title are required" });
+        }
+
+        var recommendation = await _riskAssessmentService.ApplyRecommendationByMatchAsync(dto);
+        if (recommendation == null)
+        {
+            return NotFound(new { message = "Matching recommendation was not found" });
+        }
+
+        return Ok(recommendation);
+    }
+
 }

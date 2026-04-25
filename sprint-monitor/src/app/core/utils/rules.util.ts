@@ -145,9 +145,11 @@ export function scoreTeamAvailability(availabilityPercent: number): number {
  * @returns RiskLevel enum value
  */
 export function determineRiskLevel(totalScore: number): RiskLevel {
-  if (totalScore <= RISK_THRESHOLDS.TOTAL_SCORE.LOW_MAX) {
+  const normalizedScore = Math.floor(totalScore);
+
+  if (normalizedScore <= RISK_THRESHOLDS.TOTAL_SCORE.LOW_MAX) {
     return RiskLevel.LOW;
-  } else if (totalScore <= RISK_THRESHOLDS.TOTAL_SCORE.MEDIUM_MAX) {
+  } else if (normalizedScore <= RISK_THRESHOLDS.TOTAL_SCORE.MEDIUM_MAX) {
     return RiskLevel.MEDIUM;
   } else {
     return RiskLevel.HIGH;

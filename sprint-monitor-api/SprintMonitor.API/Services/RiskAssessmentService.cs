@@ -25,6 +25,9 @@ public class RiskAssessmentService : IRiskAssessmentService
     private const decimal SPILLOVER_MEDIUM_MAX = 40m;
     private const int TOTAL_SCORE_LOW_MAX = 3;
     private const int TOTAL_SCORE_MEDIUM_MAX = 6;
+    private const decimal CALIBRATION_MIN = 0.90m;
+    private const decimal CALIBRATION_MAX = 1.15m;
+    private const int MIN_FEEDBACK_FOR_CALIBRATION = 1;
 
     public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService, ISprintService sprintService)
     {
@@ -76,8 +79,10 @@ public class RiskAssessmentService : IRiskAssessmentService
         // Score each risk factor
         var factors = ScoreAllFactors(metrics, request.PlannedCommitment, request.TeamAvailability, request.ExternalDependencies);
 
-        // Calculate total score
-        var totalScore = factors.Sum(f => f.Score);
+        // Calculate total score and calibrate with historical feedback accuracy for this team.
+        var baseScore = factors.Sum(f => f.Score);
+        var (calibrationFactor, feedbackSampleSize) = await GetFeedbackCalibrationAsync(request.TeamId);
+        var totalScore = Math.Min(17m, Math.Round(baseScore * calibrationFactor, 2));
 
         // Determine overall risk level
         var riskLevel = DetermineRiskLevel(totalScore);
@@ -86,7 +91,7 @@ public class RiskAssessmentService : IRiskAssessmentService
         var confidence = AssessConfidence(sprints.Count);
 
         // Generate recommendations
-        var recommendations = GenerateRecommendations(factors, metrics, request.PlannedCommitment, riskLevel);
+        var recommendations = GenerateRecommendations(factors, metrics, request.PlannedCommitment, riskLevel, totalScore);
 
         var iteration = await _context.RiskAssessments
             .Where(a => a.SprintId == sprint.SprintId)
@@ -132,6 +137,17 @@ public class RiskAssessmentService : IRiskAssessmentService
         // Save recommendations
         foreach (var rec in recommendations)
         {
+            RiskLevel? beforeRisk = null;
+            RiskLevel? afterRisk = null;
+            if (!string.IsNullOrWhiteSpace(rec.BeforeRiskLevel) && Enum.TryParse<RiskLevel>(rec.BeforeRiskLevel, true, out var parsedBefore))
+            {
+                beforeRisk = parsedBefore;
+            }
+            if (!string.IsNullOrWhiteSpace(rec.AfterRiskLevel) && Enum.TryParse<RiskLevel>(rec.AfterRiskLevel, true, out var parsedAfter))
+            {
+                afterRisk = parsedAfter;
+            }
+
             var recommendation = new Recommendation
             {
                 AssessmentId = assessment.AssessmentId,
@@ -140,7 +156,15 @@ public class RiskAssessmentService : IRiskAssessmentService
                 Priority = Enum.Parse<RecommendationPriority>(rec.Priority),
                 AddressesRiskFactor = rec.AddressesRiskFactor,
                 ActionType = Enum.Parse<ActionType>(rec.ActionType),
-                SuggestedChange = rec.SuggestedChange
+                SuggestedChange = rec.SuggestedChange,
+                BeforeScore = rec.BeforeScore,
+                AfterScore = rec.AfterScore,
+                ImpactScoreChange = rec.EstimatedScoreChange,
+                BeforeRiskLevel = beforeRisk,
+                AfterRiskLevel = afterRisk,
+                WasApplied = rec.WasApplied,
+                AppliedAt = rec.AppliedAt,
+                AppliedBy = rec.AppliedBy
             };
             _context.Recommendations.Add(recommendation);
         }
@@ -161,6 +185,8 @@ public class RiskAssessmentService : IRiskAssessmentService
             TotalScore = totalScore,
             MaxPossibleScore = 17,
             Confidence = confidence.ToString(),
+            FeedbackCalibrationFactor = calibrationFactor,
+            FeedbackSampleSize = feedbackSampleSize,
             AssessedAt = assessment.AssessedAt,
             Factors = factors,
             Recommendations = recommendations,
@@ -170,28 +196,46 @@ public class RiskAssessmentService : IRiskAssessmentService
 
     public async Task<IEnumerable<RiskAssessmentDto>> GetAssessmentHistoryAsync(int teamId)
     {
-        return await _context.RiskAssessments
+        var assessments = await _context.RiskAssessments
             .Include(a => a.Sprint)
             .Include(a => a.Factors)
             .Include(a => a.Recommendations)
             .Where(a => a.TeamId == teamId)
             .OrderByDescending(a => a.Sprint!.SprintNumber)
             .ThenByDescending(a => a.Iteration)
-            .Select(a => MapToDto(a))
             .ToListAsync();
+
+        var dtos = assessments.Select(MapToDto).ToList();
+        var (factor, sampleSize) = await GetFeedbackCalibrationAsync(teamId);
+        foreach (var dto in dtos)
+        {
+            dto.FeedbackCalibrationFactor = factor;
+            dto.FeedbackSampleSize = sampleSize;
+        }
+
+        return dtos;
     }
 
     public async Task<IEnumerable<RiskAssessmentDto>> GetFinalAssessmentsAsync(int teamId)
     {
-        return await _context.RiskAssessments
+        var assessments = await _context.RiskAssessments
             .Include(a => a.Sprint)
             .Include(a => a.Factors)
             .Include(a => a.Recommendations)
             .Where(a => a.TeamId == teamId && a.IsFinal && a.SprintId.HasValue)
             .OrderByDescending(a => a.Sprint!.SprintNumber)
             .ThenByDescending(a => a.AssessedAt)
-            .Select(a => MapToDto(a))
             .ToListAsync();
+
+        var dtos = assessments.Select(MapToDto).ToList();
+        var (factor, sampleSize) = await GetFeedbackCalibrationAsync(teamId);
+        foreach (var dto in dtos)
+        {
+            dto.FeedbackCalibrationFactor = factor;
+            dto.FeedbackSampleSize = sampleSize;
+        }
+
+        return dtos;
     }
 
     public async Task<RiskAssessmentDto?> GetAssessmentByIdAsync(int assessmentId)
@@ -202,7 +246,17 @@ public class RiskAssessmentService : IRiskAssessmentService
             .Include(a => a.Recommendations)
             .FirstOrDefaultAsync(a => a.AssessmentId == assessmentId);
 
-        return assessment == null ? null : MapToDto(assessment);
+        if (assessment == null)
+        {
+            return null;
+        }
+
+        var dto = MapToDto(assessment);
+        var (factor, sampleSize) = await GetFeedbackCalibrationAsync(assessment.TeamId);
+        dto.FeedbackCalibrationFactor = factor;
+        dto.FeedbackSampleSize = sampleSize;
+
+        return dto;
     }
 
     public async Task<RiskAssessmentDto?> MarkAssessmentAsFinalAsync(int assessmentId)
@@ -233,6 +287,138 @@ public class RiskAssessmentService : IRiskAssessmentService
         await _context.SaveChangesAsync();
 
         return await GetAssessmentByIdAsync(assessmentId);
+    }
+
+    public async Task<RecommendationDto?> ApplyRecommendationAsync(int recommendationId, ApplyRecommendationDto dto)
+    {
+        var recommendation = await _context.Recommendations
+            .FirstOrDefaultAsync(r => r.RecommendationId == recommendationId);
+
+        if (recommendation == null)
+        {
+            return null;
+        }
+
+        recommendation.WasApplied = true;
+        recommendation.AppliedAt = DateTime.UtcNow;
+        recommendation.AppliedBy = string.IsNullOrWhiteSpace(dto.AppliedBy) ? recommendation.AppliedBy : dto.AppliedBy;
+        recommendation.BeforeScore = dto.BeforeScore;
+        recommendation.AfterScore = dto.AfterScore;
+        recommendation.ImpactScoreChange = dto.ImpactScoreChange ??
+            (dto.BeforeScore.HasValue && dto.AfterScore.HasValue ? dto.BeforeScore.Value - dto.AfterScore.Value : null);
+
+        if (!string.IsNullOrWhiteSpace(dto.BeforeRiskLevel)
+            && Enum.TryParse<RiskLevel>(dto.BeforeRiskLevel, true, out var beforeRisk))
+        {
+            recommendation.BeforeRiskLevel = beforeRisk;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.AfterRiskLevel)
+            && Enum.TryParse<RiskLevel>(dto.AfterRiskLevel, true, out var afterRisk))
+        {
+            recommendation.AfterRiskLevel = afterRisk;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return new RecommendationDto
+        {
+            RecommendationId = recommendation.RecommendationId,
+            Title = recommendation.Title,
+            Description = recommendation.Description,
+            Priority = recommendation.Priority.ToString(),
+            AddressesRiskFactor = recommendation.AddressesRiskFactor,
+            ActionType = recommendation.ActionType.ToString(),
+            SuggestedChange = recommendation.SuggestedChange,
+            BeforeScore = recommendation.BeforeScore,
+            AfterScore = recommendation.AfterScore,
+            BeforeRiskLevel = recommendation.BeforeRiskLevel?.ToString(),
+            AfterRiskLevel = recommendation.AfterRiskLevel?.ToString(),
+            EstimatedScoreChange = recommendation.ImpactScoreChange,
+            WasApplied = recommendation.WasApplied,
+            AppliedAt = recommendation.AppliedAt,
+            AppliedBy = recommendation.AppliedBy
+        };
+    }
+
+    public async Task<RecommendationDto?> ApplyRecommendationByMatchAsync(ApplyRecommendationByMatchDto dto)
+    {
+        var query = _context.Recommendations
+            .Include(r => r.Assessment)
+            .Where(r => r.Assessment != null && r.Assessment.TeamId == dto.TeamId);
+
+        if (dto.SprintId.HasValue)
+        {
+            query = query.Where(r => r.Assessment!.SprintId == dto.SprintId.Value);
+        }
+
+        var title = dto.Title.Trim();
+        query = query.Where(r => r.Title == title);
+
+        if (!string.IsNullOrWhiteSpace(dto.ActionType)
+            && Enum.TryParse<ActionType>(dto.ActionType, true, out var actionType))
+        {
+            query = query.Where(r => r.ActionType == actionType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.AddressesRiskFactor))
+        {
+            var riskFactor = dto.AddressesRiskFactor.Trim();
+            query = query.Where(r => r.AddressesRiskFactor == riskFactor);
+        }
+
+        var recommendation = await query
+            .OrderByDescending(r => r.AppliedAt ?? DateTime.MinValue)
+            .ThenByDescending(r => r.Assessment!.Iteration)
+            .ThenByDescending(r => r.Assessment!.AssessedAt)
+            .ThenByDescending(r => r.RecommendationId)
+            .FirstOrDefaultAsync();
+
+        if (recommendation == null)
+        {
+            return null;
+        }
+
+        recommendation.WasApplied = true;
+        recommendation.AppliedAt = DateTime.UtcNow;
+        recommendation.AppliedBy = string.IsNullOrWhiteSpace(dto.AppliedBy) ? recommendation.AppliedBy : dto.AppliedBy;
+        recommendation.BeforeScore = dto.BeforeScore;
+        recommendation.AfterScore = dto.AfterScore;
+        recommendation.ImpactScoreChange = dto.ImpactScoreChange ??
+            (dto.BeforeScore.HasValue && dto.AfterScore.HasValue ? dto.BeforeScore.Value - dto.AfterScore.Value : null);
+
+        if (!string.IsNullOrWhiteSpace(dto.BeforeRiskLevel)
+            && Enum.TryParse<RiskLevel>(dto.BeforeRiskLevel, true, out var beforeRisk))
+        {
+            recommendation.BeforeRiskLevel = beforeRisk;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.AfterRiskLevel)
+            && Enum.TryParse<RiskLevel>(dto.AfterRiskLevel, true, out var afterRisk))
+        {
+            recommendation.AfterRiskLevel = afterRisk;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return new RecommendationDto
+        {
+            RecommendationId = recommendation.RecommendationId,
+            Title = recommendation.Title,
+            Description = recommendation.Description,
+            Priority = recommendation.Priority.ToString(),
+            AddressesRiskFactor = recommendation.AddressesRiskFactor,
+            ActionType = recommendation.ActionType.ToString(),
+            SuggestedChange = recommendation.SuggestedChange,
+            BeforeScore = recommendation.BeforeScore,
+            AfterScore = recommendation.AfterScore,
+            BeforeRiskLevel = recommendation.BeforeRiskLevel?.ToString(),
+            AfterRiskLevel = recommendation.AfterRiskLevel?.ToString(),
+            EstimatedScoreChange = recommendation.ImpactScoreChange,
+            WasApplied = recommendation.WasApplied,
+            AppliedAt = recommendation.AppliedAt,
+            AppliedBy = recommendation.AppliedBy
+        };
     }
 
     #region Risk Scoring Logic
@@ -374,10 +560,12 @@ public class RiskAssessmentService : IRiskAssessmentService
         return 3;
     }
 
-    private RiskLevel DetermineRiskLevel(int totalScore)
+    private RiskLevel DetermineRiskLevel(decimal totalScore)
     {
-        if (totalScore <= TOTAL_SCORE_LOW_MAX) return RiskLevel.LOW;
-        if (totalScore <= TOTAL_SCORE_MEDIUM_MAX) return RiskLevel.MEDIUM;
+        var normalizedScore = Math.Floor(totalScore);
+
+        if (normalizedScore <= TOTAL_SCORE_LOW_MAX) return RiskLevel.LOW;
+        if (normalizedScore <= TOTAL_SCORE_MEDIUM_MAX) return RiskLevel.MEDIUM;
         return RiskLevel.HIGH;
     }
 
@@ -466,7 +654,8 @@ public class RiskAssessmentService : IRiskAssessmentService
         List<RiskFactorDto> factors,
         SprintMetricsDto metrics,
         int plannedPoints,
-        RiskLevel riskLevel)
+        RiskLevel riskLevel,
+        decimal currentScore)
     {
         var recommendations = new List<RecommendationDto>();
 
@@ -481,27 +670,27 @@ public class RiskAssessmentService : IRiskAssessmentService
             var reduction = plannedPoints - (int)metrics.EffectiveCapacity;
             if (reduction > 0)
             {
-                recommendations.Add(new RecommendationDto
+                recommendations.Add(CreateImpactRecommendation(new RecommendationDto
                 {
-                    Title = "Significantly Reduce Sprint Scope",
+                    Title = "Reduce Sprint Scope",
                     Description = $"Overall risk is HIGH. Reduce commitment to {(int)metrics.EffectiveCapacity} points (your effective capacity with buffer).",
                     Priority = "CRITICAL",
                     AddressesRiskFactor = "Overall",
                     ActionType = "REDUCE_SCOPE",
                     SuggestedChange = $"Reduce by {reduction} points"
-                });
+                }, currentScore, Math.Max(1, Math.Min(3, reduction / 2))));
             }
         }
         else if (riskLevel == RiskLevel.MEDIUM && recommendations.Count == 0)
         {
-            recommendations.Add(new RecommendationDto
+            recommendations.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Add Buffer for Uncertainty",
                 Description = "Consider reserving 10-20% of capacity for unplanned work and uncertainties.",
                 Priority = "MEDIUM",
                 AddressesRiskFactor = "Overall",
                 ActionType = "ADD_BUFFER"
-            });
+            }, currentScore, 1));
         }
 
         return recommendations.OrderBy(r => GetPriorityWeight(r.Priority)).ToList();
@@ -520,33 +709,33 @@ public class RiskAssessmentService : IRiskAssessmentService
             var reduction = plannedPoints - targetPoints;
             if (reduction > 0)
             {
-                recs.Add(new RecommendationDto
+                recs.Add(CreateImpactRecommendation(new RecommendationDto
                 {
-                    Title = "Reduce Commitment to Match Velocity",
+                    Title = "Match Commitment to Velocity",
                     Description = $"Your CVR of {factor.MetricValue:F2} indicates overcommitment. Target {targetPoints} points to match your historical velocity.",
                     Priority = factor.Score >= 3 ? "CRITICAL" : "HIGH",
                     AddressesRiskFactor = factor.FactorName,
                     ActionType = "REDUCE_SCOPE",
                     SuggestedChange = $"Reduce by {reduction} points"
-                });
+                }, metricsToScore(metrics), Math.Max(1, Math.Min(2, factor.Score))));
             }
         }
 
         if (factor.FactorName.Contains("Spillover"))
         {
-            recs.Add(new RecommendationDto
+            recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
-                Title = "Address Chronic Spillover Pattern",
+                Title = "Address Spillover Pattern",
                 Description = "Your team has a pattern of incomplete sprints. Review estimation accuracy and consider smaller commitments.",
                 Priority = "HIGH",
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "IMPROVE_ESTIMATION"
-            });
+            }, metricsToScore(metrics), 1));
         }
 
         if (factor.FactorName.Contains("Capacity"))
         {
-            recs.Add(new RecommendationDto
+            recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Reserve Buffer Capacity",
                 Description = $"Plan to {(int)metrics.EffectiveCapacity} points (80% of velocity) to reserve buffer for unplanned work, meetings, and code reviews.",
@@ -554,13 +743,13 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "ADD_BUFFER",
                 SuggestedChange = $"Target {(int)metrics.EffectiveCapacity} points"
-            });
+            }, metricsToScore(metrics), 1));
         }
 
         if (factor.FactorName.Contains("Availability"))
         {
             var adjustedCapacity = (int)(metrics.EffectiveCapacity * (factor.MetricValue / 100));
-            recs.Add(new RecommendationDto
+            recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Adjust for Reduced Availability",
                 Description = $"With {factor.MetricValue}% availability, target {adjustedCapacity} points instead of full capacity.",
@@ -568,20 +757,20 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "REDUCE_SCOPE",
                 SuggestedChange = $"Target {adjustedCapacity} points"
-            });
+            }, metricsToScore(metrics), 1));
         }
 
         if (factor.FactorName.Contains("Dependencies"))
         {
-            recs.Add(new RecommendationDto
+            recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
-                Title = "Resolve External Dependencies",
+                Title = "Resolve Dependencies",
                 Description = $"{(int)factor.MetricValue} external dependencies detected. Work with dependent teams to resolve blockers before or early in the sprint.",
                 Priority = factor.Score >= 3 ? "CRITICAL" : "HIGH",
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "RESOLVE_DEPENDENCIES",
                 SuggestedChange = $"Reduce dependencies from {(int)factor.MetricValue} to 0-2"
-            });
+            }, metricsToScore(metrics), Math.Max(1, Math.Min(2, factor.Score))));
         }
 
         return recs;
@@ -597,6 +786,29 @@ public class RiskAssessmentService : IRiskAssessmentService
             "LOW" => 3,
             _ => 4
         };
+    }
+
+    private RecommendationDto CreateImpactRecommendation(RecommendationDto recommendation, decimal currentScore, decimal estimatedScoreReduction)
+    {
+        var reduction = Math.Max(0m, estimatedScoreReduction);
+        var beforeScore = Math.Round(currentScore, 2);
+        var afterScore = Math.Max(0m, Math.Round(currentScore - reduction, 2));
+
+        recommendation.BeforeScore = beforeScore;
+        recommendation.AfterScore = afterScore;
+        recommendation.EstimatedScoreChange = Math.Round(beforeScore - afterScore, 2);
+        recommendation.BeforeRiskLevel = DetermineRiskLevel(beforeScore).ToString();
+        recommendation.AfterRiskLevel = DetermineRiskLevel(afterScore).ToString();
+
+        return recommendation;
+    }
+
+    private decimal metricsToScore(SprintMetricsDto metrics)
+    {
+        return Math.Round(
+            (metrics.CVR > 1.1m ? 2m : metrics.CVR > 1.0m ? 1m : 0m)
+            + (metrics.VelocityCoefficient > 0.25m ? 2m : metrics.VelocityCoefficient > 0.15m ? 1m : 0m)
+            + (metrics.SpilloverRate > 40m ? 2m : metrics.SpilloverRate >= 20m ? 1m : 0m), 2);
     }
 
     #endregion
@@ -616,6 +828,8 @@ public class RiskAssessmentService : IRiskAssessmentService
             TotalScore = assessment.TotalScore,
             MaxPossibleScore = assessment.MaxPossibleScore,
             Confidence = assessment.Confidence.ToString(),
+            FeedbackCalibrationFactor = 1.0m,
+            FeedbackSampleSize = 0,
             AssessedAt = assessment.AssessedAt,
             Factors = assessment.Factors.Select(f => new RiskFactorDto
             {
@@ -634,8 +848,44 @@ public class RiskAssessmentService : IRiskAssessmentService
                 Priority = r.Priority.ToString(),
                 AddressesRiskFactor = r.AddressesRiskFactor,
                 ActionType = r.ActionType.ToString(),
-                SuggestedChange = r.SuggestedChange
+                SuggestedChange = r.SuggestedChange,
+                BeforeScore = r.BeforeScore,
+                AfterScore = r.AfterScore,
+                BeforeRiskLevel = r.BeforeRiskLevel?.ToString(),
+                AfterRiskLevel = r.AfterRiskLevel?.ToString(),
+                EstimatedScoreChange = r.ImpactScoreChange,
+                WasApplied = r.WasApplied,
+                AppliedAt = r.AppliedAt,
+                AppliedBy = r.AppliedBy
             }).ToList()
         };
+    }
+
+    private async Task<(decimal factor, int sampleSize)> GetFeedbackCalibrationAsync(int teamId)
+    {
+        var feedbacks = await _context.RiskFeedbacks
+            .Include(f => f.Assessment)
+            .Where(f => f.Assessment != null
+                        && f.Assessment.TeamId == teamId
+                        && f.Assessment.IsFinal)
+            .OrderByDescending(f => f.CreatedAt)
+            .Take(25)
+            .ToListAsync();
+
+        var sampleSize = feedbacks.Count;
+        if (sampleSize < MIN_FEEDBACK_FOR_CALIBRATION)
+        {
+            return (1.0m, sampleSize);
+        }
+
+        var accurate = feedbacks.Count(f => f.AgreementLevel == "Accurate");
+        var partial = feedbacks.Count(f => f.AgreementLevel == "PartiallyAccurate");
+        var weightedAccuracy = (accurate + (partial * 0.5m)) / sampleSize;
+
+        // Lower accuracy => more conservative (higher) risk score; high accuracy => slight relaxation.
+        var rawFactor = 1.05m - ((weightedAccuracy - 0.5m) * 0.2m);
+        var boundedFactor = Math.Clamp(rawFactor, CALIBRATION_MIN, CALIBRATION_MAX);
+
+        return (Math.Round(boundedFactor, 3), sampleSize);
     }
 }

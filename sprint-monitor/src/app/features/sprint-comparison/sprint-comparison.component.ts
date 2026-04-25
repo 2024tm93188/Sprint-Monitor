@@ -97,4 +97,53 @@ export class SprintComparisonComponent implements OnInit {
   getOverallTrend(): string {
     return this.comparison?.improvementTrend ?? 'STABLE';
   }
+
+  getLatestAppliedRecommendationSprint(): SprintComparison | null {
+    if (!this.comparison?.sprints?.length) {
+      return null;
+    }
+
+    const withAppliedAction = this.comparison.sprints.filter(
+      sprint => !!sprint.appliedRecommendationTitle
+    );
+
+    if (!withAppliedAction.length) {
+      return null;
+    }
+
+    return [...withAppliedAction].sort((left, right) => right.sprintNumber - left.sprintNumber)[0];
+  }
+
+  formatActionType(actionType?: string): string {
+    if (!actionType) {
+      return 'Action';
+    }
+
+    return actionType
+      .toLowerCase()
+      .split('_')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  abbreviateRisk(level?: string): string {
+    if (!level) {
+      return 'N/A';
+    }
+
+    switch (level.toUpperCase()) {
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MED';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return level;
+    }
+  }
+
+  formatMetric(value: number): string {
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/\.00$/, '');
+  }
 }

@@ -90,6 +90,18 @@ export interface RecommendationOutcome {
   effective: boolean | null;
 }
 
+export interface AppliedRecommendationSummary {
+  title: string;
+  actionType?: string;
+  beforeScore?: number;
+  afterScore?: number;
+  beforeRisk?: string;
+  afterRisk?: string;
+  impactScoreChange?: number;
+  appliedAt?: Date;
+  appliedBy?: string;
+}
+
 /** Matches backend SprintComparisonDto exactly */
 export interface SprintComparison {
   assessmentId: number;
@@ -117,6 +129,14 @@ export interface SprintComparison {
 
   // Recommendations
   recommendations: string[];
+  appliedRecommendationTitle?: string;
+  appliedRecommendationActionType?: string;
+  appliedBeforeScore?: number;
+  appliedAfterScore?: number;
+  appliedBeforeRisk?: string;
+  appliedAfterRisk?: string;
+  appliedImpactScoreChange?: number;
+  appliedRecommendations?: AppliedRecommendationSummary[];
 
   // Accuracy
   wasAccurate: boolean;

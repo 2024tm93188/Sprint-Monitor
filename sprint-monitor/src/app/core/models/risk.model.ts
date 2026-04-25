@@ -76,6 +76,12 @@ export interface RiskAssessment {
 
   /** Confidence level of assessment (based on data quality) */
   confidence: AssessmentConfidence;
+
+  /** Risk-score calibration factor derived from historical feedback */
+  feedbackCalibrationFactor?: number;
+
+  /** Number of feedback records used for calibration */
+  feedbackSampleSize?: number;
 }
 
 /**
@@ -102,6 +108,26 @@ export interface Recommendation {
 
   /** Quantified impact if available (e.g., "Reduce by 5 points") */
   suggestedChange?: string;
+
+  /** Estimated risk score before this recommendation is applied */
+  beforeScore?: number;
+
+  /** Estimated risk score after this recommendation is applied */
+  afterScore?: number;
+
+  /** Risk level before this recommendation is applied */
+  beforeRiskLevel?: RiskLevel;
+
+  /** Risk level after this recommendation is applied */
+  afterRiskLevel?: RiskLevel;
+
+  /** Estimated score improvement from applying the recommendation */
+  estimatedScoreChange?: number;
+
+  /** Explicit action tracking fields */
+  wasApplied?: boolean;
+  appliedAt?: Date;
+  appliedBy?: string;
 }
 
 export enum RecommendationPriority {

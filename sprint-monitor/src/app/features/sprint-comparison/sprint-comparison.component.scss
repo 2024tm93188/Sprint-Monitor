@@ -28,6 +28,43 @@
     }
   }
 
+  .applied-summary {
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+    }
+
+    .summary-card {
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-left: 5px solid #14b8a6;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .summary-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .sprint-ref {
+        font-size: 13px;
+        color: #475569;
+        font-weight: 600;
+      }
+
+      .summary-meta {
+        font-size: 13px;
+        color: #0f172a;
+      }
+    }
+  }
+
   .sprints-section {
     h2 { margin: 0 0 16px 0; font-size: 18px; }
 
@@ -70,7 +107,7 @@
 
             &:last-child { border-bottom: none; }
 
-            .label { font-weight: 500; color: #666; min-width: 80px; }
+            .label { font-weight: 600; color: #5b6773; min-width: 80px; }
             .value {
               &.risk-badge {
                 padding: 2px 8px;
@@ -83,6 +120,108 @@
                 &.risk-high { background: #f8d7da; color: #721c24; }
               }
               &.warning { color: #c00; font-weight: 500; }
+            }
+          }
+
+          .recommendations-block {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d9ede9;
+            background: linear-gradient(180deg, #f6fcfb 0%, #f0faf8 100%);
+
+            .rec-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 10px;
+              font-size: 13px;
+              font-weight: 700;
+              color: #0f4b46;
+            }
+
+            .rec-count {
+              min-width: 22px;
+              height: 22px;
+              border-radius: 999px;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0 6px;
+              background: #0f766e;
+              color: #fff;
+              font-size: 12px;
+              font-weight: 700;
+            }
+
+            .rec-grid {
+              display: grid;
+              gap: 8px;
+            }
+
+            .rec-card {
+              background: #ffffff;
+              border: 1px solid #dbe9e7;
+              border-radius: 10px;
+              padding: 10px;
+            }
+
+            .rec-top {
+              display: flex;
+              align-items: flex-start;
+              justify-content: space-between;
+              gap: 10px;
+              margin-bottom: 8px;
+
+              h4 {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 700;
+                color: #10212a;
+                line-height: 1.35;
+              }
+            }
+
+            .action-chip {
+              white-space: nowrap;
+              background: #e8f4f1;
+              color: #0e5f58;
+              border: 1px solid #cde8e2;
+              border-radius: 999px;
+              padding: 2px 8px;
+              font-size: 11px;
+              font-weight: 700;
+            }
+
+            .rec-metrics {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+            }
+
+            .metric-chip {
+              background: #f5f7fa;
+              border: 1px solid #e3e9ef;
+              border-radius: 999px;
+              padding: 2px 8px;
+              font-size: 11px;
+              font-weight: 600;
+              color: #334155;
+
+              &.impact {
+                background: #e8f8ef;
+                border-color: #bfe8cc;
+                color: #166534;
+              }
+            }
+
+            .no-applied {
+              font-size: 12px;
+              color: #64748b;
+              background: #ffffff;
+              border: 1px dashed #d8e2ea;
+              border-radius: 8px;
+              padding: 10px;
             }
           }
         }
@@ -131,6 +270,31 @@
 
     h3 { margin: 0 0 8px 0; }
     p { margin: 0 0 16px 0; color: #666; }
+  }
+}
+
+@media (max-width: 720px) {
+  .comparison-container {
+    .sprints-section {
+      .sprints-list {
+        .sprint-card {
+          .card-body {
+            .row {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 4px;
+            }
+
+            .recommendations-block {
+              .rec-top {
+                flex-direction: column;
+                align-items: flex-start;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 

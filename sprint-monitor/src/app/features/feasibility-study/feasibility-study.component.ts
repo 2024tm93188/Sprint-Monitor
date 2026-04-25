@@ -156,7 +156,7 @@ export class FeasibilityStudyComponent implements OnInit {
             this.loadData();
             this.showForm = false;
           },
-          error: (err) => this.error = 'Failed to update study'
+          error: (err) => this.error = err?.error?.message || 'Failed to update study'
         });
     } else {
       this.feasibilityService.createFeasibilityStudy(data).subscribe({
@@ -164,7 +164,7 @@ export class FeasibilityStudyComponent implements OnInit {
           this.loadData();
           this.showForm = false;
         },
-        error: (err) => this.error = 'Failed to create study'
+        error: (err) => this.error = err?.error?.message || 'Failed to create study'
       });
     }
   }

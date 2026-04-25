@@ -82,25 +82,17 @@ public class FeasibilityService : IFeasibilityService
     /// </summary>
     public async Task<FeasibilityDto> CreateFeasibilityStudyAsync(CreateFeasibilityDto dto)
     {
-        Sprint? sprint = null;
+        var sprint = await ResolveSprintLinkedToFinalAssessmentAsync(dto.TeamId, dto.SprintId);
 
-        if (dto.SprintId.HasValue)
+        var resolvedTeamId = dto.TeamId ?? sprint?.TeamId;
+        if (!resolvedTeamId.HasValue)
         {
-            sprint = await _context.Sprints
-                .FirstOrDefaultAsync(s => s.SprintId == dto.SprintId.Value && s.TeamId == dto.TeamId);
-        }
-        else if (dto.TeamId.HasValue)
-        {
-            var activeSprint = await _sprintService.GetActiveSprintAsync(dto.TeamId.Value);
-            if (activeSprint != null)
-            {
-                sprint = await _context.Sprints.FirstOrDefaultAsync(s => s.SprintId == activeSprint.SprintId);
-            }
+            throw new InvalidOperationException("TeamId is required to create feasibility study.");
         }
 
         var feasibility = new ImplementationFeasibility
         {
-            TeamId = dto.TeamId,
+            TeamId = resolvedTeamId,
             SprintId = sprint?.SprintId,
             EvaluationDate = DateTime.UtcNow,
             TechnicalFeasibility = dto.TechnicalFeasibility,
@@ -144,6 +136,12 @@ public class FeasibilityService : IFeasibilityService
             .FirstOrDefaultAsync(f => f.FeasibilityId == feasibilityId);
 
         if (feasibility == null) return null;
+
+        if (dto.SprintId.HasValue)
+        {
+            var sprint = await ResolveSprintLinkedToFinalAssessmentAsync(feasibility.TeamId, dto.SprintId);
+            feasibility.SprintId = sprint?.SprintId;
+        }
 
         // Update fields if provided
         if (dto.TechnicalFeasibility.HasValue)
@@ -257,6 +255,58 @@ public class FeasibilityService : IFeasibilityService
         if (f.OrganizationalFeasibility) score += 25;
         if (f.IntegrationFeasibility) score += 25;
         return score;
+    }
+
+    private async Task<Sprint?> ResolveSprintLinkedToFinalAssessmentAsync(int? teamId, int? sprintId)
+    {
+        if (sprintId.HasValue)
+        {
+            var sprint = await _context.Sprints
+                .FirstOrDefaultAsync(s => s.SprintId == sprintId.Value);
+
+            if (sprint == null)
+            {
+                throw new InvalidOperationException($"Sprint with ID {sprintId.Value} not found.");
+            }
+
+            if (teamId.HasValue && sprint.TeamId != teamId.Value)
+            {
+                throw new InvalidOperationException("Selected sprint does not belong to the selected team.");
+            }
+
+            var canonicalFinal = await _context.RiskAssessments
+                .Where(a => a.SprintId == sprint.SprintId && a.IsFinal)
+                .OrderByDescending(a => a.Iteration)
+                .ThenByDescending(a => a.AssessedAt)
+                .FirstOrDefaultAsync();
+
+            if (canonicalFinal == null)
+            {
+                throw new InvalidOperationException("Feasibility can only be validated against a sprint that has a final assessment.");
+            }
+
+            return sprint;
+        }
+
+        if (!teamId.HasValue)
+        {
+            return null;
+        }
+
+        var latestFinalAssessment = await _context.RiskAssessments
+            .Include(a => a.Sprint)
+            .Where(a => a.TeamId == teamId.Value && a.IsFinal && a.SprintId.HasValue)
+            .OrderByDescending(a => a.Sprint!.SprintNumber)
+            .ThenByDescending(a => a.Iteration)
+            .ThenByDescending(a => a.AssessedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestFinalAssessment == null || latestFinalAssessment.Sprint == null)
+        {
+            throw new InvalidOperationException("No finalized sprint plan found for this team. Finalize an assessment first, then submit feasibility validation.");
+        }
+
+        return latestFinalAssessment.Sprint;
     }
 
     // Mapper

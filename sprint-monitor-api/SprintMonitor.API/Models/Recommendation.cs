@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using SprintMonitor.API.Models;
 
 namespace SprintMonitor.API.Models;
 
@@ -79,6 +80,45 @@ public class Recommendation
     /// Whether the recommendation was applied
     /// </summary>
     public bool WasApplied { get; set; } = false;
+
+    /// <summary>
+    /// Timestamp when recommendation was explicitly applied
+    /// </summary>
+    public DateTime? AppliedAt { get; set; }
+
+    /// <summary>
+    /// User identifier/name that applied the recommendation
+    /// </summary>
+    [MaxLength(200)]
+    public string? AppliedBy { get; set; }
+
+    /// <summary>
+    /// Risk score before recommendation application
+    /// </summary>
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal? BeforeScore { get; set; }
+
+    /// <summary>
+    /// Risk score after recommendation application
+    /// </summary>
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal? AfterScore { get; set; }
+
+    /// <summary>
+    /// Score delta after applying recommendation
+    /// </summary>
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal? ImpactScoreChange { get; set; }
+
+    /// <summary>
+    /// Risk level before recommendation application
+    /// </summary>
+    public RiskLevel? BeforeRiskLevel { get; set; }
+
+    /// <summary>
+    /// Risk level after recommendation application
+    /// </summary>
+    public RiskLevel? AfterRiskLevel { get; set; }
 
     // Navigation property
     [ForeignKey("AssessmentId")]

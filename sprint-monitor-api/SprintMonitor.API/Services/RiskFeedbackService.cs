@@ -37,6 +37,7 @@ public class RiskFeedbackService : IRiskFeedbackService
     public async Task<RiskFeedbackDto> SubmitFeedbackAsync(CreateRiskFeedbackDto dto)
     {
         var assessment = await _context.RiskAssessments
+            .Include(a => a.Sprint)
             .FirstOrDefaultAsync(a => a.AssessmentId == dto.AssessmentId);
 
         if (assessment == null)
@@ -49,10 +50,28 @@ public class RiskFeedbackService : IRiskFeedbackService
             throw new InvalidOperationException("Feedback is allowed only for the final assessment of a sprint.");
         }
 
+        if (assessment.SprintId.HasValue)
+        {
+            var canonicalFinal = await _context.RiskAssessments
+                .Where(a => a.SprintId == assessment.SprintId.Value && a.IsFinal)
+                .OrderByDescending(a => a.Iteration)
+                .ThenByDescending(a => a.AssessedAt)
+                .FirstOrDefaultAsync();
+
+            if (canonicalFinal != null && canonicalFinal.AssessmentId != assessment.AssessmentId)
+            {
+                throw new InvalidOperationException("Feedback must be submitted against the canonical final assessment for this sprint.");
+            }
+        }
+
         if (assessment.TeamId != dto.TeamId)
         {
             throw new InvalidOperationException("Assessment does not belong to the selected team.");
         }
+
+        // Ensure there is a sprint row linked to this assessment and that required sprint fields are populated.
+        var sprint = await EnsureSprintForFeedbackAsync(assessment, dto);
+        assessment.SprintId = sprint.SprintId;
 
         // Determine user agreement based on agreement level
         bool userAgreement = dto.AgreementLevel == "Accurate";
@@ -75,7 +94,7 @@ public class RiskFeedbackService : IRiskFeedbackService
         }
 
         feedback.AssessmentId = dto.AssessmentId;
-        feedback.SprintId = assessment.SprintId;
+        feedback.SprintId = sprint.SprintId;
         feedback.UserId = dto.UserId;
         feedback.UserName = dto.UserName;
         feedback.UserRole = dto.UserRole;
@@ -90,8 +109,42 @@ public class RiskFeedbackService : IRiskFeedbackService
         feedback.FeedbackComments = dto.FeedbackComments;
         feedback.ImprovementSuggestions = dto.ImprovementSuggestions;
         feedback.ActualPointsCompleted = dto.CompletedPoints ?? dto.ActualPointsCompleted;
-        feedback.ActualSpillover = dto.ActualSpillover;
-        feedback.ActualSpilloverPoints = dto.ActualSpilloverPoints;
+        var resolvedCompletedPoints = feedback.ActualPointsCompleted;
+        var resolvedActualOutcome = ParseActualOutcome(dto.ActualOutcome);
+        var resolvedActualSpillover = dto.ActualSpillover ?? InferSpilloverFromOutcome(resolvedActualOutcome);
+        var resolvedActualSpilloverPoints = dto.ActualSpilloverPoints;
+
+        if (!resolvedActualSpilloverPoints.HasValue && resolvedCompletedPoints.HasValue)
+        {
+            var baselineCommitment = assessment.PlannedCommitment;
+            resolvedActualSpilloverPoints = Math.Max(0, baselineCommitment - resolvedCompletedPoints.Value);
+        }
+
+        feedback.ActualSpillover = resolvedActualSpillover;
+        feedback.ActualSpilloverPoints = resolvedActualSpilloverPoints;
+
+        // Persist actual execution outcome against the final prediction record.
+        assessment.ActualOutcome = resolvedActualOutcome;
+        assessment.ActualCompletedPoints = resolvedCompletedPoints;
+
+        // Keep linked sprint execution state synchronized with submitted feedback.
+        if (assessment.Sprint != null)
+        {
+            if (resolvedCompletedPoints.HasValue)
+            {
+                assessment.Sprint.CompletedPoints = resolvedCompletedPoints.Value;
+            }
+
+            assessment.Sprint.HadSpillover = resolvedActualSpillover;
+
+            if (!dto.ActualSpillover.HasValue && resolvedCompletedPoints.HasValue)
+            {
+                assessment.Sprint.HadSpillover = resolvedCompletedPoints.Value < assessment.Sprint.CommittedPoints;
+            }
+
+            assessment.Sprint.Status = SprintStatus.Completed;
+            assessment.Sprint.EndDate ??= DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
 
@@ -102,6 +155,86 @@ public class RiskFeedbackService : IRiskFeedbackService
         }
 
         return MapToDto(feedback);
+    }
+
+    private async Task<Sprint> EnsureSprintForFeedbackAsync(RiskAssessment assessment, CreateRiskFeedbackDto dto)
+    {
+        var team = await _context.Teams.FirstOrDefaultAsync(t => t.TeamId == assessment.TeamId)
+            ?? throw new InvalidOperationException($"Team with ID {assessment.TeamId} not found.");
+
+        var sprint = assessment.Sprint;
+
+        if (sprint == null && assessment.SprintId.HasValue)
+        {
+            sprint = await _context.Sprints.FirstOrDefaultAsync(s => s.SprintId == assessment.SprintId.Value);
+        }
+
+        if (sprint == null)
+        {
+            var nextSprintNumber = (await _context.Sprints
+                .Where(s => s.TeamId == assessment.TeamId)
+                .Select(s => (int?)s.SprintNumber)
+                .MaxAsync() ?? 0) + 1;
+
+            sprint = new Sprint
+            {
+                TeamId = assessment.TeamId,
+                SprintNumber = nextSprintNumber,
+                SprintName = $"Sprint {nextSprintNumber}",
+                Status = SprintStatus.Planned,
+                CommittedPoints = Math.Max(0, assessment.PlannedCommitment),
+                CompletedPoints = Math.Max(0, dto.CompletedPoints ?? dto.ActualPointsCompleted ?? 0),
+                AddedPoints = 0,
+                RemovedPoints = 0,
+                TeamAvailability = Math.Clamp(assessment.TeamAvailability, 0, 100),
+                TeamSize = Math.Max(1, team.TeamSize),
+                SprintDuration = 14,
+                HadSpillover = false,
+                ExternalDependencies = Math.Max(0, assessment.ExternalDependencies),
+                EndDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Sprints.Add(sprint);
+            assessment.Sprint = sprint;
+        }
+        else
+        {
+            sprint.TeamId = assessment.TeamId;
+            sprint.CommittedPoints = Math.Max(0, assessment.PlannedCommitment);
+            sprint.TeamAvailability = Math.Clamp(assessment.TeamAvailability, 0, 100);
+            sprint.TeamSize = Math.Max(1, sprint.TeamSize > 0 ? sprint.TeamSize : team.TeamSize);
+            sprint.SprintDuration = sprint.SprintDuration > 0 ? sprint.SprintDuration : 14;
+            sprint.ExternalDependencies = Math.Max(0, assessment.ExternalDependencies);
+
+            if (string.IsNullOrWhiteSpace(sprint.SprintName))
+            {
+                sprint.SprintName = $"Sprint {sprint.SprintNumber}";
+            }
+        }
+
+        return sprint;
+    }
+
+    private static SprintOutcome ParseActualOutcome(string actualOutcome)
+    {
+        if (Enum.TryParse<SprintOutcome>(actualOutcome, true, out var outcome))
+        {
+            return outcome;
+        }
+
+        throw new InvalidOperationException($"Invalid ActualOutcome '{actualOutcome}'. Expected SUCCESS, PARTIAL, or FAILED.");
+    }
+
+    private static bool InferSpilloverFromOutcome(SprintOutcome outcome)
+    {
+        return outcome switch
+        {
+            SprintOutcome.SUCCESS => false,
+            SprintOutcome.PARTIAL => true,
+            SprintOutcome.FAILED => true,
+            _ => false
+        };
     }
 
     /// <summary>
@@ -206,15 +339,24 @@ public class RiskFeedbackService : IRiskFeedbackService
     {
         var team = await _context.Teams.FindAsync(teamId);
 
-        // Compare only sprint-linked final assessments for this team.
-        var assessments = await _context.RiskAssessments
+        // Load the candidate assessments first, then do grouping/order selection in-memory.
+        // EF Core cannot translate the grouped first-per-sprint projection used by the UI view.
+        var assessmentCandidates = await _context.RiskAssessments
             .Include(a => a.Sprint)
             .Include(a => a.Recommendations)
             .Where(a => a.TeamId == teamId && a.IsFinal && a.SprintId.HasValue)
-            .OrderByDescending(a => a.AssessedAt)
-            .ThenByDescending(a => a.Sprint!.SprintNumber)
-            .Take(3)
             .ToListAsync();
+
+        // Compare latest sprints using one canonical final assessment per sprint.
+        var assessments = assessmentCandidates
+            .GroupBy(a => a.SprintId!.Value)
+            .Select(g => g
+                .OrderByDescending(a => a.Iteration)
+                .ThenByDescending(a => a.AssessedAt)
+                .First())
+            .OrderByDescending(a => a.Sprint?.SprintNumber ?? 0)
+            .Take(3)
+            .ToList();
 
         var sprintIds = assessments
             .Where(a => a.SprintId.HasValue)
@@ -232,6 +374,40 @@ public class RiskFeedbackService : IRiskFeedbackService
             .Where(f => assessmentIds.Contains(f.AssessmentId))
             .ToListAsync();
 
+        var iterationCountsBySprint = await _context.RiskAssessments
+            .Where(a => a.SprintId.HasValue && sprintIds.Contains(a.SprintId.Value))
+            .GroupBy(a => a.SprintId!.Value)
+            .Select(g => new { SprintId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.SprintId, x => x.Count);
+
+        // Resolve applied recommendations at sprint scope so actions applied on earlier
+        // iterations are still visible when the latest final assessment has no direct flag.
+        var appliedRecommendationBySprint = await _context.Recommendations
+            .Where(r => r.WasApplied)
+            .Join(
+                _context.RiskAssessments.Where(a => a.SprintId.HasValue && sprintIds.Contains(a.SprintId.Value)),
+                recommendation => recommendation.AssessmentId,
+                assessment => assessment.AssessmentId,
+                (recommendation, assessment) => new
+                {
+                    SprintId = assessment.SprintId!.Value,
+                    Iteration = assessment.Iteration,
+                    AssessedAt = assessment.AssessedAt,
+                    Recommendation = recommendation
+                })
+            .ToListAsync();
+
+        var appliedRecommendationsBySprint = appliedRecommendationBySprint
+            .GroupBy(item => item.SprintId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(item => item.Recommendation.AppliedAt ?? DateTime.MinValue)
+                    .ThenByDescending(item => item.Iteration)
+                    .ThenByDescending(item => item.AssessedAt)
+                    .Select(item => item.Recommendation)
+                    .ToList());
+
         var comparisons = new List<SprintComparisonDto>();
 
         foreach (var assessment in assessments)
@@ -241,6 +417,27 @@ public class RiskFeedbackService : IRiskFeedbackService
                 : null;
 
             var feedback = feedbacks.FirstOrDefault(f => f.AssessmentId == assessment.AssessmentId);
+            var appliedRecommendations = assessment.SprintId.HasValue
+                && appliedRecommendationsBySprint.TryGetValue(assessment.SprintId.Value, out var recommendations)
+                ? recommendations
+                : new List<Recommendation>();
+
+            var latestAppliedRecommendation = appliedRecommendations.FirstOrDefault();
+
+            var appliedRecommendationSummaries = appliedRecommendations
+                .Select(recommendation => new AppliedRecommendationSummaryDto
+                {
+                    Title = recommendation.Title,
+                    ActionType = recommendation.ActionType.ToString(),
+                    BeforeScore = recommendation.BeforeScore,
+                    AfterScore = recommendation.AfterScore,
+                    BeforeRisk = recommendation.BeforeRiskLevel?.ToString(),
+                    AfterRisk = recommendation.AfterRiskLevel?.ToString(),
+                    ImpactScoreChange = recommendation.ImpactScoreChange,
+                    AppliedAt = recommendation.AppliedAt,
+                    AppliedBy = recommendation.AppliedBy
+                })
+                .ToList();
 
             comparisons.Add(new SprintComparisonDto
             {
@@ -251,7 +448,7 @@ public class RiskFeedbackService : IRiskFeedbackService
                 StartDate = sprint?.StartDate,
                 EndDate = sprint?.EndDate,
                 PredictedRisk = assessment.RiskLevel.ToString(),
-                PredictedScore = (int)assessment.TotalScore,
+                PredictedScore = assessment.TotalScore,
                 ConfidenceLevel = assessment.Confidence switch
                 {
                     AssessmentConfidence.HIGH => 100,
@@ -260,7 +457,7 @@ public class RiskFeedbackService : IRiskFeedbackService
                     _ => 0
                 },
                 IterationCount = assessment.SprintId.HasValue
-                    ? _context.RiskAssessments.Count(a => a.SprintId == assessment.SprintId)
+                    ? iterationCountsBySprint.GetValueOrDefault(assessment.SprintId.Value, 1)
                     : 1,
                 FinalIteration = assessment.Iteration,
                 IsFinal = assessment.IsFinal,
@@ -270,6 +467,14 @@ public class RiskFeedbackService : IRiskFeedbackService
                 HadSpillover = sprint?.HadSpillover ?? false,
                 SpilloverPoints = sprint?.SpilloverPoints ?? 0,
                 Recommendations = assessment.Recommendations?.Select(r => r.Title).ToList() ?? new List<string>(),
+                AppliedRecommendationTitle = latestAppliedRecommendation?.Title,
+                AppliedRecommendationActionType = latestAppliedRecommendation?.ActionType.ToString(),
+                AppliedBeforeScore = latestAppliedRecommendation?.BeforeScore,
+                AppliedAfterScore = latestAppliedRecommendation?.AfterScore,
+                AppliedBeforeRisk = latestAppliedRecommendation?.BeforeRiskLevel?.ToString(),
+                AppliedAfterRisk = latestAppliedRecommendation?.AfterRiskLevel?.ToString(),
+                AppliedImpactScoreChange = latestAppliedRecommendation?.ImpactScoreChange,
+                AppliedRecommendations = appliedRecommendationSummaries,
                 WasAccurate = feedback?.UserAgreement ?? false,
                 AccuracyLevel = feedback?.AgreementLevel ?? "Pending",
                 HasFeedback = feedback != null,

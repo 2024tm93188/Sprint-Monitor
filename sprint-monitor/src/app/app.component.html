@@ -68,7 +68,7 @@
       </div>
     </mat-tab>
 
-    <mat-tab [disabled]="!currentAssessment">
+    <mat-tab [disabled]="!currentAssessment" *ngIf="!hideOperationalTabsForCurrentSprint">
       <ng-template mat-tab-label>
         <mat-icon>dashboard</mat-icon>
         <span>Risk Dashboard</span>
@@ -85,12 +85,12 @@
       </div>
     </mat-tab>
 
-    <mat-tab [disabled]="!currentAssessment">
+    <mat-tab [disabled]="!currentAssessment" *ngIf="!hideOperationalTabsForCurrentSprint">
       <ng-template mat-tab-label>
         <mat-icon>lightbulb</mat-icon>
         <span>Recommendations</span>
         <span class="count-badge" *ngIf="currentAssessment?.recommendations?.length">
-          {{ currentAssessment!.recommendations.length }}
+          {{ currentAssessment?.recommendations?.length }}
         </span>
       </ng-template>
       <div class="tab-content">

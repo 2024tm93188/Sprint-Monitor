@@ -117,6 +117,7 @@ export class AppComponent implements OnInit {
     }
 
     if (event.index === 5) {
+      this.syncAppliedRecommendationsForCurrentSprint();
       this.sprintComparisonComponent?.loadComparison();
     }
   }
@@ -136,7 +137,81 @@ export class AppComponent implements OnInit {
       return;
     }
 
+    const applyPayload = {
+      beforeScore: recommendation.beforeScore,
+      afterScore: recommendation.afterScore,
+      beforeRiskLevel: recommendation.beforeRiskLevel,
+      afterRiskLevel: recommendation.afterRiskLevel,
+      impactScoreChange: recommendation.estimatedScoreChange,
+      appliedBy: this.authService.userName() || this.authService.userEmail() || 'system'
+    };
+
+    const persistByMatch = () =>
+      this.apiService.applyRecommendationByMatch({
+        teamId: this.selectedTeamId,
+        sprintId: this.currentAssessment?.sprintId ?? undefined,
+        title: recommendation.title,
+        actionType: recommendation.actionType,
+        addressesRiskFactor: recommendation.addressesRiskFactor,
+        ...applyPayload
+      }).subscribe({
+        next: () => {
+          this.showSnackBar(
+            `Applied: ${recommendation.title} (${recommendation.beforeRiskLevel || 'N/A'} -> ${recommendation.afterRiskLevel || 'N/A'})`,
+            'OK',
+            2200
+          );
+        },
+        error: () => {
+          this.showSnackBar('Applied locally, but action-tracking sync failed.', 'OK', 2500);
+        }
+      });
+
+    const recommendationId = Number(recommendation.id);
+    if (!Number.isNaN(recommendationId) && recommendationId > 0) {
+      this.apiService.applyRecommendation(recommendationId, applyPayload).subscribe({
+        next: () => {
+          this.showSnackBar(
+            `Applied: ${recommendation.title} (${recommendation.beforeRiskLevel || 'N/A'} -> ${recommendation.afterRiskLevel || 'N/A'})`,
+            'OK',
+            2200
+          );
+        },
+        error: () => {
+          persistByMatch();
+        }
+      });
+    } else {
+      persistByMatch();
+    }
+
     this.planningEvaluation.applyRecommendation(recommendation);
+  }
+
+  private syncAppliedRecommendationsForCurrentSprint(): void {
+    const applied = this.currentAssessment?.recommendations?.filter(r => r.wasApplied) || [];
+    if (!applied.length) {
+      return;
+    }
+
+    applied.forEach(recommendation => {
+      this.apiService.applyRecommendationByMatch({
+        teamId: this.selectedTeamId,
+        sprintId: this.currentAssessment?.sprintId ?? undefined,
+        title: recommendation.title,
+        actionType: recommendation.actionType,
+        addressesRiskFactor: recommendation.addressesRiskFactor,
+        beforeScore: recommendation.beforeScore,
+        afterScore: recommendation.afterScore,
+        beforeRiskLevel: recommendation.beforeRiskLevel,
+        afterRiskLevel: recommendation.afterRiskLevel,
+        impactScoreChange: recommendation.estimatedScoreChange,
+        appliedBy: recommendation.appliedBy || this.authService.userName() || this.authService.userEmail() || 'system'
+      }).subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    });
   }
 
   onFinalizeRequestedFromDashboard(): void {
@@ -189,6 +264,11 @@ export class AppComponent implements OnInit {
     return this.currentAssessment.overallRisk.toLowerCase();
   }
 
+  get hideOperationalTabsForCurrentSprint(): boolean {
+    // Keep operational tabs visible unless sprint-specific gating is reintroduced.
+    return false;
+  }
+
   getTeamName(teamId: number): string {
     const team = this.teams.find(t => t.teamId === +teamId);
     return team?.teamName || 'Select team';
@@ -229,6 +309,8 @@ export class AppComponent implements OnInit {
   }
 
   private mapAssessmentResponseToModel(response: RiskAssessmentResponseDto): RiskAssessment {
+    const baseScore = Number(response.totalScore ?? 0);
+
     return {
       assessmentId: response.assessmentId,
       teamId: response.teamId,
@@ -240,6 +322,8 @@ export class AppComponent implements OnInit {
       totalScore: response.totalScore,
       maxPossibleScore: response.maxPossibleScore,
       confidence: response.confidence as AssessmentConfidence,
+      feedbackCalibrationFactor: response.feedbackCalibrationFactor,
+      feedbackSampleSize: response.feedbackSampleSize,
       assessedAt: new Date(response.assessedAt),
       factors: response.factors.map(f => ({
         name: f.factorName,
@@ -248,15 +332,48 @@ export class AppComponent implements OnInit {
         metricValue: f.metricValue,
         threshold: f.threshold ?? undefined
       })),
-      recommendations: response.recommendations.map(r => ({
-        id: r.recommendationId.toString(),
-        title: r.title,
-        description: r.description,
-        priority: r.priority as RecommendationPriority,
-        actionType: r.actionType as ActionType,
-        suggestedChange: r.suggestedChange ?? undefined,
-        addressesRiskFactor: r.addressesRiskFactor
-      }))
+      recommendations: response.recommendations.map(r => {
+        const mappedRecommendation: Recommendation = {
+          id: r.recommendationId.toString(),
+          title: r.title,
+          description: r.description,
+          priority: r.priority as RecommendationPriority,
+          actionType: r.actionType as ActionType,
+          suggestedChange: r.suggestedChange ?? undefined,
+          addressesRiskFactor: r.addressesRiskFactor,
+          beforeScore: r.beforeScore ?? undefined,
+          afterScore: r.afterScore ?? undefined,
+          beforeRiskLevel: r.beforeRiskLevel as RiskLevel | undefined,
+          afterRiskLevel: r.afterRiskLevel as RiskLevel | undefined,
+          estimatedScoreChange: r.estimatedScoreChange ?? undefined,
+          wasApplied: r.wasApplied ?? undefined,
+          appliedAt: r.appliedAt ? new Date(r.appliedAt) : undefined,
+          appliedBy: r.appliedBy ?? undefined
+        };
+
+        if (mappedRecommendation.beforeScore === undefined || mappedRecommendation.afterScore === undefined) {
+          const parsed = mappedRecommendation.suggestedChange?.match(/(\d+(?:\.\d+)?)/);
+          const inferredDelta = parsed ? Math.max(0.5, Math.min(3, parseFloat(parsed[1]) / 5)) : 1;
+          const before = Math.round(baseScore * 100) / 100;
+          const after = Math.max(0, Math.round((before - inferredDelta) * 100) / 100);
+
+          mappedRecommendation.beforeScore = before;
+          mappedRecommendation.afterScore = after;
+          mappedRecommendation.beforeRiskLevel = mappedRecommendation.beforeRiskLevel ?? (response.riskLevel as RiskLevel);
+          mappedRecommendation.afterRiskLevel = mappedRecommendation.afterRiskLevel ?? this.getRiskLevelFromScore(after);
+          mappedRecommendation.estimatedScoreChange = mappedRecommendation.estimatedScoreChange ?? Math.round(inferredDelta * 100) / 100;
+        }
+
+        return mappedRecommendation;
+      })
     };
+  }
+
+  private getRiskLevelFromScore(score: number): RiskLevel {
+    const normalizedScore = Math.floor(score);
+
+    if (normalizedScore <= 3) return RiskLevel.LOW;
+    if (normalizedScore <= 6) return RiskLevel.MEDIUM;
+    return RiskLevel.HIGH;
   }
 }
