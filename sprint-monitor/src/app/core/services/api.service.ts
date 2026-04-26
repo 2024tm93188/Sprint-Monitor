@@ -110,6 +110,12 @@ export interface RiskAssessmentResponseDto {
   isFinal: boolean;
   plannedCommitment: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  /** ML-predicted risk level (null if ML service unavailable) */
+  mlRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  /** Final combined risk level (rule + ML) */
+  finalRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  /** ML model prediction confidence (0.0 - 1.0) */
+  mlConfidence?: number | null;
   totalScore: number;
   maxPossibleScore: number;
   confidence: 'LOW' | 'MEDIUM' | 'HIGH';

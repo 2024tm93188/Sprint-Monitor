@@ -61,9 +61,26 @@
             </div>
 
             <div class="row">
-              <span class="label">Predicted:</span>
+              <span class="label">Rule Risk:</span>
               <span class="value risk-badge" [class]="'risk-' + getRiskColor(sprint.predictedRisk)">
                 {{ sprint.predictedRisk }}
+              </span>
+            </div>
+
+            <div class="row">
+              <span class="label">ML Risk:</span>
+              <span class="value risk-badge" [ngClass]="getRiskClass(sprint.mlRisk)">
+                {{ getMlRiskDisplay(sprint) }}
+              </span>
+              <span class="ml-confidence-chip" *ngIf="sprint.mlConfidence != null">
+                {{ (sprint.mlConfidence! * 100) | number:'1.0-0' }}% conf.
+              </span>
+            </div>
+
+            <div class="row">
+              <span class="label">Final Risk:</span>
+              <span class="value risk-badge final-risk-badge" [ngClass]="getRiskClass(sprint.finalRisk || sprint.predictedRisk)">
+                {{ getFinalRiskDisplay(sprint) }}
               </span>
             </div>
 
@@ -95,12 +112,18 @@
             </div>
 
             <section class="recommendations-block">
-              <div class="rec-header">
-                <span>Applied Recommendations</span>
-                <span class="rec-count" *ngIf="sprint.appliedRecommendations?.length">{{ sprint.appliedRecommendations?.length }}</span>
+              <div class="rec-header" role="button" tabindex="0" (click)="toggleRecommendations(sprint)">
+                <span>
+                  Applied Recommendations
+                  <small class="expand-hint">({{ isRecommendationsExpanded(sprint) ? 'Click to collapse' : 'Click to expand' }})</small>
+                </span>
+                <span class="rec-header-right">
+                  <span class="rec-count" *ngIf="sprint.appliedRecommendations?.length">{{ sprint.appliedRecommendations?.length }}</span>
+                  <span class="rec-toggle" aria-hidden="true">{{ isRecommendationsExpanded(sprint) ? '▾' : '▸' }}</span>
+                </span>
               </div>
 
-              <div class="rec-grid" *ngIf="sprint.appliedRecommendations?.length; else noAppliedRecommendation">
+              <div class="rec-grid" *ngIf="isRecommendationsExpanded(sprint) && sprint.appliedRecommendations?.length; else noAppliedRecommendation">
                 <article class="rec-card" *ngFor="let applied of sprint.appliedRecommendations">
                   <div class="rec-top">
                     <h4>{{ applied.title }}</h4>
@@ -122,7 +145,7 @@
               </div>
 
               <ng-template #noAppliedRecommendation>
-                <div class="no-applied">No recommendations applied in this sprint</div>
+                <div class="no-applied" *ngIf="isRecommendationsExpanded(sprint)">No recommendations applied in this sprint</div>
               </ng-template>
             </section>
           </div>

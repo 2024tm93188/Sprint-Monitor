@@ -56,8 +56,17 @@ export interface RiskAssessment {
   /** Marks the committed final assessment */
   isFinal?: boolean;
 
-  /** Overall risk level */
+  /** Overall risk level (rule-based) */
   overallRisk: RiskLevel;
+
+  /** ML-predicted risk level */
+  mlRisk?: RiskLevel | null;
+
+  /** Final combined risk level (rule + ML) */
+  finalRisk?: RiskLevel | null;
+
+  /** ML model prediction confidence (0.0 - 1.0) */
+  mlConfidence?: number | null;
 
   /** Total aggregated risk score */
   totalScore: number;

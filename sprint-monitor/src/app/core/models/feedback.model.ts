@@ -116,6 +116,11 @@ export interface SprintComparison {
   predictedScore: number;
   confidenceLevel: number;
 
+  // ML Risk Fields
+  mlRisk?: string | null;
+  finalRisk?: string | null;
+  mlConfidence?: number | null;
+
   iterationCount: number;
   finalIteration: number;
   isFinal: boolean;

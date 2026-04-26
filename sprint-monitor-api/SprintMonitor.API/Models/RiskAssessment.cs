@@ -81,10 +81,26 @@ public class RiskAssessment
     public int ExternalDependencies { get; set; }
 
     /// <summary>
-    /// Computed risk level
+    /// Computed risk level (rule-based)
     /// </summary>
     [Required]
     public RiskLevel RiskLevel { get; set; }
+
+    /// <summary>
+    /// ML-predicted risk level (null if ML service unavailable)
+    /// </summary>
+    public RiskLevel? MlRiskLevel { get; set; }
+
+    /// <summary>
+    /// Final combined risk level (rule + ML)
+    /// </summary>
+    public RiskLevel? FinalRiskLevel { get; set; }
+
+    /// <summary>
+    /// ML model prediction confidence (0.0 - 1.0)
+    /// </summary>
+    [Column(TypeName = "decimal(5,4)")]
+    public decimal? MlConfidence { get; set; }
 
     /// <summary>
     /// Total risk score (0-14)

@@ -102,10 +102,15 @@ public class SprintComparisonDto
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     
-    // Prediction Data
+    // Prediction Data (rule-based)
     public string PredictedRisk { get; set; } = string.Empty;
     public decimal PredictedScore { get; set; }
     public double ConfidenceLevel { get; set; }
+
+    // ML Risk Fields
+    public string? MlRisk { get; set; }
+    public string? FinalRisk { get; set; }
+    public decimal? MlConfidence { get; set; }
 
     // Iteration data
     public int IterationCount { get; set; }

@@ -15,6 +15,7 @@ public class RiskAssessmentService : IRiskAssessmentService
     private readonly SprintMonitorDbContext _context;
     private readonly IMetricsService _metricsService;
     private readonly ISprintService _sprintService;
+    private readonly IMlRiskService _mlRiskService;
 
     // Thresholds (could be moved to configuration)
     private const decimal CVR_LOW_MAX = 1.0m;
@@ -29,11 +30,12 @@ public class RiskAssessmentService : IRiskAssessmentService
     private const decimal CALIBRATION_MAX = 1.15m;
     private const int MIN_FEEDBACK_FOR_CALIBRATION = 1;
 
-    public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService, ISprintService sprintService)
+    public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService, ISprintService sprintService, IMlRiskService mlRiskService)
     {
         _context = context;
         _metricsService = metricsService;
         _sprintService = sprintService;
+        _mlRiskService = mlRiskService;
     }
 
     /// <summary>
@@ -98,6 +100,39 @@ public class RiskAssessmentService : IRiskAssessmentService
             .Select(a => (int?)a.Iteration)
             .MaxAsync() ?? 0;
 
+        // ---- ML Risk Prediction (Phase 2: Hybrid) ----
+        // Determine spillover from historical data
+        var lastSprint = sprints.LastOrDefault();
+        var hadSpillover = lastSprint?.HadSpillover == true ? 1 : 0;
+        var avgCompleted = sprints.Count > 0
+            ? (int)sprints.Average(s => s.CompletedPoints)
+            : request.PlannedCommitment;
+
+        var mlResult = await _mlRiskService.PredictRiskAsync(
+            cvr: metrics.CVR,
+            spillover: hadSpillover,
+            dependencies: request.ExternalDependencies,
+            teamAvailability: request.TeamAvailability,
+            committedPoints: request.PlannedCommitment,
+            completedPoints: avgCompleted,
+            teamSize: lastSprint?.TeamSize ?? 5);
+
+        RiskLevel? mlRiskLevel = null;
+        RiskLevel? finalRiskLevel = null;
+        decimal? mlConfidence = null;
+
+        if (mlResult.IsAvailable)
+        {
+            mlRiskLevel = mlResult.MlRisk;
+            mlConfidence = mlResult.Confidence;
+            finalRiskLevel = _mlRiskService.CombineRiskLevels(riskLevel, mlResult.MlRisk, mlResult.Confidence);
+        }
+        else
+        {
+            // ML unavailable — final risk = rule risk
+            finalRiskLevel = riskLevel;
+        }
+
         // Create and save the assessment
         var assessment = new RiskAssessment
         {
@@ -109,6 +144,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             TeamAvailability = request.TeamAvailability,
             ExternalDependencies = request.ExternalDependencies,
             RiskLevel = riskLevel,
+            MlRiskLevel = mlRiskLevel,
+            FinalRiskLevel = finalRiskLevel,
+            MlConfidence = mlConfidence,
             TotalScore = totalScore,
             MaxPossibleScore = 17,
             Confidence = confidence,
@@ -182,6 +220,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             IsFinal = assessment.IsFinal,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = riskLevel.ToString(),
+            MlRiskLevel = mlRiskLevel?.ToString(),
+            FinalRiskLevel = finalRiskLevel?.ToString(),
+            MlConfidence = mlConfidence,
             TotalScore = totalScore,
             MaxPossibleScore = 17,
             Confidence = confidence.ToString(),
@@ -825,6 +866,9 @@ public class RiskAssessmentService : IRiskAssessmentService
             IsFinal = assessment.IsFinal,
             PlannedCommitment = assessment.PlannedCommitment,
             RiskLevel = assessment.RiskLevel.ToString(),
+            MlRiskLevel = assessment.MlRiskLevel?.ToString(),
+            FinalRiskLevel = assessment.FinalRiskLevel?.ToString(),
+            MlConfidence = assessment.MlConfidence,
             TotalScore = assessment.TotalScore,
             MaxPossibleScore = assessment.MaxPossibleScore,
             Confidence = assessment.Confidence.ToString(),

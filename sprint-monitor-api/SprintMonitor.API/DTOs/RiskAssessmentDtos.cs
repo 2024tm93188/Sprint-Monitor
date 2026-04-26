@@ -32,6 +32,18 @@ public class RiskAssessmentDto
     public bool IsFinal { get; set; }
     public int PlannedCommitment { get; set; }
     public string RiskLevel { get; set; } = string.Empty;
+    /// <summary>
+    /// ML-predicted risk level (null if ML unavailable)
+    /// </summary>
+    public string? MlRiskLevel { get; set; }
+    /// <summary>
+    /// Final combined risk level (rule + ML)
+    /// </summary>
+    public string? FinalRiskLevel { get; set; }
+    /// <summary>
+    /// ML model prediction confidence (0.0 - 1.0)
+    /// </summary>
+    public decimal? MlConfidence { get; set; }
     public decimal TotalScore { get; set; }
     public int MaxPossibleScore { get; set; }
     public string Confidence { get; set; } = string.Empty;

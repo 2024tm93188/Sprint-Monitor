@@ -59,6 +59,14 @@ builder.Services.AddScoped<IFeasibilityService, FeasibilityService>();
 builder.Services.AddScoped<IRiskFeedbackService, RiskFeedbackService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Register ML Risk Service with HttpClient for Python microservice
+var mlServiceUrl = builder.Configuration["MlService:BaseUrl"] ?? "http://localhost:5001";
+builder.Services.AddHttpClient<IMlRiskService, MlRiskService>(client =>
+{
+    client.BaseAddress = new Uri(mlServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(5); // Fast fail if ML service is down
+});
+
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

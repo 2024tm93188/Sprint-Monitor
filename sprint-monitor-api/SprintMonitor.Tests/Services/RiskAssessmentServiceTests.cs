@@ -16,6 +16,7 @@ public class RiskAssessmentServiceTests : IDisposable
     private readonly SprintMonitorDbContext _context;
     private readonly Mock<IMetricsService> _mockMetricsService;
     private readonly Mock<ISprintService> _mockSprintService;
+    private readonly Mock<IMlRiskService> _mockMlRiskService;
     private readonly RiskAssessmentService _service;
 
     public RiskAssessmentServiceTests()
@@ -23,13 +24,20 @@ public class RiskAssessmentServiceTests : IDisposable
         _context = TestDbContextFactory.CreateWithTestData();
         _mockMetricsService = new Mock<IMetricsService>();
         _mockSprintService = new Mock<ISprintService>();
+        _mockMlRiskService = new Mock<IMlRiskService>();
         _mockSprintService
             .Setup(service => service.GetActiveSprintAsync(It.IsAny<int>()))
             .ReturnsAsync((int teamId) => BuildActiveSprintDto(teamId));
         _mockSprintService
             .Setup(service => service.GetOrCreateActiveSprintAsync(It.IsAny<int>()))
             .ReturnsAsync((int teamId) => BuildActiveSprintDto(teamId));
-        _service = new RiskAssessmentService(_context, _mockMetricsService.Object, _mockSprintService.Object);
+        // Default: ML service unavailable (rule-only tests still pass)
+        _mockMlRiskService
+            .Setup(m => m.PredictRiskAsync(
+                It.IsAny<decimal>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new MlPredictionResult { IsAvailable = false });
+        _service = new RiskAssessmentService(_context, _mockMetricsService.Object, _mockSprintService.Object, _mockMlRiskService.Object);
     }
 
     private SprintDto BuildActiveSprintDto(int teamId)

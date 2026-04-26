@@ -118,6 +118,7 @@
                 &.risk-low { background: #d4edda; color: #155724; }
                 &.risk-medium { background: #fff3cd; color: #856404; }
                 &.risk-high { background: #f8d7da; color: #721c24; }
+                &.risk-unknown { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
               }
               &.warning { color: #c00; font-weight: 500; }
             }
@@ -138,6 +139,25 @@
               font-size: 13px;
               font-weight: 700;
               color: #0f4b46;
+              cursor: pointer;
+            }
+
+            .rec-header-right {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+            }
+
+            .expand-hint {
+              margin-left: 6px;
+              font-size: 11px;
+              font-weight: 600;
+              color: #64748b;
+            }
+
+            .rec-toggle {
+              font-size: 14px;
+              color: #0f766e;
             }
 
             .rec-count {
@@ -312,4 +332,22 @@
     color: #333;
     &:hover { background: #d0d0d0; }
   }
+}
+
+/* ML Risk styles in Sprint Comparison */
+.ml-confidence-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e6fffb, #f0fdfa);
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  margin-left: 6px;
+}
+
+.final-risk-badge {
+  font-weight: 700 !important;
+  border-width: 2px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }

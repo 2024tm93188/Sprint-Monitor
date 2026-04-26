@@ -166,4 +166,12 @@ export class RiskDashboardComponent implements OnChanges {
     if (score === 2) return 'accent';
     return 'warn';
   }
+
+  /** Returns a CSS class for the ML confidence bar based on confidence level */
+  getConfidenceBarClass(): string {
+    const confidence = this.assessment?.mlConfidence ?? 0;
+    if (confidence >= 0.75) return 'confidence-high';
+    if (confidence >= 0.5) return 'confidence-medium';
+    return 'confidence-low';
+  }
 }

@@ -456,6 +456,9 @@ public class RiskFeedbackService : IRiskFeedbackService
                     AssessmentConfidence.LOW => 33,
                     _ => 0
                 },
+                MlRisk = assessment.MlRiskLevel?.ToString(),
+                FinalRisk = assessment.FinalRiskLevel?.ToString(),
+                MlConfidence = assessment.MlConfidence,
                 IterationCount = assessment.SprintId.HasValue
                     ? iterationCountsBySprint.GetValueOrDefault(assessment.SprintId.Value, 1)
                     : 1,

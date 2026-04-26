@@ -19,6 +19,67 @@
     </div>
   </mat-card>
 
+  <!-- ════════ HYBRID RISK PANEL (Rule + ML) ════════ -->
+  <section class="hybrid-risk-panel" *ngIf="assessment.mlRisk || assessment.finalRisk">
+    <mat-card class="hybrid-card">
+      <div class="hybrid-header">
+        <h3>
+          <mat-icon>psychology</mat-icon>
+          Hybrid Risk Assessment
+        </h3>
+        <span class="hybrid-badge">Rule + ML</span>
+      </div>
+
+      <div class="hybrid-grid">
+        <!-- Rule-based Risk -->
+        <div class="hybrid-item">
+          <span class="hybrid-label">Rule Engine</span>
+          <span class="hybrid-value risk-badge" [ngClass]="'risk-' + assessment.overallRisk.toLowerCase()">
+            {{ assessment.overallRisk }}
+          </span>
+          <span class="hybrid-sublabel">Deterministic</span>
+        </div>
+
+        <!-- ML Risk -->
+        <div class="hybrid-item" *ngIf="assessment.mlRisk">
+          <span class="hybrid-label">ML Prediction</span>
+          <span class="hybrid-value risk-badge" [ngClass]="'risk-' + assessment.mlRisk.toLowerCase()">
+            {{ assessment.mlRisk }}
+          </span>
+          <span class="hybrid-sublabel">
+            Confidence: {{ (assessment.mlConfidence ?? 0) * 100 | number:'1.0-0' }}%
+          </span>
+        </div>
+
+        <!-- Arrow -->
+        <div class="hybrid-arrow">
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+
+        <!-- Final Risk -->
+        <div class="hybrid-item final-item">
+          <span class="hybrid-label">Final Risk</span>
+          <span class="hybrid-value risk-badge final-badge" [ngClass]="'risk-' + (assessment.finalRisk || assessment.overallRisk).toLowerCase()">
+            {{ assessment.finalRisk || assessment.overallRisk }}
+          </span>
+          <span class="hybrid-sublabel">Combined</span>
+        </div>
+      </div>
+
+      <!-- Confidence Bar -->
+      <div class="confidence-bar-container" *ngIf="assessment.mlConfidence != null">
+        <div class="confidence-label">
+          <span>ML Confidence</span>
+          <strong>{{ (assessment.mlConfidence ?? 0) * 100 | number:'1.1-1' }}%</strong>
+        </div>
+        <div class="confidence-bar">
+          <span class="confidence-fill" [style.width.%]="(assessment.mlConfidence ?? 0) * 100"
+                [ngClass]="getConfidenceBarClass()"></span>
+        </div>
+      </div>
+    </mat-card>
+  </section>
+
   <section class="kpi-grid">
     <article class="kpi-card risk-score-card" [ngClass]="'risk-' + getRiskClass()">
       <span class="kpi-label">Risk Score</span>
@@ -27,7 +88,7 @@
     </article>
     <article class="kpi-card" *ngIf="assessment.feedbackCalibrationFactor !== undefined">
       <span class="kpi-label">Calibration Factor</span>
-      <span class="kpi-value">{{assessment.feedbackCalibrationFactor.toFixed(2)}}x</span>
+      <span class="kpi-value">{{assessment.feedbackCalibrationFactor!.toFixed(2)}}x</span>
       <span class="kpi-subvalue">From feedback history</span>
     </article>
     <article class="kpi-card" *ngIf="assessment.feedbackSampleSize !== undefined">

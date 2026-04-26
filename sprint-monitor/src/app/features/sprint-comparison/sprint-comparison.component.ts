@@ -19,6 +19,7 @@ export class SprintComparisonComponent implements OnInit {
   loading = false;
   error: string | null = null;
   selectedSprint: SprintComparison | null = null;
+  collapsedRecommendations = new Set<number>();
 
   ngOnInit(): void {
     // Reload when team changes
@@ -36,6 +37,9 @@ export class SprintComparisonComponent implements OnInit {
     this.feedbackService.getSprintComparison(teamId).subscribe({
       next: (data: SprintComparisonAnalysis) => {
         this.comparison = data;
+        this.collapsedRecommendations = new Set(
+          data.sprints.map(sprint => sprint.assessmentId)
+        );
         this.loading = false;
       },
       error: () => {
@@ -48,6 +52,35 @@ export class SprintComparisonComponent implements OnInit {
 
   selectSprint(sprint: SprintComparison): void {
     this.selectedSprint = this.selectedSprint?.sprintId === sprint.sprintId ? null : sprint;
+  }
+
+  toggleRecommendations(sprint: SprintComparison): void {
+    const key = sprint.assessmentId;
+    if (this.collapsedRecommendations.has(key)) {
+      this.collapsedRecommendations.delete(key);
+      return;
+    }
+    this.collapsedRecommendations.add(key);
+  }
+
+  isRecommendationsExpanded(sprint: SprintComparison): boolean {
+    return !this.collapsedRecommendations.has(sprint.assessmentId);
+  }
+
+  getMlRiskDisplay(sprint: SprintComparison): string {
+    return sprint.mlRisk ?? 'N/A';
+  }
+
+  getFinalRiskDisplay(sprint: SprintComparison): string {
+    return sprint.finalRisk ?? sprint.predictedRisk ?? 'N/A';
+  }
+
+  getRiskClass(level?: string | null): string {
+    if (!level) {
+      return 'risk-unknown';
+    }
+    const mapped = this.getRiskColor(level);
+    return mapped ? `risk-${mapped}` : 'risk-unknown';
   }
 
   getRiskColor(level: string): string {
