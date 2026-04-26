@@ -8,23 +8,6 @@
   <div *ngIf="error" class="error-banner">⚠️ {{ error }}<button (click)="error = null">×</button></div>
 
   <div *ngIf="comparison && !loading">
-    <div class="applied-summary" *ngIf="getLatestAppliedRecommendationSprint() as latestApplied">
-      <h2>Last Applied Recommendation</h2>
-      <div class="summary-card">
-        <div class="summary-title">
-          {{ latestApplied.appliedRecommendationTitle }}
-          <span class="sprint-ref">(Sprint #{{ latestApplied.sprintNumber }})</span>
-        </div>
-        <div class="summary-meta" *ngIf="latestApplied.appliedBeforeRisk || latestApplied.appliedAfterRisk">
-          Risk: <strong>{{ latestApplied.appliedBeforeRisk || 'N/A' }}</strong> → <strong>{{ latestApplied.appliedAfterRisk || 'N/A' }}</strong>
-        </div>
-        <div class="summary-meta" *ngIf="latestApplied.appliedBeforeScore !== undefined && latestApplied.appliedAfterScore !== undefined">
-          Score: <strong>{{ latestApplied.appliedBeforeScore }}</strong> → <strong>{{ latestApplied.appliedAfterScore }}</strong>
-          <span *ngIf="latestApplied.appliedImpactScoreChange !== undefined">(Improvement: -{{ latestApplied.appliedImpactScoreChange }})</span>
-        </div>
-      </div>
-    </div>
-
     <!-- Quick Stats -->
     <div class="stats">
       <div class="stat">
@@ -153,13 +136,6 @@
       </div>
     </div>
 
-    <!-- Key Insights -->
-    <div *ngIf="comparison.keyInsights?.length" class="insights">
-      <h2>Insights</h2>
-      <ul>
-        <li *ngFor="let insight of comparison.keyInsights">{{ insight }}</li>
-      </ul>
-    </div>
   </div>
 
   <!-- Empty -->
