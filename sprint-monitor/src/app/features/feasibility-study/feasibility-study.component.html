@@ -68,6 +68,10 @@
         <span class="status-badge" [class]="'status-' + getStatusColor(study.status)">{{ study.status }}</span>
       </div>
       <p class="study-sprint" *ngIf="study.sprintName">Sprint: {{ study.sprintName }}</p>
+      <p class="study-sprint" *ngIf="study.riskLevel || study.teamCondition">
+        Risk: {{ study.riskLevel || 'N/A' }} | Team: {{ study.teamCondition || 'N/A' }} ({{ study.teamDynamicsScore ?? 0 }}/3)
+      </p>
+      <p class="study-sprint" *ngIf="study.decisionReason">Decision: {{ study.decisionReason }}</p>
       
       <div class="score-bar">
         <div class="fill" [style.width.%]="study.overallScore"></div>

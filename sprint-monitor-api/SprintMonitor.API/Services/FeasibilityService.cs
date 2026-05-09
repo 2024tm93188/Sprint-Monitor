@@ -83,12 +83,16 @@ public class FeasibilityService : IFeasibilityService
     public async Task<FeasibilityDto> CreateFeasibilityStudyAsync(CreateFeasibilityDto dto)
     {
         var sprint = await ResolveSprintLinkedToFinalAssessmentAsync(dto.TeamId, dto.SprintId);
+        var finalAssessment = await ResolveFinalAssessmentForSprintAsync(sprint?.SprintId);
 
         var resolvedTeamId = dto.TeamId ?? sprint?.TeamId;
         if (!resolvedTeamId.HasValue)
         {
             throw new InvalidOperationException("TeamId is required to create feasibility study.");
         }
+
+        var (computedStatus, riskLevel, teamCondition, teamDynamicsScore, decisionReason) =
+            ComputeFeasibilityDecision(finalAssessment);
 
         var feasibility = new ImplementationFeasibility
         {
@@ -106,10 +110,16 @@ public class FeasibilityService : IFeasibilityService
             MentorComments = dto.MentorComments,
             ApprovedBy = dto.ApprovedBy,
             UserRole = dto.UserRole,
-            Status = dto.Status,
+            Status = string.Equals(dto.Status, "Proposed", StringComparison.OrdinalIgnoreCase)
+                ? computedStatus
+                : dto.Status,
             ExpectedBenefits = dto.ExpectedBenefits,
             AdoptionChallenges = dto.AdoptionChallenges,
             ScalabilityConsiderations = dto.ScalabilityConsiderations,
+            RiskLevel = riskLevel,
+            TeamCondition = teamCondition,
+            TeamDynamicsScore = teamDynamicsScore,
+            DecisionReason = string.IsNullOrWhiteSpace(dto.DecisionReason) ? decisionReason : dto.DecisionReason,
             OverallScore = CalculateOverallScore(dto),
             CreatedAt = DateTime.UtcNow
         };
@@ -143,6 +153,8 @@ public class FeasibilityService : IFeasibilityService
             feasibility.SprintId = sprint?.SprintId;
         }
 
+        var finalAssessment = await ResolveFinalAssessmentForSprintAsync(feasibility.SprintId);
+
         // Update fields if provided
         if (dto.TechnicalFeasibility.HasValue)
             feasibility.TechnicalFeasibility = dto.TechnicalFeasibility.Value;
@@ -174,6 +186,23 @@ public class FeasibilityService : IFeasibilityService
             feasibility.AdoptionChallenges = dto.AdoptionChallenges;
         if (dto.ScalabilityConsiderations != null)
             feasibility.ScalabilityConsiderations = dto.ScalabilityConsiderations;
+        if (dto.DecisionReason != null)
+            feasibility.DecisionReason = dto.DecisionReason;
+
+        var (computedStatus, riskLevel, teamCondition, teamDynamicsScore, decisionReason) =
+            ComputeFeasibilityDecision(finalAssessment);
+
+        if (!string.IsNullOrWhiteSpace(riskLevel))
+            feasibility.RiskLevel = riskLevel;
+        if (!string.IsNullOrWhiteSpace(teamCondition))
+            feasibility.TeamCondition = teamCondition;
+        feasibility.TeamDynamicsScore = teamDynamicsScore;
+
+        if (string.IsNullOrWhiteSpace(dto.Status) || string.Equals(dto.Status, "Proposed", StringComparison.OrdinalIgnoreCase))
+            feasibility.Status = computedStatus;
+
+        if (string.IsNullOrWhiteSpace(feasibility.DecisionReason))
+            feasibility.DecisionReason = decisionReason;
 
         // Recalculate score
         feasibility.OverallScore = CalculateOverallScore(feasibility);
@@ -309,6 +338,62 @@ public class FeasibilityService : IFeasibilityService
         return latestFinalAssessment.Sprint;
     }
 
+    private async Task<RiskAssessment?> ResolveFinalAssessmentForSprintAsync(int? sprintId)
+    {
+        if (!sprintId.HasValue)
+        {
+            return null;
+        }
+
+        return await _context.RiskAssessments
+            .Where(a => a.SprintId == sprintId.Value && a.IsFinal)
+            .OrderByDescending(a => a.Iteration)
+            .ThenByDescending(a => a.AssessedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    private static (string status, string riskLevel, string teamCondition, int teamDynamicsScore, string reason)
+        ComputeFeasibilityDecision(RiskAssessment? finalAssessment)
+    {
+        if (finalAssessment == null)
+        {
+            return (
+                status: "Under Review",
+                riskLevel: "Unknown",
+                teamCondition: "Unknown",
+                teamDynamicsScore: 0,
+                reason: "No final risk assessment found. Feasibility remains under review.");
+        }
+
+        var finalRisk = finalAssessment.FinalRiskLevel ?? finalAssessment.RiskLevel;
+        var risk = finalRisk.ToString();
+        var teamScore = Math.Clamp(finalAssessment.TeamDynamicsScore, 0, 3);
+        var condition = string.IsNullOrWhiteSpace(finalAssessment.TeamCondition)
+            ? (teamScore <= 1 ? "Strong" : teamScore == 2 ? "Watch" : "Fragile")
+            : finalAssessment.TeamCondition;
+
+        if (finalRisk == RiskLevel.HIGH && teamScore >= 2)
+        {
+            return ("Rejected", risk, condition, teamScore,
+                "High delivery risk combined with unstable team dynamics makes implementation infeasible in the current sprint.");
+        }
+
+        if (finalRisk == RiskLevel.HIGH || teamScore >= 3)
+        {
+            return ("Deferred", risk, condition, teamScore,
+                "Implementation should be deferred until risk or team dynamics improve.");
+        }
+
+        if (finalRisk == RiskLevel.MEDIUM && teamScore >= 2)
+        {
+            return ("Under Review", risk, condition, teamScore,
+                "Moderate risk with team dynamics pressure requires additional mitigation and mentor review.");
+        }
+
+        return ("Approved", risk, condition, teamScore,
+            "Risk and team conditions are acceptable for implementation with standard monitoring.");
+    }
+
     // Mapper
     private static FeasibilityDto MapToDto(ImplementationFeasibility f)
     {
@@ -336,6 +421,10 @@ public class FeasibilityService : IFeasibilityService
             AdoptionChallenges = f.AdoptionChallenges,
             ScalabilityConsiderations = f.ScalabilityConsiderations,
             OverallScore = f.OverallScore,
+            RiskLevel = f.RiskLevel,
+            TeamCondition = f.TeamCondition,
+            TeamDynamicsScore = f.TeamDynamicsScore,
+            DecisionReason = f.DecisionReason,
             CreatedAt = f.CreatedAt,
             UpdatedAt = f.UpdatedAt
         };

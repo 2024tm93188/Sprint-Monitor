@@ -35,7 +35,11 @@ public class MlRiskService : IMlRiskService
         int teamAvailability,
         int committedPoints,
         int completedPoints,
-        int teamSize)
+        int teamSize,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore)
     {
         try
         {
@@ -47,7 +51,11 @@ public class MlRiskService : IMlRiskService
                 teamAvailability,
                 committedPoints,
                 completedPoints,
-                teamSize
+                teamSize,
+                meetingHoursPerSprint,
+                newMembersCount,
+                avgExperienceLevel,
+                collaborationScore
             };
 
             var response = await _httpClient.PostAsJsonAsync("/predict", payload);
@@ -79,8 +87,8 @@ public class MlRiskService : IMlRiskService
             }
 
             _logger.LogInformation(
-                "ML prediction: {Risk} (confidence={Confidence:P2}) | CVR={CVR:F2}, Spillover={Spillover}, Deps={Deps}, Avail={Avail}%",
-                mlRisk, confidence, cvr, spillover, dependencies, teamAvailability);
+                "ML prediction: {Risk} (confidence={Confidence:P2}) | CVR={CVR:F2}, Spillover={Spillover}, Deps={Deps}, Avail={Avail}%, Team={TeamSize}, MeetHrs={MeetingHours}, NewMembers={NewMembers}, Exp={Experience}, Collab={Collab}",
+                mlRisk, confidence, cvr, spillover, dependencies, teamAvailability, teamSize, meetingHoursPerSprint, newMembersCount, avgExperienceLevel, collaborationScore);
 
             return new MlPredictionResult
             {

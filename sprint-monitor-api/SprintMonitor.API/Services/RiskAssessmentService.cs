@@ -16,26 +16,27 @@ public class RiskAssessmentService : IRiskAssessmentService
     private readonly IMetricsService _metricsService;
     private readonly ISprintService _sprintService;
     private readonly IMlRiskService _mlRiskService;
+    private readonly ITeamRiskConfigurationService _teamRiskConfigurationService;
 
-    // Thresholds (could be moved to configuration)
-    private const decimal CVR_LOW_MAX = 1.0m;
-    private const decimal CVR_MEDIUM_MAX = 1.1m;
-    private const decimal VELOCITY_CV_LOW_MAX = 0.15m;
-    private const decimal VELOCITY_CV_MEDIUM_MAX = 0.25m;
-    private const decimal SPILLOVER_LOW_MAX = 20m;
-    private const decimal SPILLOVER_MEDIUM_MAX = 40m;
     private const int TOTAL_SCORE_LOW_MAX = 3;
     private const int TOTAL_SCORE_MEDIUM_MAX = 6;
+    private const decimal METRICS_MAX_SCORE = 17m;
     private const decimal CALIBRATION_MIN = 0.90m;
     private const decimal CALIBRATION_MAX = 1.15m;
     private const int MIN_FEEDBACK_FOR_CALIBRATION = 1;
 
-    public RiskAssessmentService(SprintMonitorDbContext context, IMetricsService metricsService, ISprintService sprintService, IMlRiskService mlRiskService)
+    public RiskAssessmentService(
+        SprintMonitorDbContext context,
+        IMetricsService metricsService,
+        ISprintService sprintService,
+        IMlRiskService mlRiskService,
+        ITeamRiskConfigurationService teamRiskConfigurationService)
     {
         _context = context;
         _metricsService = metricsService;
         _sprintService = sprintService;
         _mlRiskService = mlRiskService;
+        _teamRiskConfigurationService = teamRiskConfigurationService;
     }
 
     /// <summary>
@@ -77,12 +78,30 @@ public class RiskAssessmentService : IRiskAssessmentService
 
         // Calculate metrics
         var metrics = _metricsService.CalculateMetrics(sprints, request.PlannedCommitment);
+        var config = await _teamRiskConfigurationService.GetConfigurationAsync(request.TeamId);
 
-        // Score each risk factor
-        var factors = ScoreAllFactors(metrics, request.PlannedCommitment, request.TeamAvailability, request.ExternalDependencies);
+        var effectiveTeamSize = request.TeamSize > 0 ? request.TeamSize : (sprint.TeamSize > 0 ? sprint.TeamSize : 5);
+        var effectiveMeetingHours = request.MeetingHoursPerSprint > 0 ? request.MeetingHoursPerSprint : (sprint.MeetingHoursPerSprint > 0 ? sprint.MeetingHoursPerSprint : 8);
+        var effectiveNewMembers = request.NewMembersCount >= 0 ? request.NewMembersCount : sprint.NewMembersCount;
+        var effectiveExperience = request.AvgExperienceLevel > 0 ? request.AvgExperienceLevel : (sprint.AvgExperienceLevel > 0 ? sprint.AvgExperienceLevel : 6);
+        var effectiveCollaboration = request.CollaborationScore > 0 ? request.CollaborationScore : (sprint.CollaborationScore > 0 ? sprint.CollaborationScore : 7);
 
-        // Calculate total score and calibrate with historical feedback accuracy for this team.
-        var baseScore = factors.Sum(f => f.Score);
+        // Score each risk factor (delivery + team dynamics)
+        var factors = ScoreAllFactors(
+            metrics,
+            request.PlannedCommitment,
+            request.TeamAvailability,
+            request.ExternalDependencies,
+            config,
+            effectiveMeetingHours,
+            effectiveNewMembers,
+            effectiveExperience,
+            effectiveCollaboration,
+            out var teamDynamicsScore,
+            out var teamCondition);
+
+        // Blend all enabled factors using team-specific weights, then calibrate by feedback quality.
+        var baseScore = CalculateWeightedScore(factors);
         var (calibrationFactor, feedbackSampleSize) = await GetFeedbackCalibrationAsync(request.TeamId);
         var totalScore = Math.Min(17m, Math.Round(baseScore * calibrationFactor, 2));
 
@@ -93,7 +112,14 @@ public class RiskAssessmentService : IRiskAssessmentService
         var confidence = AssessConfidence(sprints.Count);
 
         // Generate recommendations
-        var recommendations = GenerateRecommendations(factors, metrics, request.PlannedCommitment, riskLevel, totalScore);
+        var recommendations = GenerateRecommendations(
+            factors,
+            metrics,
+            request.PlannedCommitment,
+            riskLevel,
+            totalScore,
+            teamDynamicsScore,
+            teamCondition);
 
         var iteration = await _context.RiskAssessments
             .Where(a => a.SprintId == sprint.SprintId)
@@ -115,7 +141,11 @@ public class RiskAssessmentService : IRiskAssessmentService
             teamAvailability: request.TeamAvailability,
             committedPoints: request.PlannedCommitment,
             completedPoints: avgCompleted,
-            teamSize: lastSprint?.TeamSize ?? 5);
+            teamSize: effectiveTeamSize,
+            meetingHoursPerSprint: effectiveMeetingHours,
+            newMembersCount: effectiveNewMembers,
+            avgExperienceLevel: effectiveExperience,
+            collaborationScore: effectiveCollaboration);
 
         RiskLevel? mlRiskLevel = null;
         RiskLevel? finalRiskLevel = null;
@@ -143,6 +173,13 @@ public class RiskAssessmentService : IRiskAssessmentService
             PlannedCommitment = request.PlannedCommitment,
             TeamAvailability = request.TeamAvailability,
             ExternalDependencies = request.ExternalDependencies,
+            TeamSize = effectiveTeamSize,
+            MeetingHoursPerSprint = effectiveMeetingHours,
+            NewMembersCount = effectiveNewMembers,
+            AvgExperienceLevel = effectiveExperience,
+            CollaborationScore = effectiveCollaboration,
+            TeamDynamicsScore = teamDynamicsScore,
+            TeamCondition = teamCondition,
             RiskLevel = riskLevel,
             MlRiskLevel = mlRiskLevel,
             FinalRiskLevel = finalRiskLevel,
@@ -223,6 +260,13 @@ public class RiskAssessmentService : IRiskAssessmentService
             MlRiskLevel = mlRiskLevel?.ToString(),
             FinalRiskLevel = finalRiskLevel?.ToString(),
             MlConfidence = mlConfidence,
+            TeamSize = effectiveTeamSize,
+            MeetingHoursPerSprint = effectiveMeetingHours,
+            NewMembersCount = effectiveNewMembers,
+            AvgExperienceLevel = effectiveExperience,
+            CollaborationScore = effectiveCollaboration,
+            TeamDynamicsScore = teamDynamicsScore,
+            TeamCondition = teamCondition,
             TotalScore = totalScore,
             MaxPossibleScore = 17,
             Confidence = confidence.ToString(),
@@ -464,7 +508,18 @@ public class RiskAssessmentService : IRiskAssessmentService
 
     #region Risk Scoring Logic
 
-    private List<RiskFactorDto> ScoreAllFactors(SprintMetricsDto metrics, int plannedPoints, int teamAvailability, int externalDependencies = 0)
+    private List<RiskFactorDto> ScoreAllFactors(
+        SprintMetricsDto metrics,
+        int plannedPoints,
+        int teamAvailability,
+        int externalDependencies,
+        TeamRiskConfigurationDto config,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore,
+        out int teamDynamicsScore,
+        out string teamCondition)
     {
         var factors = new List<RiskFactorDto>();
         var availabilityMultiplier = teamAvailability <= 0
@@ -478,127 +533,219 @@ public class RiskAssessmentService : IRiskAssessmentService
             : 0;
 
         // 1. CVR (Commitment-to-Velocity Ratio)
-        var cvrScore = ScoreCVR(adjustedCvr);
+        var cvrScore = ScoreCVR(adjustedCvr, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Commitment-to-Velocity Ratio (CVR)",
             Score = cvrScore,
             MaxScore = 3,
+            Weight = config.CvrWeight,
             Description = GetCVRDescription(adjustedCvr, cvrScore),
             MetricValue = adjustedCvr,
-            Threshold = CVR_LOW_MAX
+            Threshold = config.CvrLowMax
         });
 
         // 2. Velocity Variance
-        var varianceScore = ScoreVelocityVariance(metrics.VelocityCoefficient);
+        var varianceScore = ScoreVelocityVariance(metrics.VelocityCoefficient, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Velocity Stability",
             Score = varianceScore,
             MaxScore = 3,
+            Weight = config.VelocityWeight,
             Description = GetVarianceDescription(metrics.VelocityCoefficient, varianceScore),
             MetricValue = metrics.VelocityCoefficient * 100,
-            Threshold = VELOCITY_CV_LOW_MAX * 100
+            Threshold = config.VelocityCvLowMax * 100
         });
 
         // 3. Spillover Rate
-        var spilloverScore = ScoreSpilloverRate(metrics.SpilloverRate);
+        var spilloverScore = ScoreSpilloverRate(metrics.SpilloverRate, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Historical Spillover Rate",
             Score = spilloverScore,
             MaxScore = 3,
+            Weight = config.SpilloverWeight,
             Description = GetSpilloverDescription(metrics.SpilloverRate, spilloverScore),
             MetricValue = metrics.SpilloverRate,
-            Threshold = SPILLOVER_LOW_MAX
+            Threshold = config.SpilloverLowMax
         });
 
         // 4. Capacity Utilization
-        var capacityScore = ScoreCapacityUtilization(plannedPoints, adjustedEffectiveCapacity);
+        var capacityScore = ScoreCapacityUtilization(plannedPoints, adjustedEffectiveCapacity, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Capacity Buffer Utilization",
             Score = capacityScore,
             MaxScore = 3,
+            Weight = config.CapacityWeight,
             Description = GetCapacityDescription(plannedPoints, adjustedEffectiveCapacity, capacityScore),
             MetricValue = adjustedEffectiveCapacity > 0 ? (plannedPoints / adjustedEffectiveCapacity) * 100 : 0,
-            Threshold = 100
+            Threshold = config.CapacityUtilizationLowMax
         });
 
         // 5. Team Availability
-        var availabilityScore = ScoreTeamAvailability(teamAvailability);
+        var availabilityScore = ScoreTeamAvailability(teamAvailability, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "Team Availability",
             Score = availabilityScore,
             MaxScore = 2,
+            Weight = config.AvailabilityWeight,
             Description = GetAvailabilityDescription(teamAvailability, availabilityScore),
             MetricValue = teamAvailability,
-            Threshold = 90
+            Threshold = config.AvailabilityHighMin
         });
 
         // 6. External Dependencies
-        var dependencyScore = ScoreExternalDependencies(externalDependencies);
+        var dependencyScore = ScoreExternalDependencies(externalDependencies, config);
         factors.Add(new RiskFactorDto
         {
             FactorName = "External Dependencies",
             Score = dependencyScore,
             MaxScore = 3,
+            Weight = config.DependencyWeight,
             Description = GetDependencyDescription(externalDependencies, dependencyScore),
             MetricValue = externalDependencies,
-            Threshold = 2
+            Threshold = config.DependencyLowMax
+        });
+
+        teamDynamicsScore = config.UseTeamDynamics
+            ? ScoreTeamDynamics(
+            meetingHoursPerSprint,
+            newMembersCount,
+            avgExperienceLevel,
+            collaborationScore,
+            config)
+            : 0;
+        teamCondition = config.UseTeamDynamics ? GetTeamCondition(teamDynamicsScore) : "Balanced";
+
+        factors.Add(new RiskFactorDto
+        {
+            FactorName = "Team Dynamics",
+            Score = teamDynamicsScore,
+            MaxScore = 3,
+            Weight = config.UseTeamDynamics ? config.TeamDynamicsWeight : 0m,
+            Description = GetTeamDynamicsDescription(teamDynamicsScore, meetingHoursPerSprint, newMembersCount, avgExperienceLevel, collaborationScore),
+            MetricValue = teamDynamicsScore,
+            Threshold = 1
         });
 
         return factors;
     }
 
-    private int ScoreCVR(decimal cvr)
+    private decimal CalculateWeightedScore(IEnumerable<RiskFactorDto> factors)
     {
-        if (cvr <= CVR_LOW_MAX) return 0;
-        if (cvr <= CVR_MEDIUM_MAX) return 1;
+        var enabledFactors = factors.Where(f => f.Weight > 0 && f.MaxScore > 0).ToList();
+        var totalWeight = enabledFactors.Sum(f => f.Weight);
+        if (totalWeight <= 0)
+        {
+            return 0m;
+        }
+
+        var weightedNormalized = enabledFactors.Sum(f => (f.Score / (decimal)f.MaxScore) * f.Weight) / totalWeight;
+        return Math.Round(weightedNormalized * METRICS_MAX_SCORE, 2);
+    }
+
+    private int ScoreCVR(decimal cvr, TeamRiskConfigurationDto config)
+    {
+        if (cvr <= config.CvrLowMax) return 0;
+        if (cvr <= config.CvrMediumMax) return 1;
         if (cvr <= 1.2m) return 2;
         return 3;
     }
 
-    private int ScoreVelocityVariance(decimal cv)
+    private int ScoreVelocityVariance(decimal cv, TeamRiskConfigurationDto config)
     {
-        if (cv <= VELOCITY_CV_LOW_MAX) return 0;
-        if (cv <= VELOCITY_CV_MEDIUM_MAX) return 1;
+        if (cv <= config.VelocityCvLowMax) return 0;
+        if (cv <= config.VelocityCvMediumMax) return 1;
         if (cv <= 0.35m) return 2;
         return 3;
     }
 
-    private int ScoreSpilloverRate(decimal rate)
+    private int ScoreSpilloverRate(decimal rate, TeamRiskConfigurationDto config)
     {
-        if (rate < SPILLOVER_LOW_MAX) return 0;
-        if (rate <= SPILLOVER_MEDIUM_MAX) return 1;
+        if (rate < config.SpilloverLowMax) return 0;
+        if (rate <= config.SpilloverMediumMax) return 1;
         if (rate <= 60) return 2;
         return 3;
     }
 
-    private int ScoreCapacityUtilization(int plannedPoints, decimal effectiveCapacity)
+    private int ScoreCapacityUtilization(int plannedPoints, decimal effectiveCapacity, TeamRiskConfigurationDto config)
     {
         if (effectiveCapacity == 0) return 3;
         var ratio = plannedPoints / effectiveCapacity;
-        if (ratio <= 1.0m) return 0;
-        if (ratio <= 1.1m) return 1;
+        if (ratio * 100 <= config.CapacityUtilizationLowMax) return 0;
+        if (ratio * 100 <= config.CapacityUtilizationMediumMax) return 1;
         if (ratio <= 1.25m) return 2;
         return 3;
     }
 
-    private int ScoreTeamAvailability(int availability)
+    private int ScoreTeamAvailability(int availability, TeamRiskConfigurationDto config)
     {
-        if (availability >= 90) return 0;
-        if (availability >= 75) return 1;
+        if (availability >= config.AvailabilityHighMin) return 0;
+        if (availability >= config.AvailabilityMediumMin) return 1;
         return 2;
     }
 
-    private int ScoreExternalDependencies(int dependencies)
+    private int ScoreExternalDependencies(int dependencies, TeamRiskConfigurationDto config)
     {
-        if (dependencies == 0) return 0;
-        if (dependencies <= 2) return 1;
+        if (dependencies <= config.DependencyLowMax) return 0;
+        if (dependencies <= config.DependencyMediumMax) return 1;
         if (dependencies <= 4) return 2;
         return 3;
+    }
+
+    private int ScoreTeamDynamics(int meetingHoursPerSprint, int newMembersCount, int avgExperienceLevel, int collaborationScore, TeamRiskConfigurationDto config)
+    {
+        var meetingScore = meetingHoursPerSprint <= config.MeetingHoursLowMax
+            ? 0
+            : meetingHoursPerSprint <= config.MeetingHoursMediumMax
+                ? 1
+                : meetingHoursPerSprint <= 16
+                    ? 2
+                    : 3;
+
+        var newMembersScore = newMembersCount <= config.NewMembersLowMax
+            ? 0
+            : newMembersCount <= config.NewMembersMediumMax
+                ? 1
+                : newMembersCount == 2
+                    ? 2
+                    : 3;
+
+        var experienceRiskScore = avgExperienceLevel >= 8
+            ? 0
+            : avgExperienceLevel >= config.ExperienceMediumMin
+                ? 1
+                : avgExperienceLevel >= config.ExperienceLowMin
+                    ? 2
+                    : 3;
+
+        var collaborationRiskScore = collaborationScore >= 8
+            ? 0
+            : collaborationScore >= config.CollaborationMediumMin
+                ? 1
+                : collaborationScore >= config.CollaborationLowMin
+                    ? 2
+                    : 3;
+
+        var weighted = (meetingScore * 0.30m)
+            + (newMembersScore * 0.25m)
+            + (experienceRiskScore * 0.25m)
+            + (collaborationRiskScore * 0.20m);
+
+        return Math.Clamp((int)Math.Round(weighted, MidpointRounding.AwayFromZero), 0, 3);
+    }
+
+    private string GetTeamCondition(int teamDynamicsScore)
+    {
+        return teamDynamicsScore switch
+        {
+            <= 1 => "Strong",
+            2 => "Watch",
+            _ => "Fragile"
+        };
     }
 
     private RiskLevel DetermineRiskLevel(decimal totalScore)
@@ -687,6 +834,17 @@ public class RiskAssessmentService : IRiskAssessmentService
         };
     }
 
+    private string GetTeamDynamicsDescription(int score, int meetingHoursPerSprint, int newMembersCount, int avgExperienceLevel, int collaborationScore)
+    {
+        return score switch
+        {
+            0 => $"Team dynamics are stable (meetings {meetingHoursPerSprint}h, new members {newMembersCount}, experience {avgExperienceLevel}/10, collaboration {collaborationScore}/10).",
+            1 => $"Team dynamics show mild risk. Review meeting overhead and onboarding load (meetings {meetingHoursPerSprint}h, new members {newMembersCount}).",
+            2 => $"Team dynamics risk is elevated. Low experience/collaboration or onboarding pressure may reduce delivery predictability.",
+            _ => $"Team dynamics risk is high. Significant coordination and capability pressure is expected this sprint."
+        };
+    }
+
     #endregion
 
     #region Recommendation Generation
@@ -696,7 +854,9 @@ public class RiskAssessmentService : IRiskAssessmentService
         SprintMetricsDto metrics,
         int plannedPoints,
         RiskLevel riskLevel,
-        decimal currentScore)
+        decimal currentScore,
+        int teamDynamicsScore,
+        string teamCondition)
     {
         var recommendations = new List<RecommendationDto>();
 
@@ -732,6 +892,20 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = "Overall",
                 ActionType = "ADD_BUFFER"
             }, currentScore, 1));
+        }
+
+        if (teamDynamicsScore >= 2)
+        {
+            recommendations.Add(CreateImpactRecommendation(new RecommendationDto
+            {
+                Title = "Stabilize Team Dynamics",
+                Description = teamCondition == "Fragile"
+                    ? "Team dynamics are fragile. Reduce meeting load, support onboarding, and schedule pairing/mentoring to recover delivery stability."
+                    : "Team dynamics need attention. Protect focused time and actively manage onboarding/collaboration risks.",
+                Priority = teamDynamicsScore >= 3 ? "CRITICAL" : "HIGH",
+                AddressesRiskFactor = "Team Dynamics",
+                ActionType = "IMPROVE_ESTIMATION"
+            }, currentScore, teamDynamicsScore >= 3 ? 2 : 1));
         }
 
         return recommendations.OrderBy(r => GetPriorityWeight(r.Priority)).ToList();
@@ -869,6 +1043,13 @@ public class RiskAssessmentService : IRiskAssessmentService
             MlRiskLevel = assessment.MlRiskLevel?.ToString(),
             FinalRiskLevel = assessment.FinalRiskLevel?.ToString(),
             MlConfidence = assessment.MlConfidence,
+            TeamSize = assessment.TeamSize,
+            MeetingHoursPerSprint = assessment.MeetingHoursPerSprint,
+            NewMembersCount = assessment.NewMembersCount,
+            AvgExperienceLevel = assessment.AvgExperienceLevel,
+            CollaborationScore = assessment.CollaborationScore,
+            TeamDynamicsScore = assessment.TeamDynamicsScore,
+            TeamCondition = assessment.TeamCondition,
             TotalScore = assessment.TotalScore,
             MaxPossibleScore = assessment.MaxPossibleScore,
             Confidence = assessment.Confidence.ToString(),

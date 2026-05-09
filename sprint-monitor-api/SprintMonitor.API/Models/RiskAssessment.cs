@@ -81,6 +81,36 @@ public class RiskAssessment
     public int ExternalDependencies { get; set; }
 
     /// <summary>
+    /// Team size used for this assessment.
+    /// </summary>
+    [Range(1, 50)]
+    public int TeamSize { get; set; } = 5;
+
+    [Range(0, 200)]
+    public int MeetingHoursPerSprint { get; set; } = 8;
+
+    [Range(0, 50)]
+    public int NewMembersCount { get; set; } = 0;
+
+    [Range(1, 10)]
+    public int AvgExperienceLevel { get; set; } = 6;
+
+    [Range(1, 10)]
+    public int CollaborationScore { get; set; } = 7;
+
+    /// <summary>
+    /// Team dynamics risk score (0-3).
+    /// </summary>
+    [Range(0, 3)]
+    public int TeamDynamicsScore { get; set; }
+
+    /// <summary>
+    /// Qualitative team condition derived from team dynamics.
+    /// </summary>
+    [MaxLength(20)]
+    public string TeamCondition { get; set; } = "Balanced";
+
+    /// <summary>
     /// Computed risk level (rule-based)
     /// </summary>
     [Required]
@@ -103,7 +133,7 @@ public class RiskAssessment
     public decimal? MlConfidence { get; set; }
 
     /// <summary>
-    /// Total risk score (0-14)
+    /// Total risk score (0-17)
     /// </summary>
     [Required]
     [Column(TypeName = "decimal(5,2)")]
@@ -112,7 +142,7 @@ public class RiskAssessment
     /// <summary>
     /// Maximum possible score
     /// </summary>
-    public int MaxPossibleScore { get; set; } = 14;
+    public int MaxPossibleScore { get; set; } = 17;
 
     /// <summary>
     /// Confidence in the assessment

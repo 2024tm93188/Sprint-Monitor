@@ -20,6 +20,7 @@ import { PlanningEvaluationComponent } from './features/planning-evaluation/plan
 import { RiskDashboardComponent } from './features/risk-dashboard/risk-dashboard.component';
 import { RecommendationsComponent } from './features/recommendations/recommendations.component';
 import { FeasibilityStudyComponent } from './features/feasibility-study/feasibility-study.component';
+import { TeamRiskConfigurationComponent } from './features/team-risk-configuration/team-risk-configuration.component';
 import { RiskFeedbackComponent } from './features/risk-feedback/risk-feedback.component';
 import { SprintComparisonComponent } from './features/sprint-comparison/sprint-comparison.component';
 
@@ -52,6 +53,7 @@ import { selectCurrentAssessment, selectCurrentMetrics } from './core/store/plan
     RiskDashboardComponent,
     RecommendationsComponent,
     FeasibilityStudyComponent,
+    TeamRiskConfigurationComponent,
     RiskFeedbackComponent,
     SprintComparisonComponent
   ],
@@ -106,17 +108,17 @@ export class AppComponent implements OnInit {
 
   onNavigateToRiskDashboard(): void {
     if (this.tabGroup) {
-      this.tabGroup.selectedIndex = 1;
+      this.tabGroup.selectedIndex = 2;
     }
   }
 
   onTabChange(event: MatTabChangeEvent): void {
     // Tabs are 0-based in template order.
-    if (event.index === 4) {
+    if (event.index === 5) {
       this.riskFeedbackComponent?.loadData();
     }
 
-    if (event.index === 5) {
+    if (event.index === 6) {
       this.syncAppliedRecommendationsForCurrentSprint();
       this.sprintComparisonComponent?.loadComparison();
     }
@@ -320,6 +322,13 @@ export class AppComponent implements OnInit {
       isFinal: response.isFinal,
       overallRisk: response.riskLevel as RiskLevel,
       totalScore: response.totalScore,
+      teamSize: response.teamSize,
+      meetingHoursPerSprint: response.meetingHoursPerSprint,
+      newMembersCount: response.newMembersCount,
+      avgExperienceLevel: response.avgExperienceLevel,
+      collaborationScore: response.collaborationScore,
+      teamDynamicsScore: response.teamDynamicsScore,
+      teamCondition: response.teamCondition,
       maxPossibleScore: response.maxPossibleScore,
       confidence: response.confidence as AssessmentConfidence,
       feedbackCalibrationFactor: response.feedbackCalibrationFactor,

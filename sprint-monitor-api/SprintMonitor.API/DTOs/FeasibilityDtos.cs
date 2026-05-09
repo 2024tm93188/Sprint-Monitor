@@ -33,6 +33,10 @@ public class FeasibilityDto
     public string? AdoptionChallenges { get; set; }
     public string? ScalabilityConsiderations { get; set; }
     public int OverallScore { get; set; }
+    public string? RiskLevel { get; set; }
+    public string? TeamCondition { get; set; }
+    public int TeamDynamicsScore { get; set; }
+    public string? DecisionReason { get; set; }
     
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -66,6 +70,7 @@ public class CreateFeasibilityDto
     public string? ExpectedBenefits { get; set; }
     public string? AdoptionChallenges { get; set; }
     public string? ScalabilityConsiderations { get; set; }
+    public string? DecisionReason { get; set; }
 }
 
 /// <summary>
@@ -95,6 +100,7 @@ public class UpdateFeasibilityDto
     public string? ExpectedBenefits { get; set; }
     public string? AdoptionChallenges { get; set; }
     public string? ScalabilityConsiderations { get; set; }
+    public string? DecisionReason { get; set; }
 }
 
 /// <summary>

@@ -17,6 +17,11 @@ public class RiskAssessmentRequestDto
     public int PlannedCommitment { get; set; }
     public int TeamAvailability { get; set; } = 100;
     public int ExternalDependencies { get; set; } = 0;
+    public int TeamSize { get; set; } = 5;
+    public int MeetingHoursPerSprint { get; set; } = 8;
+    public int NewMembersCount { get; set; } = 0;
+    public int AvgExperienceLevel { get; set; } = 6;
+    public int CollaborationScore { get; set; } = 7;
 }
 
 /// <summary>
@@ -44,6 +49,13 @@ public class RiskAssessmentDto
     /// ML model prediction confidence (0.0 - 1.0)
     /// </summary>
     public decimal? MlConfidence { get; set; }
+    public int TeamSize { get; set; }
+    public int MeetingHoursPerSprint { get; set; }
+    public int NewMembersCount { get; set; }
+    public int AvgExperienceLevel { get; set; }
+    public int CollaborationScore { get; set; }
+    public int TeamDynamicsScore { get; set; }
+    public string TeamCondition { get; set; } = "Balanced";
     public decimal TotalScore { get; set; }
     public int MaxPossibleScore { get; set; }
     public string Confidence { get; set; } = string.Empty;
@@ -63,6 +75,7 @@ public class RiskFactorDto
     public string FactorName { get; set; } = string.Empty;
     public int Score { get; set; }
     public int MaxScore { get; set; }
+    public decimal Weight { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal MetricValue { get; set; }
     public decimal? Threshold { get; set; }

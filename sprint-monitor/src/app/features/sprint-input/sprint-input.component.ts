@@ -98,6 +98,10 @@ export class SprintInputComponent implements OnInit {
       plannedPoints: [30, [Validators.required, Validators.min(0)]],
       teamAvailability: [100, [Validators.required, Validators.min(0), Validators.max(100)]],
       teamSize: [5, [Validators.required, Validators.min(1)]],
+      meetingHoursPerSprint: [8, [Validators.required, Validators.min(0)]],
+      newMembersCount: [0, [Validators.required, Validators.min(0)]],
+      avgExperienceLevel: [6, [Validators.required, Validators.min(1), Validators.max(10)]],
+      collaborationScore: [7, [Validators.required, Validators.min(1), Validators.max(10)]],
       externalDependencies: [0, [Validators.min(0)]],
       sprintId: [null]  // optional sprint link
     });
@@ -152,6 +156,10 @@ export class SprintInputComponent implements OnInit {
         plannedStoryPoints: this.planningForm.get('plannedPoints')?.value,
         teamAvailability: this.planningForm.get('teamAvailability')?.value,
         teamSize: this.planningForm.get('teamSize')?.value,
+        meetingHoursPerSprint: this.planningForm.get('meetingHoursPerSprint')?.value,
+        newMembersCount: this.planningForm.get('newMembersCount')?.value,
+        avgExperienceLevel: this.planningForm.get('avgExperienceLevel')?.value,
+        collaborationScore: this.planningForm.get('collaborationScore')?.value,
         externalDependencies: this.planningForm.get('externalDependencies')?.value,
         sprintId: sprintIdValue || undefined
       };
@@ -168,6 +176,10 @@ export class SprintInputComponent implements OnInit {
       plannedPoints: 35,
       teamAvailability: 90,
       teamSize: selectedTeam?.teamSize ?? 5,
+      meetingHoursPerSprint: 8,
+      newMembersCount: 0,
+      avgExperienceLevel: 6,
+      collaborationScore: 7,
       externalDependencies: 2,
       sprintId: null
     });
@@ -186,6 +198,10 @@ export class SprintInputComponent implements OnInit {
         plannedPoints: sprint.committedPoints,
         teamAvailability: sprint.teamAvailability,
         teamSize: sprint.teamSize,
+        meetingHoursPerSprint: sprint.meetingHoursPerSprint ?? 8,
+        newMembersCount: sprint.newMembersCount ?? 0,
+        avgExperienceLevel: sprint.avgExperienceLevel ?? 6,
+        collaborationScore: sprint.collaborationScore ?? 7,
         externalDependencies: sprint.externalDependencies
       });
       this.loadHistoricalData();

@@ -126,6 +126,29 @@ public class ImplementationFeasibility
     public int OverallScore { get; set; }
 
     /// <summary>
+    /// Final risk level from the linked sprint assessment.
+    /// </summary>
+    [MaxLength(20)]
+    public string? RiskLevel { get; set; }
+
+    /// <summary>
+    /// Team condition derived from team dynamics score.
+    /// </summary>
+    [MaxLength(20)]
+    public string? TeamCondition { get; set; }
+
+    /// <summary>
+    /// Team dynamics score copied from the linked final assessment.
+    /// </summary>
+    public int TeamDynamicsScore { get; set; }
+
+    /// <summary>
+    /// Computed rationale for feasibility decision.
+    /// </summary>
+    [MaxLength(500)]
+    public string? DecisionReason { get; set; }
+
+    /// <summary>
     /// Record creation timestamp
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -111,6 +111,10 @@ public class SprintComparisonDto
     public string? MlRisk { get; set; }
     public string? FinalRisk { get; set; }
     public decimal? MlConfidence { get; set; }
+    public int TeamDynamicsScore { get; set; }
+    public string? TeamCondition { get; set; }
+    public string? FeasibilityStatus { get; set; }
+    public string? FeasibilityReason { get; set; }
 
     // Iteration data
     public int IterationCount { get; set; }

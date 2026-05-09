@@ -70,10 +70,10 @@
       <div class="confidence-bar-container" *ngIf="assessment.mlConfidence != null">
         <div class="confidence-label">
           <span>ML Confidence</span>
-          <strong>{{ (assessment.mlConfidence ?? 0) * 100 | number:'1.1-1' }}%</strong>
+          <strong>{{ assessment.mlConfidence * 100 | number:'1.1-1' }}%</strong>
         </div>
         <div class="confidence-bar">
-          <span class="confidence-fill" [style.width.%]="(assessment.mlConfidence ?? 0) * 100"
+          <span class="confidence-fill" [style.width.%]="assessment.mlConfidence * 100"
                 [ngClass]="getConfidenceBarClass()"></span>
         </div>
       </div>
@@ -112,6 +112,43 @@
       <span class="kpi-label">Historical Sprints</span>
       <span class="kpi-value">{{metrics.sprintCount}}</span>
     </article>
+  </section>
+
+  <section class="details-grid" *ngIf="assessment.teamDynamicsScore !== undefined">
+    <mat-card class="detail-card">
+      <h3>Team Impact</h3>
+      <div class="factor-list">
+        <div class="factor-row">
+          <div class="factor-main">
+            <span class="factor-name">Team Dynamics Score</span>
+            <span class="factor-score" [ngClass]="getFactorScoreClass(assessment.teamDynamicsScore || 0)">
+              {{ assessment.teamDynamicsScore || 0 }}/3
+            </span>
+          </div>
+          <p class="factor-description">Condition: <strong>{{ assessment.teamCondition || 'Balanced' }}</strong></p>
+        </div>
+        <div class="factor-row">
+          <p class="factor-description">
+            Team Size {{ assessment.teamSize || 'N/A' }}, Meetings {{ assessment.meetingHoursPerSprint || 0 }}h,
+            New Members {{ assessment.newMembersCount || 0 }}, Experience {{ assessment.avgExperienceLevel || 0 }}/10,
+            Collaboration {{ assessment.collaborationScore || 0 }}/10.
+          </p>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="detail-card">
+      <h3>Feasibility Signal</h3>
+      <div class="factor-list">
+        <div class="factor-row">
+          <div class="factor-main">
+            <span class="factor-name">Implementation Readiness</span>
+            <span class="status-chip" [ngClass]="'risk-' + getRiskClass()">{{ getFeasibilitySignal() }}</span>
+          </div>
+          <p class="factor-description">Based on final risk and current team dynamics profile.</p>
+        </div>
+      </div>
+    </mat-card>
   </section>
 
   <section class="details-grid">

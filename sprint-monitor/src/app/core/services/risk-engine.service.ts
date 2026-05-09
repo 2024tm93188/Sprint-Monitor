@@ -53,6 +53,10 @@ export class RiskEngineService {
     teamAvailability: number,
     teamSize: number,
     externalDependencies: number,
+    meetingHoursPerSprint: number,
+    newMembersCount: number,
+    avgExperienceLevel: number,
+    collaborationScore: number,
     sprintId?: number
   ): Observable<RiskAssessment> {
     if (!this.useApiEvaluation) {
@@ -67,7 +71,12 @@ export class RiskEngineService {
       sprintId: sprintId || undefined,
       plannedCommitment: plannedPoints,
       teamAvailability,
-      externalDependencies
+      externalDependencies,
+      teamSize,
+      meetingHoursPerSprint,
+      newMembersCount,
+      avgExperienceLevel,
+      collaborationScore
     };
 
     return this.apiService.evaluateRisk(request).pipe(
@@ -97,6 +106,13 @@ export class RiskEngineService {
       mlRisk: response.mlRiskLevel ? response.mlRiskLevel as RiskLevel : null,
       finalRisk: response.finalRiskLevel ? response.finalRiskLevel as RiskLevel : null,
       mlConfidence: response.mlConfidence ?? null,
+      teamSize: response.teamSize,
+      meetingHoursPerSprint: response.meetingHoursPerSprint,
+      newMembersCount: response.newMembersCount,
+      avgExperienceLevel: response.avgExperienceLevel,
+      collaborationScore: response.collaborationScore,
+      teamDynamicsScore: response.teamDynamicsScore,
+      teamCondition: response.teamCondition,
       totalScore: response.totalScore,
       maxPossibleScore: response.maxPossibleScore,
       confidence: response.confidence as AssessmentConfidence,

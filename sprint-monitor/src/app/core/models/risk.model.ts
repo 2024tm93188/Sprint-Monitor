@@ -68,6 +68,19 @@ export interface RiskAssessment {
   /** ML model prediction confidence (0.0 - 1.0) */
   mlConfidence?: number | null;
 
+  /** Team size snapshot used by evaluation */
+  teamSize?: number;
+
+  /** Team dynamics inputs used by evaluation */
+  meetingHoursPerSprint?: number;
+  newMembersCount?: number;
+  avgExperienceLevel?: number;
+  collaborationScore?: number;
+
+  /** Derived team dynamics output */
+  teamDynamicsScore?: number;
+  teamCondition?: string;
+
   /** Total aggregated risk score */
   totalScore: number;
 

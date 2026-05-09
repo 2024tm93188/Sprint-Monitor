@@ -28,6 +28,10 @@ export interface SprintDto {
   addedPoints: number;
   removedPoints: number;
   teamSize: number;
+  meetingHoursPerSprint: number;
+  newMembersCount: number;
+  avgExperienceLevel: number;
+  collaborationScore: number;
   teamAvailability: number;
   sprintDuration: number;
   hadSpillover: boolean;
@@ -99,6 +103,11 @@ export interface RiskAssessmentRequestDto {
   plannedCommitment: number;
   teamAvailability: number;
   externalDependencies: number;
+  teamSize?: number;
+  meetingHoursPerSprint?: number;
+  newMembersCount?: number;
+  avgExperienceLevel?: number;
+  collaborationScore?: number;
 }
 
 export interface RiskAssessmentResponseDto {
@@ -116,6 +125,13 @@ export interface RiskAssessmentResponseDto {
   finalRiskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   /** ML model prediction confidence (0.0 - 1.0) */
   mlConfidence?: number | null;
+  teamSize: number;
+  meetingHoursPerSprint: number;
+  newMembersCount: number;
+  avgExperienceLevel: number;
+  collaborationScore: number;
+  teamDynamicsScore: number;
+  teamCondition: string;
   totalScore: number;
   maxPossibleScore: number;
   confidence: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -136,11 +152,47 @@ export interface CreateSprintDto {
   removedPoints?: number;
   teamAvailability?: number;
   teamSize?: number;
+  meetingHoursPerSprint?: number;
+  newMembersCount?: number;
+  avgExperienceLevel?: number;
+  collaborationScore?: number;
   sprintDuration?: number;
   hadSpillover: boolean;
   externalDependencies?: number;
   startDate?: string;
   endDate?: string;
+}
+
+export interface TeamRiskConfigurationDto {
+  teamId: number;
+  cvrLowMax: number;
+  cvrMediumMax: number;
+  velocityCvLowMax: number;
+  velocityCvMediumMax: number;
+  spilloverLowMax: number;
+  spilloverMediumMax: number;
+  capacityUtilizationLowMax: number;
+  capacityUtilizationMediumMax: number;
+  availabilityHighMin: number;
+  availabilityMediumMin: number;
+  dependencyLowMax: number;
+  dependencyMediumMax: number;
+  cvrWeight: number;
+  velocityWeight: number;
+  spilloverWeight: number;
+  capacityWeight: number;
+  availabilityWeight: number;
+  dependencyWeight: number;
+  teamDynamicsWeight: number;
+  useTeamDynamics: boolean;
+  meetingHoursLowMax: number;
+  meetingHoursMediumMax: number;
+  newMembersLowMax: number;
+  newMembersMediumMax: number;
+  experienceLowMin: number;
+  experienceMediumMin: number;
+  collaborationLowMin: number;
+  collaborationMediumMin: number;
 }
 
 /**
@@ -194,6 +246,15 @@ export class ApiService {
 
   deleteSprint(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/sprints/${id}`);
+  }
+
+  // ---- Team Risk Configuration ----
+  getTeamRiskConfiguration(teamId: number): Observable<TeamRiskConfigurationDto> {
+    return this.http.get<TeamRiskConfigurationDto>(`${this.baseUrl}/teams/${teamId}/risk-config`);
+  }
+
+  saveTeamRiskConfiguration(teamId: number, configuration: TeamRiskConfigurationDto): Observable<TeamRiskConfigurationDto> {
+    return this.http.put<TeamRiskConfigurationDto>(`${this.baseUrl}/teams/${teamId}/risk-config`, configuration);
   }
 
   // ---- Metrics ----

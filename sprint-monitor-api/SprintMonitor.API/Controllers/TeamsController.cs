@@ -15,10 +15,12 @@ namespace SprintMonitor.API.Controllers;
 public class TeamsController : ControllerBase
 {
     private readonly ITeamService _teamService;
+    private readonly ITeamRiskConfigurationService _teamRiskConfigurationService;
 
-    public TeamsController(ITeamService teamService)
+    public TeamsController(ITeamService teamService, ITeamRiskConfigurationService teamRiskConfigurationService)
     {
         _teamService = teamService;
+        _teamRiskConfigurationService = teamRiskConfigurationService;
     }
 
     /// <summary>
@@ -95,5 +97,35 @@ public class TeamsController : ControllerBase
             return NotFound(new { message = $"Team with ID {teamId} not found" });
 
         return NoContent();
+    }
+
+    [HttpGet("{teamId}/risk-config")]
+    [ProducesResponseType(typeof(TeamRiskConfigurationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TeamRiskConfigurationDto>> GetRiskConfiguration(int teamId)
+    {
+        var team = await _teamService.GetTeamByIdAsync(teamId);
+        if (team == null)
+        {
+            return NotFound(new { message = $"Team with ID {teamId} not found" });
+        }
+
+        var configuration = await _teamRiskConfigurationService.GetConfigurationAsync(teamId);
+        return Ok(configuration);
+    }
+
+    [HttpPut("{teamId}/risk-config")]
+    [ProducesResponseType(typeof(TeamRiskConfigurationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TeamRiskConfigurationDto>> SaveRiskConfiguration(int teamId, [FromBody] TeamRiskConfigurationDto dto)
+    {
+        var team = await _teamService.GetTeamByIdAsync(teamId);
+        if (team == null)
+        {
+            return NotFound(new { message = $"Team with ID {teamId} not found" });
+        }
+
+        var saved = await _teamRiskConfigurationService.SaveConfigurationAsync(teamId, dto);
+        return Ok(saved);
     }
 }

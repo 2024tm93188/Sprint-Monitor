@@ -68,6 +68,16 @@
       </div>
     </mat-tab>
 
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>tune</mat-icon>
+        <span>Team Risk Configuration</span>
+      </ng-template>
+      <div class="tab-content">
+        <app-team-risk-configuration></app-team-risk-configuration>
+      </div>
+    </mat-tab>
+
     <mat-tab [disabled]="!currentAssessment" *ngIf="!hideOperationalTabsForCurrentSprint">
       <ng-template mat-tab-label>
         <mat-icon>dashboard</mat-icon>

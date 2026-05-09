@@ -29,6 +29,18 @@ export interface Sprint {
   /** Number of team members participating */
   teamSize: number;
 
+  /** Total meeting overhead hours in sprint */
+  meetingHoursPerSprint?: number;
+
+  /** Number of newly joined members in sprint */
+  newMembersCount?: number;
+
+  /** Average team experience level (1-10) */
+  avgExperienceLevel?: number;
+
+  /** Team collaboration score (1-10) */
+  collaborationScore?: number;
+
   /** Whether stories spilled over to next sprint */
   hadSpillover: boolean;
 
@@ -61,6 +73,18 @@ export interface SprintPlanningInput {
 
   /** Number of external dependencies */
   externalDependencies: number;
+
+  /** Team meeting overhead for upcoming sprint */
+  meetingHoursPerSprint: number;
+
+  /** New members joining this sprint */
+  newMembersCount: number;
+
+  /** Average team experience level (1-10) */
+  avgExperienceLevel: number;
+
+  /** Team collaboration score (1-10) */
+  collaborationScore: number;
 
   /**
    * Optional: DB SprintId to link this assessment to an existing sprint record.

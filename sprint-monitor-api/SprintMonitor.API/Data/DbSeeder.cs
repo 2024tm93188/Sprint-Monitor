@@ -145,6 +145,20 @@ public static class DbSeeder
             new()
             {
                 TeamId = teamId,
+                SettingKey = "VELOCITY_CV_LOW_MAX",
+                SettingValue = "0.15",
+                Description = "Velocity coefficient threshold for low risk"
+            },
+            new()
+            {
+                TeamId = teamId,
+                SettingKey = "VELOCITY_CV_MEDIUM_MAX",
+                SettingValue = "0.25",
+                Description = "Velocity coefficient threshold for medium risk"
+            },
+            new()
+            {
+                TeamId = teamId,
                 SettingKey = "SPILLOVER_LOW_MAX",
                 SettingValue = "20",
                 Description = "Spillover rate threshold for low risk (%)"
@@ -162,6 +176,20 @@ public static class DbSeeder
                 SettingKey = "CAPACITY_BUFFER",
                 SettingValue = "0.8",
                 Description = "Capacity buffer multiplier (80% rule)"
+            },
+            new()
+            {
+                TeamId = teamId,
+                SettingKey = "TEAM_DYNAMICS_WEIGHT",
+                SettingValue = "20",
+                Description = "Weight used for team dynamics in the risk score"
+            },
+            new()
+            {
+                TeamId = teamId,
+                SettingKey = "USE_TEAM_DYNAMICS",
+                SettingValue = "true",
+                Description = "Whether team dynamics contributes to the risk score"
             }
         };
 

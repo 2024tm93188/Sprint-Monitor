@@ -68,6 +68,21 @@
             </div>
 
             <div class="row">
+              <span class="label">Team Score:</span>
+              <span class="value">{{ sprint.teamDynamicsScore }}/3 · {{ sprint.teamCondition || 'N/A' }}</span>
+            </div>
+
+            <div class="row" *ngIf="sprint.feasibilityStatus">
+              <span class="label">Feasibility:</span>
+              <span class="value">{{ sprint.feasibilityStatus }}</span>
+            </div>
+
+            <div class="row" *ngIf="sprint.feasibilityReason">
+              <span class="label">Feasibility Note:</span>
+              <span class="value">{{ sprint.feasibilityReason }}</span>
+            </div>
+
+            <div class="row">
               <span class="label">Score:</span>
               <span class="value">{{ sprint.predictedScore | number:'1.2-2' }} / 17</span>
             </div>

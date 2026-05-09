@@ -13,6 +13,10 @@ public class CreateSprintDto
     public int RemovedPoints { get; set; } = 0;
     public int TeamAvailability { get; set; } = 100;
     public int TeamSize { get; set; } = 5;
+    public int MeetingHoursPerSprint { get; set; } = 8;
+    public int NewMembersCount { get; set; } = 0;
+    public int AvgExperienceLevel { get; set; } = 6;
+    public int CollaborationScore { get; set; } = 7;
     public int SprintDuration { get; set; } = 14;
     public bool HadSpillover { get; set; }
     public int ExternalDependencies { get; set; } = 0;
@@ -37,6 +41,10 @@ public class SprintDto
     public int RemovedPoints { get; set; }
     public int TeamAvailability { get; set; }
     public int TeamSize { get; set; }
+    public int MeetingHoursPerSprint { get; set; }
+    public int NewMembersCount { get; set; }
+    public int AvgExperienceLevel { get; set; }
+    public int CollaborationScore { get; set; }
     public int SprintDuration { get; set; }
     public bool HadSpillover { get; set; }
     public int ExternalDependencies { get; set; }
@@ -58,6 +66,10 @@ public class UpdateSprintDto
     public int? RemovedPoints { get; set; }
     public int? TeamAvailability { get; set; }
     public int? TeamSize { get; set; }
+    public int? MeetingHoursPerSprint { get; set; }
+    public int? NewMembersCount { get; set; }
+    public int? AvgExperienceLevel { get; set; }
+    public int? CollaborationScore { get; set; }
     public bool? HadSpillover { get; set; }
     public int? ExternalDependencies { get; set; }
     public DateTime? StartDate { get; set; }

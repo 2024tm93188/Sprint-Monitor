@@ -13,19 +13,7 @@
 
 import { RISK_THRESHOLDS, RiskLevel } from '../models/risk.model';
 
-/**
- * Score CVR (Commitment-to-Velocity Ratio)
- *
- * CVR = committedPoints / averageVelocity
- *
- * Interpretation:
- * - CVR ≤ 1.0: Team is committing at or below their capacity (Low risk)
- * - CVR 1.0-1.1: Slight overcommitment, manageable (Medium risk)
- * - CVR > 1.1: Significant overcommitment (High risk)
- *
- * @param cvr - Commitment-to-Velocity Ratio
- * @returns Risk score (0, 1, 2, or 3)
- */
+
 export function scoreCVR(cvr: number): number {
   if (cvr <= RISK_THRESHOLDS.CVR.LOW_MAX) {
     return 0; // Committing within velocity - safe
@@ -38,18 +26,6 @@ export function scoreCVR(cvr: number): number {
   }
 }
 
-/**
- * Score Velocity Variance (Stability)
- *
- * Uses Coefficient of Variation (CV) = stdDev / mean
- *
- * Interpretation:
- * - Low CV: Velocity is stable and predictable
- * - High CV: Velocity fluctuates, making planning unreliable
- *
- * @param cv - Coefficient of variation (decimal, e.g., 0.15 = 15%)
- * @returns Risk score (0, 1, 2, or 3)
- */
 export function scoreVelocityVariance(cv: number): number {
   if (cv <= RISK_THRESHOLDS.VELOCITY_CV.LOW_MAX) {
     return 0; // Stable velocity - trustworthy estimates
@@ -62,18 +38,6 @@ export function scoreVelocityVariance(cv: number): number {
   }
 }
 
-/**
- * Score Spillover Rate
- *
- * Spillover Rate = (sprints with spillover / total sprints) * 100
- *
- * Interpretation:
- * - Low spillover: Team consistently completes commitments
- * - High spillover: Pattern of overcommitment
- *
- * @param spilloverRate - Percentage of sprints with spillover (0-100)
- * @returns Risk score (0, 1, 2, or 3)
- */
 export function scoreSpilloverRate(spilloverRate: number): number {
   if (spilloverRate < RISK_THRESHOLDS.SPILLOVER.LOW_MAX) {
     return 0; // Rarely spills over - good track record
@@ -86,20 +50,6 @@ export function scoreSpilloverRate(spilloverRate: number): number {
   }
 }
 
-/**
- * Score Capacity Utilization
- *
- * Uses the 80% rule: effective capacity = velocity * 0.8
- * This reserves 20% buffer for:
- * - Unplanned work
- * - Meetings & ceremonies
- * - Code reviews
- * - Bug fixes
- *
- * @param committedPoints - Story points committed
- * @param effectiveCapacity - Velocity * 0.8
- * @returns Risk score (0, 1, 2, or 3)
- */
 export function scoreCapacityUtilization(
   committedPoints: number,
   effectiveCapacity: number
@@ -119,15 +69,6 @@ export function scoreCapacityUtilization(
   }
 }
 
-/**
- * Score Team Availability Impact
- *
- * Adjusts risk based on team availability for the sprint.
- * Lower availability increases risk.
- *
- * @param availabilityPercent - Team availability (0-100)
- * @returns Risk score (0, 1, or 2)
- */
 export function scoreTeamAvailability(availabilityPercent: number): number {
   if (availabilityPercent >= 90) {
     return 0; // Full team - no adjustment

@@ -1,51 +1,61 @@
 ## Purpose
 
-This file gives compact, actionable guidance for AI coding agents working in this repository.
-Keep edits short and focused — the repo is a minimal, root-level Java example application.
+This file gives compact, actionable guidance for AI coding agents working in the Sprint Monitor workspace.
+Keep edits narrow, evidence-driven, and aligned with the existing frontend, backend, and ML architecture.
 
 ## Big picture
 
-- Single-file Java program located at `Hello.java` in the repository root.
-- No build system (Maven/Gradle) or tests present. The project is intentionally minimal: source is package-less, compiled and run with the JDK tools.
+- The workspace is a multi-project system with Angular frontend, ASP.NET Core API, and a Python ML service.
+- The main backend behavior lives in `sprint-monitor-api/SprintMonitor.API`.
+- The main frontend behavior lives in `sprint-monitor/src/app`.
+- The ML runtime lives in `ml-service`.
+- Existing architecture docs and status notes are part of the source of truth; inspect them before changing behavior.
 
 ## How to run (developer workflows)
 
 Use Windows PowerShell (the developer's default shell):
 
 ```powershell
-javac Hello.java; if ($LASTEXITCODE -eq 0) { java Hello }
+dotnet test sprint-monitor-api/SprintMonitor.sln
 ```
 
-This compiles `Hello.java` and runs the `Hello` class if compilation succeeded. Output is printed to stdout.
+```powershell
+Set-Location "c:\Users\sunit\Desktop\Dissertation Project\Sprint_Monitor\sprint-monitor"; npm run build
+```
+
+```powershell
+Set-Location "c:\Users\sunit\Desktop\Dissertation Project\Sprint_Monitor\ml-service"; python -m uvicorn ml_service:app --host 127.0.0.1 --port 8000
+```
 
 ## Project-specific patterns & conventions
 
-- Files live at the repository root; there are no packages. Expect global, package-less Java classes (see `Hello.java`).
-- Avoid adding package declarations unless you also introduce a directory structure and update compile/run instructions.
-- No external dependencies or resource files are present — treat new additions as self-contained unless you add a build tool.
+- Keep frontend, backend, and ML contracts synchronized when changing request/response shapes.
+- Prefer the existing orchestration flow: rule engine, ML fallback, then combined risk result.
+- When behavior changes, inspect the nearest controller, service, DTO, model, and test together.
+- Preserve the current architecture unless the request explicitly calls for a refactor.
 
 ## What AI agents should do first
 
-1. Inspect `Hello.java` to learn the code style and scope (it demonstrates simple arithmetic and stdout use).
-2. If adding features, mirror the existing repo layout: create files at the root or introduce a single top-level `src/` layout and update this doc with build/run steps.
-3. Do not assume existence of tests or CI; if you add tests or CI, update this file with commands and expectations.
-
-## Examples from this codebase
-
-- `Hello.java` (root): package-less class with `public static void main(String[])`, uses `System.out.println` for output. Use it as the canonical example for small, self-contained Java changes.
+1. Inspect the nearest feature code and any relevant architecture docs or status notes.
+2. Identify the exact layer that owns the behavior: frontend, backend, ML, or cross-service contract.
+3. Check for existing tests or smoke flows that already cover the slice.
+4. Make the smallest change that matches the current architecture.
+5. Re-run the narrowest verification that can disprove the hypothesis.
 
 ## Integration points and external dependencies
 
-- Currently none. If you introduce libraries, add a build tool (Gradle/Maven) and update the "How to run" section.
+- Backend API talks to the ML service through `IMlRiskService`.
+- Angular consumes the backend API through `ApiService` and related feature services.
+- If you change one side of a contract, update the matching DTO, model, and test surface on the other side.
 
 ## Merge guidance for humans/agents
 
-- Keep the repo minimal and explicit about any new workflow steps.
-- When adding a build system, include: a) install/run commands for Windows PowerShell, b) how to run tests, c) expected artifacts.
+- Keep changes local to the affected slice.
+- Add or update validation whenever the architecture contract changes.
+- Prefer explicit run commands and targeted tests over broad exploratory edits.
 
 ## When something is unclear
 
-- Look for additional top-level files (README, build files). If none exist, follow the single-file pattern and document any new conventions in this file.
-
----
-If you'd like, I can also: add a tiny `README.md` that mirrors these run instructions, or convert the project to a `src/` layout with a Gradle wrapper and basic test harness. Which would you prefer?
+- Look for additional top-level docs such as `SPRINT_MONITOR_FULL_USER_AND_TECHNICAL_DOCUMENTATION.md`, `SPRINT_MONITOR_CODE_FLOW.md`, and the repository notes.
+- Trace the request through the relevant service boundary before editing.
+- If behavior appears inconsistent after a change, verify the live API and ML runtime before assuming the code is wrong.

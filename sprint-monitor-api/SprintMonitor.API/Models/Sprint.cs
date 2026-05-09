@@ -71,6 +71,30 @@ public class Sprint
     public int TeamSize { get; set; } = 5;
 
     /// <summary>
+    /// Total team meeting overhead hours planned for the sprint.
+    /// </summary>
+    [Range(0, 200)]
+    public int MeetingHoursPerSprint { get; set; } = 8;
+
+    /// <summary>
+    /// Number of new members joining this sprint.
+    /// </summary>
+    [Range(0, 50)]
+    public int NewMembersCount { get; set; } = 0;
+
+    /// <summary>
+    /// Average experience level of the team (1-10).
+    /// </summary>
+    [Range(1, 10)]
+    public int AvgExperienceLevel { get; set; } = 6;
+
+    /// <summary>
+    /// Collaboration effectiveness score (1-10).
+    /// </summary>
+    [Range(1, 10)]
+    public int CollaborationScore { get; set; } = 7;
+
+    /// <summary>
     /// Sprint duration in days (typically 7 or 14)
     /// </summary>
     [Range(1, 30)]

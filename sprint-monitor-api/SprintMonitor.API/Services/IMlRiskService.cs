@@ -29,7 +29,11 @@ public interface IMlRiskService
         int teamAvailability,
         int committedPoints,
         int completedPoints,
-        int teamSize);
+        int teamSize,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore);
 
     /// <summary>
     /// Combine rule-based and ML risk levels into a final risk level.

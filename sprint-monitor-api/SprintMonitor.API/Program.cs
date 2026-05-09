@@ -52,6 +52,7 @@ builder.Services.AddAuthorization();
 // Register application services
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ITeamRiskConfigurationService, TeamRiskConfigurationService>();
 builder.Services.AddScoped<IRiskAssessmentService, RiskAssessmentService>();
 builder.Services.AddScoped<IMetricsService, MetricsService>();
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();

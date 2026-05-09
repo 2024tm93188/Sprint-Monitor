@@ -48,6 +48,10 @@ public class SprintService : ISprintService
             RemovedPoints = dto.RemovedPoints,
             TeamAvailability = dto.TeamAvailability,
             TeamSize = dto.TeamSize,
+            MeetingHoursPerSprint = dto.MeetingHoursPerSprint,
+            NewMembersCount = dto.NewMembersCount,
+            AvgExperienceLevel = dto.AvgExperienceLevel,
+            CollaborationScore = dto.CollaborationScore,
             SprintDuration = dto.SprintDuration,
             HadSpillover = dto.HadSpillover,
             ExternalDependencies = dto.ExternalDependencies,
@@ -76,6 +80,10 @@ public class SprintService : ISprintService
         if (dto.RemovedPoints.HasValue) sprint.RemovedPoints = dto.RemovedPoints.Value;
         if (dto.TeamAvailability.HasValue) sprint.TeamAvailability = dto.TeamAvailability.Value;
         if (dto.TeamSize.HasValue) sprint.TeamSize = dto.TeamSize.Value;
+        if (dto.MeetingHoursPerSprint.HasValue) sprint.MeetingHoursPerSprint = dto.MeetingHoursPerSprint.Value;
+        if (dto.NewMembersCount.HasValue) sprint.NewMembersCount = dto.NewMembersCount.Value;
+        if (dto.AvgExperienceLevel.HasValue) sprint.AvgExperienceLevel = dto.AvgExperienceLevel.Value;
+        if (dto.CollaborationScore.HasValue) sprint.CollaborationScore = dto.CollaborationScore.Value;
         if (dto.HadSpillover.HasValue) sprint.HadSpillover = dto.HadSpillover.Value;
         if (dto.ExternalDependencies.HasValue) sprint.ExternalDependencies = dto.ExternalDependencies.Value;
         if (dto.StartDate.HasValue) sprint.StartDate = dto.StartDate.Value;
@@ -145,6 +153,14 @@ public class SprintService : ISprintService
             Status = SprintStatus.Planned,
             CommittedPoints = 0,
             CompletedPoints = 0,
+            TeamAvailability = 100,
+            TeamSize = team.TeamSize > 0 ? team.TeamSize : 5,
+            MeetingHoursPerSprint = 8,
+            NewMembersCount = 0,
+            AvgExperienceLevel = 6,
+            CollaborationScore = 7,
+            SprintDuration = 14,
+            ExternalDependencies = 0,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -181,6 +197,10 @@ public class SprintService : ISprintService
             RemovedPoints = sprint.RemovedPoints,
             TeamAvailability = sprint.TeamAvailability,
             TeamSize = sprint.TeamSize,
+            MeetingHoursPerSprint = sprint.MeetingHoursPerSprint,
+            NewMembersCount = sprint.NewMembersCount,
+            AvgExperienceLevel = sprint.AvgExperienceLevel,
+            CollaborationScore = sprint.CollaborationScore,
             SprintDuration = sprint.SprintDuration,
             HadSpillover = sprint.HadSpillover,
             ExternalDependencies = sprint.ExternalDependencies,

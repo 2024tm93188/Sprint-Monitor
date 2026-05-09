@@ -174,4 +174,14 @@ export class RiskDashboardComponent implements OnChanges {
     if (confidence >= 0.5) return 'confidence-medium';
     return 'confidence-low';
   }
+
+  getFeasibilitySignal(): 'Approved' | 'Under Review' | 'Deferred' | 'Rejected' {
+    const risk = this.assessment?.finalRisk || this.assessment?.overallRisk;
+    const teamScore = this.assessment?.teamDynamicsScore ?? 0;
+
+    if (risk === RiskLevel.HIGH && teamScore >= 2) return 'Rejected';
+    if (risk === RiskLevel.HIGH || teamScore >= 3) return 'Deferred';
+    if (risk === RiskLevel.MEDIUM && teamScore >= 2) return 'Under Review';
+    return 'Approved';
+  }
 }

@@ -119,6 +119,14 @@ public class CsvImportService : ICsvImportService
                 map["availability"] = i;
             else if (header.Contains("teamsize") || header.Contains("size"))
                 map["teamsize"] = i;
+            else if ((header.Contains("meeting") && header.Contains("hour")) || header == "meetinghourspersprint")
+                map["meetinghours"] = i;
+            else if ((header.Contains("new") && header.Contains("member")) || header == "newmemberscount")
+                map["newmembers"] = i;
+            else if ((header.Contains("experience") && header.Contains("level")) || header == "avgexperiencelevel")
+                map["experience"] = i;
+            else if (header.Contains("collaboration") || header == "collaborationscore")
+                map["collaboration"] = i;
             else if (header.Contains("duration") || header.Contains("days"))
                 map["duration"] = i;
             else if (header.Contains("start"))
@@ -150,6 +158,10 @@ public class CsvImportService : ICsvImportService
             RemovedPoints = int.Parse(GetValue(values, columnMap, "removed", "0")),
             TeamAvailability = int.Parse(GetValue(values, columnMap, "availability", "100")),
             TeamSize = int.Parse(GetValue(values, columnMap, "teamsize", "5")),
+            MeetingHoursPerSprint = int.Parse(GetValue(values, columnMap, "meetinghours", "8")),
+            NewMembersCount = int.Parse(GetValue(values, columnMap, "newmembers", "0")),
+            AvgExperienceLevel = int.Parse(GetValue(values, columnMap, "experience", "6")),
+            CollaborationScore = int.Parse(GetValue(values, columnMap, "collaboration", "7")),
             SprintDuration = int.Parse(GetValue(values, columnMap, "duration", "14")),
             ExternalDependencies = int.Parse(GetValue(values, columnMap, "dependencies", "0"))
         };

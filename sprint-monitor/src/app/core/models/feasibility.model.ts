@@ -32,6 +32,10 @@ export interface Feasibility {
   adoptionChallenges?: string;
   scalabilityConsiderations?: string;
   overallScore: number;
+  riskLevel?: string;
+  teamCondition?: string;
+  teamDynamicsScore?: number;
+  decisionReason?: string;
   
   createdAt: Date;
   updatedAt?: Date;
@@ -63,6 +67,7 @@ export interface CreateFeasibility {
   expectedBenefits?: string;
   adoptionChallenges?: string;
   scalabilityConsiderations?: string;
+  decisionReason?: string;
 }
 
 export interface UpdateFeasibility {
@@ -88,6 +93,7 @@ export interface UpdateFeasibility {
   expectedBenefits?: string;
   adoptionChallenges?: string;
   scalabilityConsiderations?: string;
+  decisionReason?: string;
 }
 
 export interface FeasibilitySummary {

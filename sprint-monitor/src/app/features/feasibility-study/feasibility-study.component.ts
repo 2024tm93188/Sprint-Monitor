@@ -49,14 +49,17 @@ export class FeasibilityStudyComponent implements OnInit {
     integrationNotes: [''],
     mentorComments: [''],
     approvedBy: [''],
-    status: ['Approved'],
+    status: ['Proposed'],
     expectedBenefits: [''],
     adoptionChallenges: [''],
     scalabilityConsiderations: ['']
   });
 
   statusOptions: FeasibilityStatus[] = [
-    'Approved', 
+    'Proposed',
+    'Under Review',
+    'Approved',
+    'Deferred',
     'Rejected'
   ];
 
@@ -122,7 +125,7 @@ export class FeasibilityStudyComponent implements OnInit {
       operationalFeasibility: false,
       organizationalFeasibility: false,
       integrationFeasibility: false,
-      status: 'Approved'
+      status: 'Proposed'
     });
     this.showForm = true;
   }

@@ -90,6 +90,10 @@ export class PlanningEvaluationComponent implements OnInit {
       input.teamAvailability,
       input.teamSize,
       input.externalDependencies,
+      input.meetingHoursPerSprint,
+      input.newMembersCount,
+      input.avgExperienceLevel,
+      input.collaborationScore,
       input.sprintId
     ).subscribe({
       next: (assessment) => {
@@ -311,6 +315,10 @@ export class PlanningEvaluationComponent implements OnInit {
       plannedStoryPoints: form.get('plannedPoints')?.value ?? 0,
       teamAvailability: form.get('teamAvailability')?.value ?? 100,
       teamSize: form.get('teamSize')?.value ?? 1,
+      meetingHoursPerSprint: form.get('meetingHoursPerSprint')?.value ?? 8,
+      newMembersCount: form.get('newMembersCount')?.value ?? 0,
+      avgExperienceLevel: form.get('avgExperienceLevel')?.value ?? 6,
+      collaborationScore: form.get('collaborationScore')?.value ?? 7,
       externalDependencies: form.get('externalDependencies')?.value ?? 0,
       sprintId: form.get('sprintId')?.value || undefined
     };

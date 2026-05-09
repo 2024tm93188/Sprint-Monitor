@@ -183,6 +183,35 @@
 
       <mat-divider></mat-divider>
 
+      <div class="section-title">
+        <mat-icon>groups</mat-icon>
+        Team Dynamics Inputs
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Meeting Hours per Sprint</mat-label>
+        <input matInput type="number" formControlName="meetingHoursPerSprint" min="0">
+        <mat-hint>Total meeting overhead hours expected in this sprint</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>New Members Count</mat-label>
+        <input matInput type="number" formControlName="newMembersCount" min="0">
+        <mat-hint>People newly joining the squad this sprint</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Average Experience Level (1-10)</mat-label>
+        <input matInput type="number" formControlName="avgExperienceLevel" min="1" max="10">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Collaboration Score (1-10)</mat-label>
+        <input matInput type="number" formControlName="collaborationScore" min="1" max="10">
+      </mat-form-field>
+
+      <mat-divider></mat-divider>
+
       <!-- Submit Button -->
       <div class="actions">
         <button mat-raised-button color="primary" type="submit"

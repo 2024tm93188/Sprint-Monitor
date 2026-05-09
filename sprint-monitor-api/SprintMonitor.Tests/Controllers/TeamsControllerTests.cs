@@ -13,12 +13,14 @@ namespace SprintMonitor.Tests.Controllers;
 public class TeamsControllerTests
 {
     private readonly Mock<ITeamService> _mockTeamService;
+    private readonly Mock<ITeamRiskConfigurationService> _mockTeamRiskConfigService;
     private readonly TeamsController _controller;
 
     public TeamsControllerTests()
     {
         _mockTeamService = new Mock<ITeamService>();
-        _controller = new TeamsController(_mockTeamService.Object);
+        _mockTeamRiskConfigService = new Mock<ITeamRiskConfigurationService>();
+        _controller = new TeamsController(_mockTeamService.Object, _mockTeamRiskConfigService.Object);
     }
 
     #region GetAllTeams Tests

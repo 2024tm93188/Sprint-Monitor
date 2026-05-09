@@ -120,6 +120,10 @@ export interface SprintComparison {
   mlRisk?: string | null;
   finalRisk?: string | null;
   mlConfidence?: number | null;
+  teamDynamicsScore: number;
+  teamCondition?: string | null;
+  feasibilityStatus?: string | null;
+  feasibilityReason?: string | null;
 
   iterationCount: number;
   finalIteration: number;

@@ -188,6 +188,10 @@ public class RiskFeedbackService : IRiskFeedbackService
                 RemovedPoints = 0,
                 TeamAvailability = Math.Clamp(assessment.TeamAvailability, 0, 100),
                 TeamSize = Math.Max(1, team.TeamSize),
+                MeetingHoursPerSprint = Math.Max(0, assessment.MeetingHoursPerSprint),
+                NewMembersCount = Math.Max(0, assessment.NewMembersCount),
+                AvgExperienceLevel = Math.Clamp(assessment.AvgExperienceLevel, 1, 10),
+                CollaborationScore = Math.Clamp(assessment.CollaborationScore, 1, 10),
                 SprintDuration = 14,
                 HadSpillover = false,
                 ExternalDependencies = Math.Max(0, assessment.ExternalDependencies),
@@ -204,6 +208,10 @@ public class RiskFeedbackService : IRiskFeedbackService
             sprint.CommittedPoints = Math.Max(0, assessment.PlannedCommitment);
             sprint.TeamAvailability = Math.Clamp(assessment.TeamAvailability, 0, 100);
             sprint.TeamSize = Math.Max(1, sprint.TeamSize > 0 ? sprint.TeamSize : team.TeamSize);
+            sprint.MeetingHoursPerSprint = Math.Max(0, assessment.MeetingHoursPerSprint);
+            sprint.NewMembersCount = Math.Max(0, assessment.NewMembersCount);
+            sprint.AvgExperienceLevel = Math.Clamp(assessment.AvgExperienceLevel > 0 ? assessment.AvgExperienceLevel : sprint.AvgExperienceLevel, 1, 10);
+            sprint.CollaborationScore = Math.Clamp(assessment.CollaborationScore > 0 ? assessment.CollaborationScore : sprint.CollaborationScore, 1, 10);
             sprint.SprintDuration = sprint.SprintDuration > 0 ? sprint.SprintDuration : 14;
             sprint.ExternalDependencies = Math.Max(0, assessment.ExternalDependencies);
 
@@ -368,6 +376,15 @@ public class RiskFeedbackService : IRiskFeedbackService
             .Where(s => sprintIds.Contains(s.SprintId))
             .ToListAsync();
 
+        var feasibilityCandidates = await _context.ImplementationFeasibilities
+            .Where(f => f.SprintId.HasValue && sprintIds.Contains(f.SprintId.Value))
+            .OrderByDescending(f => f.EvaluationDate)
+            .ToListAsync();
+
+        var latestFeasibilityBySprint = feasibilityCandidates
+            .GroupBy(f => f.SprintId!.Value)
+            .ToDictionary(g => g.Key, g => g.First());
+
         // Get feedbacks for these final assessments
         var assessmentIds = assessments.Select(a => a.AssessmentId).ToList();
         var feedbacks = await _context.RiskFeedbacks
@@ -459,6 +476,14 @@ public class RiskFeedbackService : IRiskFeedbackService
                 MlRisk = assessment.MlRiskLevel?.ToString(),
                 FinalRisk = assessment.FinalRiskLevel?.ToString(),
                 MlConfidence = assessment.MlConfidence,
+                TeamDynamicsScore = assessment.TeamDynamicsScore,
+                TeamCondition = assessment.TeamCondition,
+                FeasibilityStatus = sprint?.SprintId != null && latestFeasibilityBySprint.TryGetValue(sprint.SprintId, out var feasibility)
+                    ? feasibility.Status
+                    : null,
+                FeasibilityReason = sprint?.SprintId != null && latestFeasibilityBySprint.TryGetValue(sprint.SprintId, out var feasibilityReason)
+                    ? feasibilityReason.DecisionReason
+                    : null,
                 IterationCount = assessment.SprintId.HasValue
                     ? iterationCountsBySprint.GetValueOrDefault(assessment.SprintId.Value, 1)
                     : 1,

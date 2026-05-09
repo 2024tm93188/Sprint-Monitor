@@ -1,0 +1,78 @@
+<section class="config-shell">
+  <mat-card class="hero-card">
+    <div class="hero-copy">
+      <p class="eyebrow">Team Risk Configuration</p>
+      <h2>Keep core metrics fixed. Tune thresholds, weights, and team dynamics by team.</h2>
+      <p class="summary">
+        CVR, spillover, capacity, availability, and dependencies stay in the model.
+        Teams can only adjust thresholds, importance weights, and the optional team-dynamics layer.
+      </p>
+    </div>
+    <div class="hero-meta">
+      <div class="meta-chip">Team {{ selectedTeamName || (selectedTeamId ? ('#' + selectedTeamId) : 'N/A') }}</div>
+      <div class="meta-chip accent" *ngIf="loading">Loading</div>
+    </div>
+  </mat-card>
+
+  <form [formGroup]="form" class="config-grid">
+    <mat-card class="config-card">
+      <h3>Metric Thresholds</h3>
+      <p class="section-note">These thresholds tune the scoring bands without removing the core metrics.</p>
+      <div class="field-grid">
+        <mat-form-field appearance="outline"><mat-label>CVR Low Max</mat-label><input matInput type="number" formControlName="cvrLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>CVR Medium Max</mat-label><input matInput type="number" formControlName="cvrMediumMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Velocity CV Low Max</mat-label><input matInput type="number" formControlName="velocityCvLowMax" step="0.01"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Velocity CV Medium Max</mat-label><input matInput type="number" formControlName="velocityCvMediumMax" step="0.01"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Spillover Low Max</mat-label><input matInput type="number" formControlName="spilloverLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Spillover Medium Max</mat-label><input matInput type="number" formControlName="spilloverMediumMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Capacity Utilization Low Max</mat-label><input matInput type="number" formControlName="capacityUtilizationLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Capacity Utilization Medium Max</mat-label><input matInput type="number" formControlName="capacityUtilizationMediumMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Availability High Min</mat-label><input matInput type="number" formControlName="availabilityHighMin"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Availability Medium Min</mat-label><input matInput type="number" formControlName="availabilityMediumMin"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Dependency Low Max</mat-label><input matInput type="number" formControlName="dependencyLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Dependency Medium Max</mat-label><input matInput type="number" formControlName="dependencyMediumMax"></mat-form-field>
+      </div>
+    </mat-card>
+
+    <mat-card class="config-card">
+      <h3>Metric Weights</h3>
+      <p class="section-note">Weights are normalized by the engine. They define how strongly each factor contributes to final risk.</p>
+      <div class="field-grid weights-grid">
+        <mat-form-field appearance="outline"><mat-label>CVR Weight %</mat-label><input matInput type="number" formControlName="cvrWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Velocity Weight %</mat-label><input matInput type="number" formControlName="velocityWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Spillover Weight %</mat-label><input matInput type="number" formControlName="spilloverWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Capacity Weight %</mat-label><input matInput type="number" formControlName="capacityWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Availability Weight %</mat-label><input matInput type="number" formControlName="availabilityWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Dependency Weight %</mat-label><input matInput type="number" formControlName="dependencyWeight"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Team Dynamics Weight %</mat-label><input matInput type="number" formControlName="teamDynamicsWeight"></mat-form-field>
+      </div>
+    </mat-card>
+
+    <mat-card class="config-card">
+      <h3>Team Dynamics Settings</h3>
+      <p class="section-note">These values tune how team context contributes to risk and feasibility.</p>
+      <div class="field-grid">
+        <mat-form-field appearance="outline"><mat-label>Meeting Hours Low Max</mat-label><input matInput type="number" formControlName="meetingHoursLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Meeting Hours Medium Max</mat-label><input matInput type="number" formControlName="meetingHoursMediumMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>New Members Low Max</mat-label><input matInput type="number" formControlName="newMembersLowMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>New Members Medium Max</mat-label><input matInput type="number" formControlName="newMembersMediumMax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Experience Low Min</mat-label><input matInput type="number" formControlName="experienceLowMin"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Experience Medium Min</mat-label><input matInput type="number" formControlName="experienceMediumMin"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Collaboration Low Min</mat-label><input matInput type="number" formControlName="collaborationLowMin"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Collaboration Medium Min</mat-label><input matInput type="number" formControlName="collaborationMediumMin"></mat-form-field>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="core-note">
+        <strong>Fixed core metrics:</strong> CVR, spillover, capacity/availability, and dependencies always remain enabled.
+      </div>
+
+      <mat-checkbox formControlName="useTeamDynamics">Use Team Dynamics in scoring</mat-checkbox>
+    </mat-card>
+
+    <div class="actions">
+      <button class="btn btn-primary" type="button" (click)="save()" [disabled]="saving || loading">Save Configuration</button>
+    </div>
+  </form>
+</section>
