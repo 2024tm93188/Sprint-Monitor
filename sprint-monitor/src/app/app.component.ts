@@ -119,7 +119,6 @@ export class AppComponent implements OnInit {
     }
 
     if (event.index === 6) {
-      this.syncAppliedRecommendationsForCurrentSprint();
       this.sprintComparisonComponent?.loadComparison();
     }
   }
@@ -139,80 +138,95 @@ export class AppComponent implements OnInit {
       return;
     }
 
+    const appliedBy = this.authService.userName() || this.authService.userEmail() || 'system';
+    const recommendationId = Number(recommendation.id);
+
+    console.log('[App] onApplyRecommendation:', recommendation.title,
+      '| id:', recommendation.id, '| actionType:', recommendation.actionType);
+
+    // Step 1: Track applied state & patch form inputs (no local recalculation)
+    this.planningEvaluation.applyRecommendation(recommendation, true /* skipFormPatch */);
+    this.planningEvaluation.patchFormForRecommendation(recommendation);
+
+    // Step 2: Persist the application record to the backend (fire-and-forget)
     const applyPayload = {
       beforeScore: recommendation.beforeScore,
       afterScore: recommendation.afterScore,
       beforeRiskLevel: recommendation.beforeRiskLevel,
       afterRiskLevel: recommendation.afterRiskLevel,
       impactScoreChange: recommendation.estimatedScoreChange,
-      appliedBy: this.authService.userName() || this.authService.userEmail() || 'system'
+      appliedBy
     };
 
-    const persistByMatch = () =>
-      this.apiService.applyRecommendationByMatch({
-        teamId: this.selectedTeamId,
-        sprintId: this.currentAssessment?.sprintId ?? undefined,
-        title: recommendation.title,
-        actionType: recommendation.actionType,
-        addressesRiskFactor: recommendation.addressesRiskFactor,
-        ...applyPayload
-      }).subscribe({
-        next: () => {
-          this.showSnackBar(
-            `Applied: ${recommendation.title} (${recommendation.beforeRiskLevel || 'N/A'} -> ${recommendation.afterRiskLevel || 'N/A'})`,
-            'OK',
-            2200
-          );
-        },
-        error: () => {
-          this.showSnackBar('Applied locally, but action-tracking sync failed.', 'OK', 2500);
-        }
-      });
-
-    const recommendationId = Number(recommendation.id);
     if (!Number.isNaN(recommendationId) && recommendationId > 0) {
       this.apiService.applyRecommendation(recommendationId, applyPayload).subscribe({
-        next: () => {
-          this.showSnackBar(
-            `Applied: ${recommendation.title} (${recommendation.beforeRiskLevel || 'N/A'} -> ${recommendation.afterRiskLevel || 'N/A'})`,
-            'OK',
-            2200
-          );
-        },
-        error: () => {
-          persistByMatch();
+        next: () => console.log('[App] Recommendation persisted by ID:', recommendationId),
+        error: (err) => {
+          console.warn('[App] applyRecommendation by ID failed, trying match-based:', err);
+          this.persistRecommendationByMatch(recommendation, appliedBy);
         }
       });
     } else {
-      persistByMatch();
+      this.persistRecommendationByMatch(recommendation, appliedBy);
     }
 
-    this.planningEvaluation.applyRecommendation(recommendation);
+    // Step 3: Authoritative backend re-evaluation (single source of truth)
+    this.planningEvaluation.triggerReevaluationAndFinalize()?.subscribe({
+      next: (assessment) => {
+        if (!assessment) {
+          this.showSnackBar('Recommendation applied. Re-evaluation returned no result.', 'OK', 2500);
+          return;
+        }
+
+        console.log('[App] Post-recommendation re-evaluation complete:', {
+          assessmentId: (assessment as any).assessmentId,
+          overallRisk: assessment.overallRisk,
+          mlRisk: (assessment as any).mlRisk,
+          finalRisk: (assessment as any).finalRisk,
+          totalScore: assessment.totalScore,
+          recommendations: assessment.recommendations?.length
+        });
+
+        this.showSnackBar(
+          `✓ Applied "${recommendation.title}" — Risk recalculated: ${assessment.overallRisk}`,
+          'OK',
+          3000
+        );
+
+        // Step 4: Refresh comparison dashboard with the new final assessment
+        this.sprintComparisonComponent?.loadComparison();
+      },
+      error: (err) => {
+        console.error('[App] Backend re-evaluation failed after recommendation apply:', err);
+        this.showSnackBar(
+          `"${recommendation.title}" applied locally. Backend re-evaluation failed.`,
+          'OK',
+          2500
+        );
+      }
+    });
   }
 
-  private syncAppliedRecommendationsForCurrentSprint(): void {
-    const applied = this.currentAssessment?.recommendations?.filter(r => r.wasApplied) || [];
-    if (!applied.length) {
-      return;
-    }
-
-    applied.forEach(recommendation => {
-      this.apiService.applyRecommendationByMatch({
-        teamId: this.selectedTeamId,
-        sprintId: this.currentAssessment?.sprintId ?? undefined,
-        title: recommendation.title,
-        actionType: recommendation.actionType,
-        addressesRiskFactor: recommendation.addressesRiskFactor,
-        beforeScore: recommendation.beforeScore,
-        afterScore: recommendation.afterScore,
-        beforeRiskLevel: recommendation.beforeRiskLevel,
-        afterRiskLevel: recommendation.afterRiskLevel,
-        impactScoreChange: recommendation.estimatedScoreChange,
-        appliedBy: recommendation.appliedBy || this.authService.userName() || this.authService.userEmail() || 'system'
-      }).subscribe({
-        next: () => {},
-        error: () => {}
-      });
+  /**
+   * Persists a recommendation application record to the backend using title/actionType/factor matching.
+   * Fire-and-forget — does NOT affect the local state or re-evaluation flow.
+   */
+  private persistRecommendationByMatch(recommendation: Recommendation, appliedBy: string): void {
+    this.apiService.applyRecommendationByMatch({
+      teamId: this.selectedTeamId,
+      sprintId: this.currentAssessment?.sprintId ?? undefined,
+      title: recommendation.title,
+      actionType: recommendation.actionType,
+      addressesRiskFactor: recommendation.addressesRiskFactor,
+      beforeScore: recommendation.beforeScore,
+      afterScore: recommendation.afterScore,
+      beforeRiskLevel: recommendation.beforeRiskLevel,
+      afterRiskLevel: recommendation.afterRiskLevel,
+      impactScoreChange: recommendation.estimatedScoreChange,
+      appliedBy
+    }).subscribe({
+      next: () => console.log('[App] Recommendation persisted by match:', recommendation.title),
+      error: (err) => console.warn('[App] persistRecommendationByMatch failed:', err)
     });
   }
 
@@ -311,7 +325,6 @@ export class AppComponent implements OnInit {
   }
 
   private mapAssessmentResponseToModel(response: RiskAssessmentResponseDto): RiskAssessment {
-    const baseScore = Number(response.totalScore ?? 0);
 
     return {
       assessmentId: response.assessmentId,
@@ -321,6 +334,9 @@ export class AppComponent implements OnInit {
       iteration: response.iteration,
       isFinal: response.isFinal,
       overallRisk: response.riskLevel as RiskLevel,
+      mlRisk: response.mlRiskLevel ? response.mlRiskLevel as RiskLevel : null,
+      finalRisk: response.finalRiskLevel ? response.finalRiskLevel as RiskLevel : null,
+      mlConfidence: response.mlConfidence ?? null,
       totalScore: response.totalScore,
       teamSize: response.teamSize,
       meetingHoursPerSprint: response.meetingHoursPerSprint,
@@ -341,48 +357,27 @@ export class AppComponent implements OnInit {
         metricValue: f.metricValue,
         threshold: f.threshold ?? undefined
       })),
-      recommendations: response.recommendations.map(r => {
-        const mappedRecommendation: Recommendation = {
-          id: r.recommendationId.toString(),
-          title: r.title,
-          description: r.description,
-          priority: r.priority as RecommendationPriority,
-          actionType: r.actionType as ActionType,
-          suggestedChange: r.suggestedChange ?? undefined,
-          addressesRiskFactor: r.addressesRiskFactor,
-          beforeScore: r.beforeScore ?? undefined,
-          afterScore: r.afterScore ?? undefined,
-          beforeRiskLevel: r.beforeRiskLevel as RiskLevel | undefined,
-          afterRiskLevel: r.afterRiskLevel as RiskLevel | undefined,
-          estimatedScoreChange: r.estimatedScoreChange ?? undefined,
-          wasApplied: r.wasApplied ?? undefined,
-          appliedAt: r.appliedAt ? new Date(r.appliedAt) : undefined,
-          appliedBy: r.appliedBy ?? undefined
-        };
-
-        if (mappedRecommendation.beforeScore === undefined || mappedRecommendation.afterScore === undefined) {
-          const parsed = mappedRecommendation.suggestedChange?.match(/(\d+(?:\.\d+)?)/);
-          const inferredDelta = parsed ? Math.max(0.5, Math.min(3, parseFloat(parsed[1]) / 5)) : 1;
-          const before = Math.round(baseScore * 100) / 100;
-          const after = Math.max(0, Math.round((before - inferredDelta) * 100) / 100);
-
-          mappedRecommendation.beforeScore = before;
-          mappedRecommendation.afterScore = after;
-          mappedRecommendation.beforeRiskLevel = mappedRecommendation.beforeRiskLevel ?? (response.riskLevel as RiskLevel);
-          mappedRecommendation.afterRiskLevel = mappedRecommendation.afterRiskLevel ?? this.getRiskLevelFromScore(after);
-          mappedRecommendation.estimatedScoreChange = mappedRecommendation.estimatedScoreChange ?? Math.round(inferredDelta * 100) / 100;
-        }
-
-        return mappedRecommendation;
-      })
+      // Map recommendations — use backend values as-is; do NOT inject heuristic
+      // before/after scores. The backend (RiskAssessmentService) already computes
+      // CreateImpactRecommendation with before/after scores. If they are null it
+      // means the backend chose not to provide them, and so should we.
+      recommendations: response.recommendations.map(r => ({
+        id: r.recommendationId.toString(),
+        title: r.title,
+        description: r.description,
+        priority: r.priority as RecommendationPriority,
+        actionType: r.actionType as ActionType,
+        suggestedChange: r.suggestedChange ?? undefined,
+        addressesRiskFactor: r.addressesRiskFactor,
+        beforeScore: r.beforeScore ?? undefined,
+        afterScore: r.afterScore ?? undefined,
+        beforeRiskLevel: r.beforeRiskLevel as RiskLevel | undefined,
+        afterRiskLevel: r.afterRiskLevel as RiskLevel | undefined,
+        estimatedScoreChange: r.estimatedScoreChange ?? undefined,
+        wasApplied: r.wasApplied ?? undefined,
+        appliedAt: r.appliedAt ? new Date(r.appliedAt) : undefined,
+        appliedBy: r.appliedBy ?? undefined
+      } as Recommendation))
     };
-  }
-
-  private getRiskLevelFromScore(score: number): RiskLevel {
-    const normalizedScore = Math.floor(score);
-
-    if (normalizedScore <= 3) return RiskLevel.LOW;
-    if (normalizedScore <= 6) return RiskLevel.MEDIUM;
-    return RiskLevel.HIGH;
   }
 }

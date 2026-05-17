@@ -59,6 +59,18 @@ export class RiskDashboardComponent implements OnChanges {
     return getRiskLevelLabel(this.assessment.overallRisk);
   }
 
+  getMlRisk(): RiskLevel | null {
+    return this.getAssessmentRiskValue('mlRisk', 'mlRiskLevel');
+  }
+
+  getFinalRisk(): RiskLevel | null {
+    return this.getAssessmentRiskValue('finalRisk', 'finalRiskLevel');
+  }
+
+  hasHybridRiskData(): boolean {
+    return !!(this.getMlRisk() || this.getFinalRisk());
+  }
+
   canMarkFinal(): boolean {
     return !!this.assessment?.assessmentId && !this.assessment?.isFinal;
   }
@@ -176,12 +188,29 @@ export class RiskDashboardComponent implements OnChanges {
   }
 
   getFeasibilitySignal(): 'Approved' | 'Under Review' | 'Deferred' | 'Rejected' {
-    const risk = this.assessment?.finalRisk || this.assessment?.overallRisk;
+    const risk = this.getFinalRisk() || this.assessment?.overallRisk;
     const teamScore = this.assessment?.teamDynamicsScore ?? 0;
 
     if (risk === RiskLevel.HIGH && teamScore >= 2) return 'Rejected';
     if (risk === RiskLevel.HIGH || teamScore >= 3) return 'Deferred';
     if (risk === RiskLevel.MEDIUM && teamScore >= 2) return 'Under Review';
     return 'Approved';
+  }
+
+  private getAssessmentRiskValue(...keys: string[]): RiskLevel | null {
+    if (!this.assessment) {
+      return null;
+    }
+
+    const assessment = this.assessment as unknown as Record<string, unknown>;
+
+    for (const key of keys) {
+      const value = assessment[key];
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value as RiskLevel;
+      }
+    }
+
+    return null;
   }
 }

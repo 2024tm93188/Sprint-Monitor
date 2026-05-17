@@ -116,6 +116,13 @@ public class RiskAssessmentService : IRiskAssessmentService
             factors,
             metrics,
             request.PlannedCommitment,
+            request.TeamAvailability,
+            request.ExternalDependencies,
+            effectiveMeetingHours,
+            effectiveNewMembers,
+            effectiveExperience,
+            effectiveCollaboration,
+            config,
             riskLevel,
             totalScore,
             teamDynamicsScore,
@@ -853,6 +860,13 @@ public class RiskAssessmentService : IRiskAssessmentService
         List<RiskFactorDto> factors,
         SprintMetricsDto metrics,
         int plannedPoints,
+        int teamAvailability,
+        int externalDependencies,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore,
+        TeamRiskConfigurationDto config,
         RiskLevel riskLevel,
         decimal currentScore,
         int teamDynamicsScore,
@@ -862,7 +876,18 @@ public class RiskAssessmentService : IRiskAssessmentService
 
         foreach (var factor in factors.Where(f => f.Score >= 2))
         {
-            recommendations.AddRange(GetRecommendationsForFactor(factor, metrics, plannedPoints));
+            recommendations.AddRange(GetRecommendationsForFactor(
+                factor,
+                metrics,
+                plannedPoints,
+                teamAvailability,
+                externalDependencies,
+                meetingHoursPerSprint,
+                newMembersCount,
+                avgExperienceLevel,
+                collaborationScore,
+                config,
+                currentScore));
         }
 
         // Add general recommendations for high risk
@@ -871,6 +896,22 @@ public class RiskAssessmentService : IRiskAssessmentService
             var reduction = plannedPoints - (int)metrics.EffectiveCapacity;
             if (reduction > 0)
             {
+                var projectedAfterScore = EstimateProjectedScore(
+                    recommendationType: ActionType.REDUCE_SCOPE,
+                    recommendation: new RecommendationDto
+                    {
+                        SuggestedChange = $"Reduce by {reduction} points"
+                    },
+                    metrics: metrics,
+                    plannedPoints: plannedPoints,
+                    teamAvailability: teamAvailability,
+                    externalDependencies: externalDependencies,
+                    meetingHoursPerSprint: meetingHoursPerSprint,
+                    newMembersCount: newMembersCount,
+                    avgExperienceLevel: avgExperienceLevel,
+                    collaborationScore: collaborationScore,
+                    config: config);
+
                 recommendations.Add(CreateImpactRecommendation(new RecommendationDto
                 {
                     Title = "Reduce Sprint Scope",
@@ -879,11 +920,24 @@ public class RiskAssessmentService : IRiskAssessmentService
                     AddressesRiskFactor = "Overall",
                     ActionType = "REDUCE_SCOPE",
                     SuggestedChange = $"Reduce by {reduction} points"
-                }, currentScore, Math.Max(1, Math.Min(3, reduction / 2))));
+                }, currentScore, currentScore - projectedAfterScore));
             }
         }
         else if (riskLevel == RiskLevel.MEDIUM && recommendations.Count == 0)
         {
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.ADD_BUFFER,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recommendations.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Add Buffer for Uncertainty",
@@ -891,11 +945,24 @@ public class RiskAssessmentService : IRiskAssessmentService
                 Priority = "MEDIUM",
                 AddressesRiskFactor = "Overall",
                 ActionType = "ADD_BUFFER"
-            }, currentScore, 1));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         if (teamDynamicsScore >= 2)
         {
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.IMPROVE_ESTIMATION,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recommendations.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Stabilize Team Dynamics",
@@ -905,7 +972,7 @@ public class RiskAssessmentService : IRiskAssessmentService
                 Priority = teamDynamicsScore >= 3 ? "CRITICAL" : "HIGH",
                 AddressesRiskFactor = "Team Dynamics",
                 ActionType = "IMPROVE_ESTIMATION"
-            }, currentScore, teamDynamicsScore >= 3 ? 2 : 1));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         return recommendations.OrderBy(r => GetPriorityWeight(r.Priority)).ToList();
@@ -914,7 +981,15 @@ public class RiskAssessmentService : IRiskAssessmentService
     private List<RecommendationDto> GetRecommendationsForFactor(
         RiskFactorDto factor,
         SprintMetricsDto metrics,
-        int plannedPoints)
+        int plannedPoints,
+        int teamAvailability,
+        int externalDependencies,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore,
+        TeamRiskConfigurationDto config,
+        decimal currentScore)
     {
         var recs = new List<RecommendationDto>();
 
@@ -924,6 +999,22 @@ public class RiskAssessmentService : IRiskAssessmentService
             var reduction = plannedPoints - targetPoints;
             if (reduction > 0)
             {
+                var projectedAfterScore = EstimateProjectedScore(
+                    recommendationType: ActionType.REDUCE_SCOPE,
+                    recommendation: new RecommendationDto
+                    {
+                        SuggestedChange = $"Reduce by {reduction} points"
+                    },
+                    metrics: metrics,
+                    plannedPoints: plannedPoints,
+                    teamAvailability: teamAvailability,
+                    externalDependencies: externalDependencies,
+                    meetingHoursPerSprint: meetingHoursPerSprint,
+                    newMembersCount: newMembersCount,
+                    avgExperienceLevel: avgExperienceLevel,
+                    collaborationScore: collaborationScore,
+                    config: config);
+
                 recs.Add(CreateImpactRecommendation(new RecommendationDto
                 {
                     Title = "Match Commitment to Velocity",
@@ -932,12 +1023,25 @@ public class RiskAssessmentService : IRiskAssessmentService
                     AddressesRiskFactor = factor.FactorName,
                     ActionType = "REDUCE_SCOPE",
                     SuggestedChange = $"Reduce by {reduction} points"
-                }, metricsToScore(metrics), Math.Max(1, Math.Min(2, factor.Score))));
+                }, currentScore, currentScore - projectedAfterScore));
             }
         }
 
         if (factor.FactorName.Contains("Spillover"))
         {
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.IMPROVE_ESTIMATION,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Address Spillover Pattern",
@@ -945,11 +1049,24 @@ public class RiskAssessmentService : IRiskAssessmentService
                 Priority = "HIGH",
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "IMPROVE_ESTIMATION"
-            }, metricsToScore(metrics), 1));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         if (factor.FactorName.Contains("Capacity"))
         {
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.ADD_BUFFER,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Reserve Buffer Capacity",
@@ -958,12 +1075,25 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "ADD_BUFFER",
                 SuggestedChange = $"Target {(int)metrics.EffectiveCapacity} points"
-            }, metricsToScore(metrics), 1));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         if (factor.FactorName.Contains("Availability"))
         {
             var adjustedCapacity = (int)(metrics.EffectiveCapacity * (factor.MetricValue / 100));
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.REDUCE_SCOPE,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Adjust for Reduced Availability",
@@ -972,11 +1102,24 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "REDUCE_SCOPE",
                 SuggestedChange = $"Target {adjustedCapacity} points"
-            }, metricsToScore(metrics), 1));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         if (factor.FactorName.Contains("Dependencies"))
         {
+            var projectedAfterScore = EstimateProjectedScore(
+                recommendationType: ActionType.RESOLVE_DEPENDENCIES,
+                recommendation: new RecommendationDto(),
+                metrics: metrics,
+                plannedPoints: plannedPoints,
+                teamAvailability: teamAvailability,
+                externalDependencies: externalDependencies,
+                meetingHoursPerSprint: meetingHoursPerSprint,
+                newMembersCount: newMembersCount,
+                avgExperienceLevel: avgExperienceLevel,
+                collaborationScore: collaborationScore,
+                config: config);
+
             recs.Add(CreateImpactRecommendation(new RecommendationDto
             {
                 Title = "Resolve Dependencies",
@@ -985,10 +1128,83 @@ public class RiskAssessmentService : IRiskAssessmentService
                 AddressesRiskFactor = factor.FactorName,
                 ActionType = "RESOLVE_DEPENDENCIES",
                 SuggestedChange = $"Reduce dependencies from {(int)factor.MetricValue} to 0-2"
-            }, metricsToScore(metrics), Math.Max(1, Math.Min(2, factor.Score))));
+            }, currentScore, currentScore - projectedAfterScore));
         }
 
         return recs;
+    }
+
+    private decimal EstimateProjectedScore(
+        ActionType recommendationType,
+        RecommendationDto recommendation,
+        SprintMetricsDto metrics,
+        int plannedPoints,
+        int teamAvailability,
+        int externalDependencies,
+        int meetingHoursPerSprint,
+        int newMembersCount,
+        int avgExperienceLevel,
+        int collaborationScore,
+        TeamRiskConfigurationDto config)
+    {
+        var projectedPlannedPoints = plannedPoints;
+        var projectedTeamAvailability = teamAvailability;
+        var projectedExternalDependencies = externalDependencies;
+
+        switch (recommendationType)
+        {
+            case ActionType.REDUCE_SCOPE:
+            {
+                var reduction = ExtractReductionAmount(recommendation, plannedPoints);
+                projectedPlannedPoints = Math.Max(1, plannedPoints - reduction);
+                break;
+            }
+            case ActionType.ADD_BUFFER:
+                projectedPlannedPoints = Math.Max(1, (int)Math.Floor(plannedPoints * 0.8m));
+                break;
+            case ActionType.SPLIT_STORIES:
+                projectedPlannedPoints = Math.Max(1, (int)Math.Floor(plannedPoints * 0.9m));
+                break;
+            case ActionType.RESOLVE_DEPENDENCIES:
+                projectedExternalDependencies = Math.Max(0, externalDependencies - 2);
+                break;
+            case ActionType.INCREASE_CAPACITY:
+                projectedTeamAvailability = Math.Min(100, teamAvailability + 15);
+                break;
+            case ActionType.IMPROVE_ESTIMATION:
+                projectedPlannedPoints = Math.Max(1, (int)Math.Floor(plannedPoints * 0.92m));
+                projectedExternalDependencies = Math.Max(0, externalDependencies - 1);
+                break;
+        }
+
+        var projectedFactors = ScoreAllFactors(
+            metrics,
+            projectedPlannedPoints,
+            projectedTeamAvailability,
+            projectedExternalDependencies,
+            config,
+            meetingHoursPerSprint,
+            newMembersCount,
+            avgExperienceLevel,
+            collaborationScore,
+            out _,
+            out _);
+
+        return CalculateWeightedScore(projectedFactors);
+    }
+
+    private static int ExtractReductionAmount(RecommendationDto recommendation, int plannedPoints)
+    {
+        if (!string.IsNullOrWhiteSpace(recommendation.SuggestedChange))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(recommendation.SuggestedChange, @"(\d+)");
+            if (match.Success && int.TryParse(match.Value, out var parsedReduction))
+            {
+                return Math.Max(1, parsedReduction);
+            }
+        }
+
+        return Math.Max(1, (int)Math.Ceiling(plannedPoints * 0.15m));
     }
 
     private int GetPriorityWeight(string priority)

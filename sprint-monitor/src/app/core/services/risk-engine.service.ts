@@ -20,7 +20,7 @@ import {
   determineRiskLevel
 } from '../utils/rules.util';
 import { MetricsService } from './metrics.service';
-import { ApiService, RiskAssessmentRequestDto } from './api.service';
+import { ApiService, RiskAssessmentRequestDto, TeamRiskConfigurationDto } from './api.service';
 import { SprintService } from './sprint.service';
 
 /**
@@ -60,10 +60,16 @@ export class RiskEngineService {
     sprintId?: number
   ): Observable<RiskAssessment> {
     if (!this.useApiEvaluation) {
-      // Use local calculation
+      // Use local calculation but fetch team config first
       const sprints = this.sprintService.getHistoricalSprintsSnapshot();
       const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints, teamAvailability, externalDependencies);
-      return of(this.evaluateRisk(metrics, plannedPoints, teamAvailability));
+      return this.apiService.getTeamRiskConfiguration(this.sprintService.getCurrentTeamId()).pipe(
+        map((config: TeamRiskConfigurationDto) => this.evaluateRisk(metrics, plannedPoints, teamAvailability, config)),
+        catchError(err => {
+          console.warn('Team config fetch failed, using defaults for local evaluation:', err);
+          return of(this.evaluateRisk(metrics, plannedPoints, teamAvailability));
+        })
+      );
     }
 
     const request: RiskAssessmentRequestDto = {
@@ -85,7 +91,11 @@ export class RiskEngineService {
         console.warn('API evaluation failed, falling back to local calculation:', err);
         const sprints = this.sprintService.getHistoricalSprintsSnapshot();
         const metrics = this.metricsService.calculateMetrics(sprints, plannedPoints, teamAvailability, externalDependencies);
-        return of(this.evaluateRisk(metrics, plannedPoints, teamAvailability));
+        // Try to fetch team config for a closer local evaluation; if that fails use defaults
+        return this.apiService.getTeamRiskConfiguration(this.sprintService.getCurrentTeamId()).pipe(
+          map((config: TeamRiskConfigurationDto) => this.evaluateRisk(metrics, plannedPoints, teamAvailability, config)),
+          catchError(() => of(this.evaluateRisk(metrics, plannedPoints, teamAvailability)))
+        );
       })
     );
   }
@@ -144,17 +154,10 @@ export class RiskEngineService {
           appliedBy: r.appliedBy ?? undefined
         };
 
-        if (recommendation.beforeScore === undefined || recommendation.afterScore === undefined) {
-          const delta = recommendation.estimatedScoreChange ?? this.estimateScoreChange(recommendation);
-          const before = Math.round(baseScore * 100) / 100;
-          const after = Math.max(0, Math.round((before - delta) * 100) / 100);
-
-          recommendation.beforeScore = before;
-          recommendation.afterScore = after;
-          recommendation.beforeRiskLevel = recommendation.beforeRiskLevel ?? determineRiskLevel(before);
-          recommendation.afterRiskLevel = recommendation.afterRiskLevel ?? determineRiskLevel(after);
-          recommendation.estimatedScoreChange = recommendation.estimatedScoreChange ?? Math.round(delta * 100) / 100;
-        }
+        // Do not apply frontend heuristics for API responses. Keep backend-provided
+        // before/after scores and estimated changes as the source of truth. If the
+        // backend omits these values, leave them undefined so the UI can reflect
+        // that a server-side recalculation is required for authoritative numbers.
 
         return recommendation;
       }),
@@ -180,17 +183,18 @@ export class RiskEngineService {
   evaluateRisk(
     metrics: SprintMetrics,
     plannedPoints: number,
-    teamAvailability: number
+    teamAvailability: number,
+    config?: TeamRiskConfigurationDto
   ): RiskAssessment {
     // Step 1: Score each risk factor
-    const factors = this.scoreAllFactors(metrics, plannedPoints, teamAvailability);
+    const factors = this.scoreAllFactors(metrics, plannedPoints, teamAvailability, config);
 
     // Step 2: Calculate total score
     const totalScore = factors.reduce((sum, f) => sum + f.score, 0);
     const maxPossibleScore = factors.length * 3; // Each factor can contribute max 3 points
 
     // Step 3: Determine overall risk level
-    const overallRisk = determineRiskLevel(totalScore);
+    const overallRisk = determineRiskLevel(totalScore, config);
 
     // Step 4: Generate recommendations based on findings
     const recommendations = this.generateRecommendations(
@@ -222,42 +226,43 @@ export class RiskEngineService {
   private scoreAllFactors(
     metrics: SprintMetrics,
     plannedPoints: number,
-    teamAvailability: number
+    teamAvailability: number,
+    config?: TeamRiskConfigurationDto
   ): RiskFactor[] {
     const factors: RiskFactor[] = [];
 
     // 1. CVR (Commitment-to-Velocity Ratio)
-    const cvrScore = scoreCVR(metrics.cvr);
+    const cvrScore = scoreCVR(metrics.cvr, config);
     factors.push({
       name: 'Commitment-to-Velocity Ratio (CVR)',
       score: cvrScore,
       description: this.getCVRDescription(metrics.cvr, cvrScore),
       metricValue: metrics.cvr,
-      threshold: RISK_THRESHOLDS.CVR.LOW_MAX
+      threshold: config?.cvrLowMax ?? RISK_THRESHOLDS.CVR.LOW_MAX
     });
 
     // 2. Velocity Variance
-    const varianceScore = scoreVelocityVariance(metrics.velocityCoefficient);
+    const varianceScore = scoreVelocityVariance(metrics.velocityCoefficient, config);
     factors.push({
       name: 'Velocity Stability',
       score: varianceScore,
       description: this.getVarianceDescription(metrics.velocityCoefficient, varianceScore),
       metricValue: metrics.velocityCoefficient * 100, // Show as percentage
-      threshold: RISK_THRESHOLDS.VELOCITY_CV.LOW_MAX * 100
+      threshold: (config?.velocityCvLowMax ?? RISK_THRESHOLDS.VELOCITY_CV.LOW_MAX) * 100
     });
 
     // 3. Spillover Rate
-    const spilloverScore = scoreSpilloverRate(metrics.spilloverRate);
+    const spilloverScore = scoreSpilloverRate(metrics.spilloverRate, config);
     factors.push({
       name: 'Historical Spillover Rate',
       score: spilloverScore,
       description: this.getSpilloverDescription(metrics.spilloverRate, spilloverScore),
       metricValue: metrics.spilloverRate,
-      threshold: RISK_THRESHOLDS.SPILLOVER.LOW_MAX
+      threshold: config?.spilloverLowMax ?? RISK_THRESHOLDS.SPILLOVER.LOW_MAX
     });
 
     // 4. Capacity Utilization
-    const capacityScore = scoreCapacityUtilization(plannedPoints, metrics.effectiveCapacity);
+    const capacityScore = scoreCapacityUtilization(plannedPoints, metrics.effectiveCapacity, config);
     factors.push({
       name: 'Capacity Buffer Utilization',
       score: capacityScore,
@@ -265,17 +270,17 @@ export class RiskEngineService {
       metricValue: metrics.effectiveCapacity > 0
         ? (plannedPoints / metrics.effectiveCapacity) * 100
         : 0,
-      threshold: 100 // 100% of effective capacity
+      threshold: config?.capacityUtilizationLowMax ?? 100 // 100% of effective capacity
     });
 
     // 5. Team Availability
-    const availabilityScore = scoreTeamAvailability(teamAvailability);
+    const availabilityScore = scoreTeamAvailability(teamAvailability, config);
     factors.push({
       name: 'Team Availability',
       score: availabilityScore,
       description: this.getAvailabilityDescription(teamAvailability, availabilityScore),
       metricValue: teamAvailability,
-      threshold: 90
+      threshold: config?.availabilityHighMin ?? 90
     });
 
     return factors;

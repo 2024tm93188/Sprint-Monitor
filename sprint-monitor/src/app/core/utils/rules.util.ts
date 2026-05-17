@@ -12,12 +12,16 @@
  */
 
 import { RISK_THRESHOLDS, RiskLevel } from '../models/risk.model';
+import { TeamRiskConfigurationDto } from '../services/api.service';
 
 
-export function scoreCVR(cvr: number): number {
-  if (cvr <= RISK_THRESHOLDS.CVR.LOW_MAX) {
+export function scoreCVR(cvr: number, config?: TeamRiskConfigurationDto): number {
+  const lowMax = config?.cvrLowMax ?? RISK_THRESHOLDS.CVR.LOW_MAX;
+  const medMax = config?.cvrMediumMax ?? RISK_THRESHOLDS.CVR.MEDIUM_MAX;
+
+  if (cvr <= lowMax) {
     return 0; // Committing within velocity - safe
-  } else if (cvr <= RISK_THRESHOLDS.CVR.MEDIUM_MAX) {
+  } else if (cvr <= medMax) {
     return 1; // Slight overcommit - minor risk
   } else if (cvr <= 1.2) {
     return 2; // Moderate overcommit
@@ -26,10 +30,13 @@ export function scoreCVR(cvr: number): number {
   }
 }
 
-export function scoreVelocityVariance(cv: number): number {
-  if (cv <= RISK_THRESHOLDS.VELOCITY_CV.LOW_MAX) {
+export function scoreVelocityVariance(cv: number, config?: TeamRiskConfigurationDto): number {
+  const lowMax = config?.velocityCvLowMax ?? RISK_THRESHOLDS.VELOCITY_CV.LOW_MAX;
+  const medMax = config?.velocityCvMediumMax ?? RISK_THRESHOLDS.VELOCITY_CV.MEDIUM_MAX;
+
+  if (cv <= lowMax) {
     return 0; // Stable velocity - trustworthy estimates
-  } else if (cv <= RISK_THRESHOLDS.VELOCITY_CV.MEDIUM_MAX) {
+  } else if (cv <= medMax) {
     return 1; // Moderate variance - some uncertainty
   } else if (cv <= 0.35) {
     return 2; // High variance - unreliable velocity
@@ -38,10 +45,13 @@ export function scoreVelocityVariance(cv: number): number {
   }
 }
 
-export function scoreSpilloverRate(spilloverRate: number): number {
-  if (spilloverRate < RISK_THRESHOLDS.SPILLOVER.LOW_MAX) {
+export function scoreSpilloverRate(spilloverRate: number, config?: TeamRiskConfigurationDto): number {
+  const lowMax = config?.spilloverLowMax ?? RISK_THRESHOLDS.SPILLOVER.LOW_MAX;
+  const medMax = config?.spilloverMediumMax ?? RISK_THRESHOLDS.SPILLOVER.MEDIUM_MAX;
+
+  if (spilloverRate < lowMax) {
     return 0; // Rarely spills over - good track record
-  } else if (spilloverRate <= RISK_THRESHOLDS.SPILLOVER.MEDIUM_MAX) {
+  } else if (spilloverRate <= medMax) {
     return 1; // Occasional spillover - watch carefully
   } else if (spilloverRate <= 60) {
     return 2; // Frequent spillover - systemic issue
@@ -52,15 +62,19 @@ export function scoreSpilloverRate(spilloverRate: number): number {
 
 export function scoreCapacityUtilization(
   committedPoints: number,
-  effectiveCapacity: number
+  effectiveCapacity: number,
+  config?: TeamRiskConfigurationDto
 ): number {
   if (effectiveCapacity === 0) return 3; // No capacity data
 
   const utilizationRatio = committedPoints / effectiveCapacity;
 
-  if (utilizationRatio <= 1.0) {
+  const lowMax = (config?.capacityUtilizationLowMax ?? 100) / 100; // stored as percent on backend
+  const medMax = (config?.capacityUtilizationMediumMax ?? 125) / 100;
+
+  if (utilizationRatio <= lowMax) {
     return 0; // Within safe capacity
-  } else if (utilizationRatio <= 1.1) {
+  } else if (utilizationRatio <= medMax && utilizationRatio <= 1.1) {
     return 1; // Slightly over effective capacity
   } else if (utilizationRatio <= 1.25) {
     return 2; // Significantly over effective capacity
@@ -69,10 +83,13 @@ export function scoreCapacityUtilization(
   }
 }
 
-export function scoreTeamAvailability(availabilityPercent: number): number {
-  if (availabilityPercent >= 90) {
+export function scoreTeamAvailability(availabilityPercent: number, config?: TeamRiskConfigurationDto): number {
+  const highMin = config?.availabilityHighMin ?? 90;
+  const medMin = config?.availabilityMediumMin ?? 75;
+
+  if (availabilityPercent >= highMin) {
     return 0; // Full team - no adjustment
-  } else if (availabilityPercent >= 75) {
+  } else if (availabilityPercent >= medMin) {
     return 1; // Some absence - minor risk increase
   } else {
     return 2; // Significant absence - notable risk
@@ -85,12 +102,15 @@ export function scoreTeamAvailability(availabilityPercent: number): number {
  * @param totalScore - Sum of all risk factor scores
  * @returns RiskLevel enum value
  */
-export function determineRiskLevel(totalScore: number): RiskLevel {
+export function determineRiskLevel(totalScore: number, config?: TeamRiskConfigurationDto): RiskLevel {
   const normalizedScore = Math.floor(totalScore);
+  const lowMax = RISK_THRESHOLDS.TOTAL_SCORE.LOW_MAX;
+  const medMax = RISK_THRESHOLDS.TOTAL_SCORE.MEDIUM_MAX;
 
-  if (normalizedScore <= RISK_THRESHOLDS.TOTAL_SCORE.LOW_MAX) {
+  // Frontend does not currently expose total-score overrides per-team; use global thresholds
+  if (normalizedScore <= lowMax) {
     return RiskLevel.LOW;
-  } else if (normalizedScore <= RISK_THRESHOLDS.TOTAL_SCORE.MEDIUM_MAX) {
+  } else if (normalizedScore <= medMax) {
     return RiskLevel.MEDIUM;
   } else {
     return RiskLevel.HIGH;

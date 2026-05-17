@@ -20,7 +20,7 @@
   </mat-card>
 
   <!-- ════════ HYBRID RISK PANEL (Rule + ML) ════════ -->
-  <section class="hybrid-risk-panel" *ngIf="assessment.mlRisk || assessment.finalRisk">
+  <section class="hybrid-risk-panel">
     <mat-card class="hybrid-card">
       <div class="hybrid-header">
         <h3>
@@ -41,14 +41,22 @@
         </div>
 
         <!-- ML Risk -->
-        <div class="hybrid-item" *ngIf="assessment.mlRisk">
+        <div class="hybrid-item">
           <span class="hybrid-label">ML Prediction</span>
-          <span class="hybrid-value risk-badge" [ngClass]="'risk-' + assessment.mlRisk.toLowerCase()">
-            {{ assessment.mlRisk }}
-          </span>
-          <span class="hybrid-sublabel">
-            Confidence: {{ (assessment.mlConfidence ?? 0) * 100 | number:'1.0-0' }}%
-          </span>
+          <ng-container *ngIf="getMlRisk() as mlRisk; else mlUnavailable">
+            <span class="hybrid-value risk-badge" [ngClass]="'risk-' + mlRisk.toLowerCase()">
+              {{ mlRisk }}
+            </span>
+            <span class="hybrid-sublabel">
+              Confidence: {{ (assessment.mlConfidence ?? 0) * 100 | number:'1.0-0' }}%
+            </span>
+          </ng-container>
+          <ng-template #mlUnavailable>
+            <span class="hybrid-value risk-badge risk-unknown" title="ML service was not available during this evaluation. Re-evaluate to get ML prediction.">
+              Unavailable
+            </span>
+            <span class="hybrid-sublabel ml-unavail-hint">Re-evaluate to get ML risk</span>
+          </ng-template>
         </div>
 
         <!-- Arrow -->
@@ -59,10 +67,10 @@
         <!-- Final Risk -->
         <div class="hybrid-item final-item">
           <span class="hybrid-label">Final Risk</span>
-          <span class="hybrid-value risk-badge final-badge" [ngClass]="'risk-' + (assessment.finalRisk || assessment.overallRisk).toLowerCase()">
-            {{ assessment.finalRisk || assessment.overallRisk }}
+          <span class="hybrid-value risk-badge final-badge" [ngClass]="'risk-' + (getFinalRisk() || assessment.overallRisk).toLowerCase()">
+            {{ getFinalRisk() || assessment.overallRisk }}
           </span>
-          <span class="hybrid-sublabel">Combined</span>
+          <span class="hybrid-sublabel">{{ getMlRisk() ? 'Rule + ML Combined' : 'Rule-based Only' }}</span>
         </div>
       </div>
 

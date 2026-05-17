@@ -8,13 +8,13 @@
   </mat-card-header>
 
   <mat-card-content>
-    <div class="impact-banner" *ngIf="recommendations[0].beforeScore !== undefined && recommendations[0].afterScore !== undefined">
+    <div class="impact-banner" *ngIf="recommendations[0].beforeScore != null && recommendations[0].afterScore != null">
       <mat-icon>insights</mat-icon>
       <div>
-        <strong>Projected impact is now shown for every recommendation.</strong>
+        <strong>Projected impact shown for each recommendation.</strong>
         <span>
-          Example: {{recommendations[0].beforeRiskLevel || 'N/A'}} ({{recommendations[0].beforeScore.toFixed(2)}})
-          → {{recommendations[0].afterRiskLevel || 'N/A'}} ({{recommendations[0].afterScore.toFixed(2)}})
+          Example: {{recommendations[0].beforeRiskLevel || 'N/A'}} ({{recommendations[0].beforeScore!.toFixed(2)}})
+          → {{recommendations[0].afterRiskLevel || 'N/A'}} ({{recommendations[0].afterScore!.toFixed(2)}})
         </span>
       </div>
     </div>
@@ -40,15 +40,19 @@
           </mat-expansion-panel-header>
 
           <div class="recommendation-content">
-            <div class="impact-strip" *ngIf="rec.beforeScore !== undefined && rec.afterScore !== undefined">
+            <div class="impact-strip" *ngIf="rec.beforeScore != null && rec.afterScore != null">
               <span class="impact-label">Before</span>
-              <span class="impact-score">{{rec.beforeRiskLevel || 'N/A'}} {{rec.beforeScore.toFixed(2)}}</span>
+              <span class="impact-score">{{rec.beforeRiskLevel || 'N/A'}} {{rec.beforeScore!.toFixed(2)}}</span>
               <mat-icon>arrow_forward</mat-icon>
               <span class="impact-label">After</span>
-              <span class="impact-score strong">{{rec.afterRiskLevel || 'N/A'}} {{rec.afterScore.toFixed(2)}}</span>
-              <span class="impact-delta" *ngIf="rec.estimatedScoreChange !== undefined">
-                -{{rec.estimatedScoreChange.toFixed(2)}} pts
+              <span class="impact-score strong">{{rec.afterRiskLevel || 'N/A'}} {{rec.afterScore!.toFixed(2)}}</span>
+              <span class="impact-delta" *ngIf="rec.estimatedScoreChange != null">
+                -{{rec.estimatedScoreChange!.toFixed(2)}} pts
               </span>
+            </div>
+            <div class="impact-strip no-impact" *ngIf="rec.beforeScore == null || rec.afterScore == null">
+              <mat-icon>info_outline</mat-icon>
+              <span>Impact scores will update after applying and re-evaluating.</span>
             </div>
 
             <p class="description">{{rec.description}}</p>

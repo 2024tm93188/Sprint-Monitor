@@ -57,6 +57,13 @@ describe('RiskDashboardComponent', () => {
     assessedAt: new Date()
   };
 
+  const mockDtoStyleAssessment = {
+    ...mockAssessment,
+    mlRiskLevel: RiskLevel.HIGH,
+    finalRiskLevel: RiskLevel.HIGH,
+    mlConfidence: 0.82
+  } as unknown as RiskAssessment;
+
   const mockMetrics: SprintMetrics = {
     averageVelocity: 28,
     velocityStandardDeviation: 4.2,
@@ -121,6 +128,21 @@ describe('RiskDashboardComponent', () => {
       const scoreMax = fixture.debugElement.query(By.css('.risk-score-card .kpi-subvalue'));
       expect(scoreValue.nativeElement.textContent).toContain('7');
       expect(scoreMax.nativeElement.textContent).toContain('15');
+    });
+
+    it('should display ML risk when DTO field names are present', () => {
+      component.assessment = mockDtoStyleAssessment;
+      component.metrics = mockMetrics;
+      fixture.detectChanges();
+
+      const hybridPanel = fixture.debugElement.query(By.css('.hybrid-risk-panel'));
+      expect(hybridPanel).toBeTruthy();
+
+      const mlPrediction = fixture.debugElement.query(By.css('.hybrid-item .hybrid-label'));
+      expect(mlPrediction.nativeElement.textContent).toContain('ML Prediction');
+
+      const riskBadges = fixture.debugElement.queryAll(By.css('.hybrid-value.risk-badge'));
+      expect(riskBadges.some(node => node.nativeElement.textContent?.includes('HIGH'))).toBeTrue();
     });
   });
 

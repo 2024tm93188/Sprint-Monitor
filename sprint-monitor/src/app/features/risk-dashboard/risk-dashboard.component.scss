@@ -592,6 +592,21 @@ h3 {
   border: 1px solid #fca5a5;
 }
 
+.risk-badge.risk-unknown {
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  font-size: 13px !important;
+  font-style: italic;
+  cursor: help;
+}
+
+.ml-unavail-hint {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 10px !important;
+}
+
 /* Confidence Bar */
 .confidence-bar-container {
   margin-top: 18px;
